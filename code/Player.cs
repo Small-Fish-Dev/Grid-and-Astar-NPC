@@ -68,12 +68,10 @@ partial class Player : AnimatedEntity
 
 		Position = helper.Position;
 		Velocity = helper.Velocity; 
-
-		
 		
 		var traceDown = helper.TraceDirection( Vector3.Down ); 
 
-		if ( traceDown.Entity != null && Velocity.z <= 0f )
+		if ( traceDown.Entity != null )
 		{
 			GroundEntity = traceDown.Entity;
 			Position = traceDown.EndPosition;
