@@ -1,9 +1,4 @@
-﻿using Sandbox;
-using System;
-using System.Drawing;
-using System.Linq;
-
-namespace Sandbox;
+﻿namespace GridAStar;
 
 partial class Player : AnimatedEntity
 {
