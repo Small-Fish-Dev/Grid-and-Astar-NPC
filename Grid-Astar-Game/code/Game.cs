@@ -7,7 +7,7 @@ global using System.Linq;
 global using System.Collections.Generic;
 global using System.Diagnostics;
 
-namespace GridAStar;
+namespace GridAStarNPC;
 
 public partial class GridAStar : GameManager
 {

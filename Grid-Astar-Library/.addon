@@ -1,0 +1,19 @@
+{
+  "Title": "Grid and A* Library",
+  "Type": "library",
+  "Org": "local",
+  "Ident": "grid_and_astar",
+  "Tags": null,
+  "Schema": 1,
+  "HasAssets": false,
+  "AssetsPath": "",
+  "ResourcePaths": null,
+  "HasCode": true,
+  "CodePath": ".",
+  "PackageReferences": [],
+  "EditorReferences": null,
+  "Metadata": {
+    "ProjectTemplate": null,
+    "CsProjName": ""
+  }
+}

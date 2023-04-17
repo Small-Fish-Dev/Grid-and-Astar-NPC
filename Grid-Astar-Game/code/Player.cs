@@ -1,4 +1,4 @@
-﻿namespace GridAStar;
+﻿namespace GridAStarNPC;
 
 partial class Player : AnimatedEntity
 {

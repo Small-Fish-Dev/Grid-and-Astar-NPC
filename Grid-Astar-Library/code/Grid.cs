@@ -1,4 +1,13 @@
-﻿namespace GridAStar;
+﻿global using Sandbox;
+global using System;
+global using Sandbox.UI;
+global using System.Runtime.CompilerServices;
+global using System.Collections;
+global using System.Linq;
+global using System.Collections.Generic;
+global using System.Diagnostics;
+
+namespace GridAStar;
 
 public partial class Grid
 {
