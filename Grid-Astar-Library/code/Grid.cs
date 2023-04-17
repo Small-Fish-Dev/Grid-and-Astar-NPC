@@ -13,6 +13,8 @@ public static class GridSettings
 {
 	public const float DEFAULT_STANDABLE_ANGLE = 45f;	// How steep the terrain can be on a cell before it gets discarded
 	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
+	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;	// How much vertical space there should be
+	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also entities
 }
 
 public partial class Grid
@@ -20,8 +22,10 @@ public partial class Grid
 	public static Grid Main { get; set; }           // The default world grid
 
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
+	public BBox Bounds { get; set; }
 	public float StandableAngle { get; set; }
 	public float CellSize { get; set; }
+	public float HeightClearance { get; set; }
 
 	public Grid()
 	{
@@ -116,10 +120,10 @@ public partial class Grid
 	/// <param name="bounds"></param>
 	/// <param name="standableAngle"></param>
 	/// <param name="cellSize"></param>
-	/// <param name="expandSearch"></param>
+	/// <param name="heightClearance"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public static Grid InitializeGrid( BBox bounds, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, bool expandSearch = true, bool worldOnly = true )
+	public static Grid Initialize( BBox bounds, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
 		Stopwatch traceDownWatch = new Stopwatch();
 		Stopwatch totalWatch = new Stopwatch();
@@ -129,8 +133,10 @@ public partial class Grid
 		Log.Info( "Initializing grid..." );
 
 		var currentGrid = new Grid();
+		currentGrid.Bounds = bounds;
 		currentGrid.StandableAngle = standableAngle;
 		currentGrid.CellSize = cellSize;
+		currentGrid.HeightClearance = heightClearance;
 
 		var minimumGrid = bounds.Mins.ToIntVector2( cellSize );
 		var maximumGrid = bounds.Maxs.ToIntVector2( cellSize );
@@ -143,9 +149,10 @@ public partial class Grid
 		{
 			for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
 			{
-				var startPosition = new Vector3( row * cellSize, column * cellSize, maxHeight );
-				var endPosition = new Vector3( row * cellSize, column * cellSize, minHeight );
-				var positionTrace = Sandbox.Trace.Box( new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) ), startPosition, endPosition );
+				var startPosition = new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize);
+				var endPosition = new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize );
+				var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
+				var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
 				if ( worldOnly )
 					positionTrace.WorldOnly();
@@ -154,7 +161,7 @@ public partial class Grid
 
 				var positionResult = positionTrace.Run();
 
-				if ( positionResult.Hit )
+				while ( positionResult.Hit )
 				{
 					if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
 					{
@@ -163,25 +170,26 @@ public partial class Grid
 						if ( newCell != null )
 							currentGrid.AddCell( newCell );
 					}
+
+					var checkPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
+
+					while ( Sandbox.Trace.TestPoint( checkPosition, radius: cellSize / 2f ) )
+						checkPosition += Vector3.Down * heightClearance;
+
+					positionTrace = Sandbox.Trace.Box( checkBBox, checkPosition, endPosition );
+
+					if ( worldOnly )
+						positionTrace.WorldOnly();
+					else
+						positionTrace.WorldAndEntities();
+
+					positionResult = positionTrace.Run();
 				}
 			}
 		}
 
 		traceDownWatch.Stop();
 		Log.Info( $"TraceDown completed in {traceDownWatch.ElapsedMilliseconds}ms" );
-
-		if ( expandSearch )
-		{
-			Log.Info( "Searching for internal cells..." );
-
-			Stopwatch internalWatch = new Stopwatch();
-			internalWatch.Start();
-
-			var cellsFound = currentGrid.SearchBorders();
-
-			internalWatch.Stop();
-			Log.Info( $"Found {cellsFound} internal cells in {internalWatch.ElapsedMilliseconds}ms" );
-		}
 
 		totalWatch.Stop();
 		Log.Info( $"Grid initialized in {totalWatch.ElapsedMilliseconds}ms" );
@@ -205,57 +213,10 @@ public partial class Grid
 		return outerCells;
 	}
 
-	/// <summary>
-	/// Finds and adds all the cells missing from the initial search due to overhang terrain or confined spaces
-	/// </summary>
-	public int SearchBorders()
-	{
-		int cellsFound = 0;
-		Stopwatch outerWatch = new Stopwatch();
-		outerWatch.Start();
-		var cellsToCheck = FindOuterCells();
-		outerWatch.Stop();
-		Log.Info( $"Finished finding outer cells in {outerWatch.ElapsedMilliseconds}ms" );
-		while ( cellsToCheck.Count > 0 )
-		{
-			var newCellsToCheck = new List<Cell>();
-
-			foreach ( var currentCell in cellsToCheck )
-			{
-				for ( int y = -1; y <= 1; y++ )
-				{
-					for ( int x = -1; x <= 1; x++ )
-					{
-						if ( x == 0 && y == 0 ) continue;
-
-						var cellFound = GetCell( new IntVector2( currentCell.GridPosition.x + x, currentCell.GridPosition.y + y ), currentCell.Position.z );
-
-						if ( cellFound != null ) continue;
-
-						var testPosition = currentCell.Position + Vector3.Forward * x * CellSize + Vector3.Left * y * CellSize;
-						var newCell = Cell.TryCreate( this, testPosition );
-
-						if ( newCell != null )
-						{
-							AddCell( newCell );
-							newCellsToCheck.Add( newCell );
-							cellsFound++;
-						}
-					}
-				}
-			}
-
-			cellsToCheck.Clear();
-			cellsToCheck = new List<Cell>( newCellsToCheck );
-		}
-
-		return cellsFound;
-	}
-
 	[ConCmd.Server( "RegenerateMainGrid" )]
 	public static void RegenerateMainGrid()
 	{
-		Main = Grid.InitializeGrid( Game.PhysicsWorld.Body.GetBounds(), expandSearch: false );
+		Main = Grid.Initialize( Game.PhysicsWorld.Body.GetBounds() );
 	}
 
 	[ConCmd.Server( "DisplayGrid" )]
@@ -276,17 +237,23 @@ public partial class Grid
 		if ( !Game.IsServer ) return;
 		if ( Grid.Main == null ) return;
 
-		if ( Time.Tick % 60 == 0 )
+		foreach( var client in Game.Clients )
 		{
-			foreach ( var cellStack in Main.Cells )
+			if ( client.Pawn != null )
 			{
-				foreach ( var cell in cellStack.Value )
+				if ( Time.Tick % 10 == 0 )
 				{
-					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.5f, true );
+					foreach ( var cellStack in Main.Cells )
+					{
+						foreach ( var cell in cellStack.Value )
+						{
+							if ( cell.Position.DistanceSquared( client.Pawn.Position ) < 500000f )
+								cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
+						}
+					}
 				}
 			}
 		}
-
 	}
 
 }
