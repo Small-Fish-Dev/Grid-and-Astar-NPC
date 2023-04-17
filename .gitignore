@@ -11,3 +11,5 @@ code/obj/Debug/grid_and_a__npc.assets.cache
 code/obj/Debug/grid_and_a__npc.AssemblyInfoInputs.cache
 code/obj/Debug/grid_and_a__npc.AssemblyInfo.cs
 code/obj/Debug/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs
+*.cache
+*.csproj

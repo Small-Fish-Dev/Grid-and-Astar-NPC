@@ -9,18 +9,22 @@ global using System.Diagnostics;
 
 namespace GridAStar;
 
+public static class GridSettings
+{
+	public const float DEFAULT_STANDABLE_ANGLE = 45f;	// How steep the terrain can be on a cell before it gets discarded
+	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
+}
+
 public partial class Grid
 {
-	public const int DefaultStandableAngle = 45;	// How steep the terrain can be on a cell before it gets discarded
-	public const int DefaultCellSize = 12;			// How large each cell will be in hammer units
-	public static Grid Main { get; set; }			// The default world grid
+	public static Grid Main { get; set; }           // The default world grid
 
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
-	public int StandableAngle { get; set; }
-	public int CellSize { get; set; }
+	public float StandableAngle { get; set; }
+	public float CellSize { get; set; }
 
 	public Grid()
-	{ 
+	{
 		Event.Register( this );
 	}
 
@@ -48,9 +52,9 @@ public partial class Grid
 			var minDistance = float.MaxValue;
 			Cell currentCell = null;
 
-			foreach( var cellStacks in Cells )
+			foreach ( var cellStacks in Cells )
 			{
-				foreach( var cell in cellStacks.Value )
+				foreach ( var cell in cellStacks.Value )
 				{
 					var curDistance = cell.Position.Distance( position );
 					if ( curDistance < minDistance )
@@ -100,7 +104,7 @@ public partial class Grid
 	{
 		if ( cell == null ) return;
 		var coordinates = cell.GridPosition;
-		if ( !Cells.ContainsKey(coordinates) )
+		if ( !Cells.ContainsKey( coordinates ) )
 			Cells.Add( coordinates, new List<Cell>() { cell } );
 		else
 			Cells[coordinates].Add( cell );
@@ -115,7 +119,7 @@ public partial class Grid
 	/// <param name="expandSearch"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public static Grid InitializeGrid( BBox bounds, int standableAngle = DefaultStandableAngle, int cellSize = DefaultCellSize, bool expandSearch = true, bool worldOnly = true )
+	public static Grid InitializeGrid( BBox bounds, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, bool expandSearch = true, bool worldOnly = true )
 	{
 		Stopwatch traceDownWatch = new Stopwatch();
 		Stopwatch totalWatch = new Stopwatch();
@@ -141,7 +145,7 @@ public partial class Grid
 			{
 				var startPosition = new Vector3( row * cellSize, column * cellSize, maxHeight );
 				var endPosition = new Vector3( row * cellSize, column * cellSize, minHeight );
-				var positionTrace = Sandbox.Trace.Ray( startPosition, endPosition );
+				var positionTrace = Sandbox.Trace.Box( new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) ), startPosition, endPosition );
 
 				if ( worldOnly )
 					positionTrace.WorldOnly();
@@ -150,10 +154,16 @@ public partial class Grid
 
 				var positionResult = positionTrace.Run();
 
-				var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition, 0f, worldOnly );
+				if ( positionResult.Hit )
+				{
+					if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
+					{
+						var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition, worldOnly );
 
-				if ( newCell != null )
-					currentGrid.AddCell( newCell );
+						if ( newCell != null )
+							currentGrid.AddCell( newCell );
+					}
+				}
 			}
 		}
 
@@ -210,7 +220,7 @@ public partial class Grid
 		{
 			var newCellsToCheck = new List<Cell>();
 
-			foreach( var currentCell in cellsToCheck )
+			foreach ( var currentCell in cellsToCheck )
 			{
 				for ( int y = -1; y <= 1; y++ )
 				{
@@ -223,7 +233,7 @@ public partial class Grid
 						if ( cellFound != null ) continue;
 
 						var testPosition = currentCell.Position + Vector3.Forward * x * CellSize + Vector3.Left * y * CellSize;
-						var newCell = Cell.TryCreate( this, testPosition, currentCell.Height );
+						var newCell = Cell.TryCreate( this, testPosition );
 
 						if ( newCell != null )
 						{
@@ -245,7 +255,7 @@ public partial class Grid
 	[ConCmd.Server( "RegenerateMainGrid" )]
 	public static void RegenerateMainGrid()
 	{
-		Main = Grid.InitializeGrid( Game.PhysicsWorld.Body.GetBounds() );
+		Main = Grid.InitializeGrid( Game.PhysicsWorld.Body.GetBounds(), expandSearch: false );
 	}
 
 	[ConCmd.Server( "DisplayGrid" )]
@@ -259,6 +269,26 @@ public partial class Grid
 			}
 		}
 	}
+
+	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
+	public static void GridOverlay()
+	{
+		if ( !Game.IsServer ) return;
+		if ( Grid.Main == null ) return;
+
+		if ( Time.Tick % 60 == 0 )
+		{
+			foreach ( var cellStack in Main.Cells )
+			{
+				foreach ( var cell in cellStack.Value )
+				{
+					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.5f, true );
+				}
+			}
+		}
+
+	}
+
 }
 
 

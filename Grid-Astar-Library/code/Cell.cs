@@ -39,37 +39,20 @@ public partial class Cell
 	/// </summary>
 	/// <param name="grid">Parent grid</param>
 	/// <param name="position">Starting center of the cell</param>
-	/// <param name="heightClearance">If the parent cell is on a slope</param>
 	/// <param name="worldOnly">If the parent cell is on a slope</param>
 	/// <returns></returns>
-	public static Cell TryCreate( Grid grid, Vector3 position, float heightClearance = 0f, bool worldOnly = true )
+	public static Cell TryCreate( Grid grid, Vector3 position, bool worldOnly = true )
 	{
-		float maxHeight = grid.CellSize * MathF.Tan( MathX.DegreeToRadian( grid.StandableAngle ) );
 
 		float[] validCoordinates = new float[4];
 
-		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, maxHeight, worldOnly ) )
-		{
-			if ( heightClearance > 1f )
-			{
-				if ( !TraceCoordinates( position + Vector3.Up * heightClearance / 2f, ref validCoordinates, grid.CellSize, maxHeight, worldOnly ) )
-					if ( !TraceCoordinates( position + Vector3.Down * heightClearance / 2f, ref validCoordinates, grid.CellSize, maxHeight, worldOnly ) )
-						return null;
-			}
-			else return null;
-		}
-
-		var minCoordinate = validCoordinates.Min();
-		var maxCoordinate = validCoordinates.Max();
-
-		if ( validCoordinates.Max() - validCoordinates.Min() > maxHeight ) return null;
-
-		var centerCoordinate = (minCoordinate + maxCoordinate) / 2;
+		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, worldOnly ) )
+			return null;
 		
-		return new Cell( grid, position.WithZ( centerCoordinate ), validCoordinates );
+		return new Cell( grid, position, validCoordinates );
 	}
 
-	private static bool TraceCoordinates( Vector3 position, ref float[] validCoordinates, int cellSize, float maxHeight, bool worldOnly )
+	private static bool TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, bool worldOnly )
 	{
 		Vector3[] testCoordinates = new Vector3[4] {
 			new Vector3( -cellSize / 2, -cellSize / 2 ),
@@ -77,10 +60,12 @@ public partial class Cell
 			new Vector3( cellSize / 2, -cellSize / 2 ),
 			new Vector3( cellSize / 2, cellSize / 2 ) };
 
+		float maxHeight = cellSize * MathF.Tan( MathX.DegreeToRadian( standableAngle ) ) * 1.1f;
+
 		// TODO: Maybe borrow the two adjacent coordinates from parent cell?
 		for ( int i = 0; i < 4; i++ )
 		{
-			var testTrace = Sandbox.Trace.Ray( position + testCoordinates[i].WithZ( maxHeight ), position + testCoordinates[i].WithZ( -maxHeight ) );
+			var testTrace = Sandbox.Trace.Ray( position + testCoordinates[i].WithZ(maxHeight), position + testCoordinates[i].WithZ(-maxHeight) );
 
 			if ( worldOnly )
 				testTrace.WorldOnly();
@@ -95,10 +80,10 @@ public partial class Cell
 			validCoordinates[i] = testResult.HitPosition.z;
 		}
 
-		var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
+		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
 		var occupyTrace = Sandbox.Trace.Box( bbox, position.WithZ( validCoordinates.Max() + 1f ) + Vector3.Up * 48f, position.WithZ( validCoordinates.Max() + 1f ) );
 
-		/*
+		
 		if ( worldOnly )
 			occupyTrace.WorldOnly();
 		else
@@ -199,7 +184,7 @@ public partial class Cell
 		DebugOverlay.Line( TopLeft, BottomLeft, color, duration, depthTest );
 
 		if ( drawCenter )
-			DebugOverlay.Sphere( Position, 5f, color, duration, depthTest );
+			DebugOverlay.Sphere( Position, 1f, color, duration, depthTest );
 
 		if ( drawCross )
 		{
