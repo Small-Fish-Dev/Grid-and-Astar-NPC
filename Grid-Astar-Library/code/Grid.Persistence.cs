@@ -50,6 +50,11 @@ public partial class Grid
 		loadingWatch.Stop();
 		Log.Info( $"Loading completed in {loadingWatch.ElapsedMilliseconds}ms" );
 
+		if ( Grids.ContainsKey( identifier ) )
+			Grids[identifier] = currentGrid;
+		else
+			Grids.Add( identifier, currentGrid );
+
 		return currentGrid;
 	}
 

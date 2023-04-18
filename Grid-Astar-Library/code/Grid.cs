@@ -20,7 +20,25 @@ public static partial class GridSettings
 
 public partial class Grid
 {
-	public static Grid Main { get; set; }           // The default world grid
+	public static Grid Main
+	{
+		get 
+		{
+			if ( Grids.ContainsKey( "main" ) )
+				return Grids["main"];
+			else
+				return null;
+		}
+		set 
+		{
+			if ( Grids.ContainsKey( "main" ) )
+				Grids["main"] = value;
+			else
+				Grids.Add( "main", value );
+		}
+	}
+
+	public static Dictionary<string, Grid> Grids { get; set; } = new();
 
 	public string Identifier { get; set; }
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
@@ -198,6 +216,11 @@ public partial class Grid
 		totalWatch.Stop();
 		Log.Info( $"Grid initialized in {totalWatch.ElapsedMilliseconds}ms" );
 
+		if ( Grids.ContainsKey( identifier ) )
+			Grids[identifier] = currentGrid;
+		else
+			Grids.Add( identifier, currentGrid );
+
 		return currentGrid;
 	}
 
@@ -220,17 +243,22 @@ public partial class Grid
 	[ConCmd.Server( "RegenerateMainGrid" )]
 	public static void RegenerateMainGrid()
 	{
-		Main = Grid.Initialize( Game.PhysicsWorld.Body.GetBounds() );
+		Grid.Initialize( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
 		Main.Save();
+	}
+
+	[ConCmd.Server( "CreateGrid" )]
+	public static void CreateGrid( string identifier )
+	{
+		var caller = ConsoleSystem.Caller;
+		var newGrid = Grid.Initialize( new BBox( caller.Position - 500f, caller.Position + 500f ), identifier );
+		newGrid.Save();
 	}
 
 	[ConCmd.Server( "LoadGrid" )]
 	public static void LoadGrid( string identifier = "main" )
 	{
-		if ( identifier == "main" )
-		{
-			Main = Grid.Load( "main" );
-		}
+		Grid.Load( identifier );
 	}
 
 	[ConCmd.Server( "DisplayGrid" )]
@@ -249,7 +277,6 @@ public partial class Grid
 	public static void GridOverlay()
 	{
 		if ( !Game.IsServer ) return;
-		if ( Grid.Main == null ) return;
 
 		foreach( var client in Game.Clients )
 		{
@@ -257,12 +284,15 @@ public partial class Grid
 			{
 				if ( Time.Tick % 10 == 0 )
 				{
-					foreach ( var cellStack in Main.Cells )
+					foreach ( var grid in Grids )
 					{
-						foreach ( var cell in cellStack.Value )
+						foreach ( var cellStack in grid.Value.Cells )
 						{
-							if ( cell.Position.DistanceSquared( client.Pawn.Position ) < 500000f )
-								cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
+							foreach ( var cell in cellStack.Value )
+							{
+								if ( cell.Position.DistanceSquared( client.Pawn.Position ) < 500000f )
+									cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
+							}
 						}
 					}
 				}
