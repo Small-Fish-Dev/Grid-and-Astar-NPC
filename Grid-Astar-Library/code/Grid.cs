@@ -6,10 +6,11 @@ global using System.Collections;
 global using System.Linq;
 global using System.Collections.Generic;
 global using System.Diagnostics;
+global using System.Threading.Tasks;
 
 namespace GridAStar;
 
-public static class GridSettings
+public static partial class GridSettings
 {
 	public const float DEFAULT_STANDABLE_ANGLE = 45f;	// How steep the terrain can be on a cell before it gets discarded
 	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
@@ -216,15 +217,20 @@ public partial class Grid
 		return outerCells;
 	}
 
-	public static Grid GetGrid( string identifier = "main" )
-	{
-		return null;
-	}
-
 	[ConCmd.Server( "RegenerateMainGrid" )]
 	public static void RegenerateMainGrid()
 	{
 		Main = Grid.Initialize( Game.PhysicsWorld.Body.GetBounds() );
+		Main.Save();
+	}
+
+	[ConCmd.Server( "LoadGrid" )]
+	public static void LoadGrid( string identifier = "main" )
+	{
+		if ( identifier == "main" )
+		{
+			Main = Grid.Load( "main" );
+		}
 	}
 
 	[ConCmd.Server( "DisplayGrid" )]
