@@ -21,14 +21,18 @@ public partial class Grid
 {
 	public static Grid Main { get; set; }           // The default world grid
 
+	public string Identifier { get; set; }
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
 	public BBox Bounds { get; set; }
 	public float StandableAngle { get; set; }
 	public float CellSize { get; set; }
 	public float HeightClearance { get; set; }
 
-	public Grid()
+	public Grid() { }
+
+	public Grid( string identifier ) : this()
 	{
+		Identifier = identifier;
 		Event.Register( this );
 	}
 
@@ -96,10 +100,8 @@ public partial class Grid
 		float maxHeight = CellSize * MathF.Tan( MathX.DegreeToRadian( StandableAngle ) );
 
 		foreach ( var cell in cellsAtCoordinates )
-		{
 			if ( cell.Position.z - maxHeight <= height )
 				return cell;
-		}
 
 		return null;
 	}
@@ -117,13 +119,14 @@ public partial class Grid
 	/// <summary>
 	/// Creates a new grid and generates cells within the bounds given
 	/// </summary>
+	/// <param name="identifier"></param>
 	/// <param name="bounds"></param>
 	/// <param name="standableAngle"></param>
 	/// <param name="cellSize"></param>
 	/// <param name="heightClearance"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public static Grid Initialize( BBox bounds, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public static Grid Initialize( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
 		Stopwatch traceDownWatch = new Stopwatch();
 		Stopwatch totalWatch = new Stopwatch();
@@ -132,7 +135,7 @@ public partial class Grid
 
 		Log.Info( "Initializing grid..." );
 
-		var currentGrid = new Grid();
+		var currentGrid = new Grid( identifier );
 		currentGrid.Bounds = bounds;
 		currentGrid.StandableAngle = standableAngle;
 		currentGrid.CellSize = cellSize;
@@ -211,6 +214,11 @@ public partial class Grid
 					outerCells.Add( cell );
 
 		return outerCells;
+	}
+
+	public static Grid GetGrid( string identifier = "main" )
+	{
+		return null;
 	}
 
 	[ConCmd.Server( "RegenerateMainGrid" )]
