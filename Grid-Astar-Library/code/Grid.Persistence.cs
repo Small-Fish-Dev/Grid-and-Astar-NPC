@@ -12,7 +12,7 @@ public static partial class GridSettings
 public partial class Grid
 {
 
-	public static Grid Load( string identifier = "main" )
+	public async static Task<Grid> Load( string identifier = "main" )
 	{
 		Stopwatch loadingWatch = new Stopwatch();
 		loadingWatch.Start();
@@ -34,26 +34,29 @@ public partial class Grid
 		currentGrid.CellSize = reader.ReadSingle();
 		currentGrid.HeightClearance = reader.ReadSingle();
 
-		var cellsToRead = reader.ReadInt32();
-
-		for ( int i = 0; i < cellsToRead; i++ )
+		await GameTask.RunInThreadAsync( () =>
 		{
-			var cellPosition = reader.ReadVector3();
-			var cellVertices = new float[4];
-			for ( int vertex = 0; vertex < 4; vertex++ )
-				cellVertices[vertex] = reader.ReadSingle();
+			var cellsToRead = reader.ReadInt32();
 
-			var cell = new Cell( currentGrid, cellPosition, cellVertices );
-			currentGrid.AddCell( cell );
-		}
+			for ( int i = 0; i < cellsToRead; i++ )
+			{
+				var cellPosition = reader.ReadVector3();
+				var cellVertices = new float[4];
+				for ( int vertex = 0; vertex < 4; vertex++ )
+					cellVertices[vertex] = reader.ReadSingle();
 
-		loadingWatch.Stop();
-		Log.Info( $"Loading completed in {loadingWatch.ElapsedMilliseconds}ms" );
+				var cell = new Cell( currentGrid, cellPosition, cellVertices );
+				currentGrid.AddCell( cell );
+			}
 
-		if ( Grids.ContainsKey( identifier ) )
-			Grids[identifier] = currentGrid;
-		else
-			Grids.Add( identifier, currentGrid );
+			loadingWatch.Stop();
+			Log.Info( $"Loading completed in {loadingWatch.ElapsedMilliseconds}ms" );
+
+			if ( Grids.ContainsKey( identifier ) )
+				Grids[identifier] = currentGrid;
+			else
+				Grids.Add( identifier, currentGrid );
+		} );
 
 		return currentGrid;
 	}

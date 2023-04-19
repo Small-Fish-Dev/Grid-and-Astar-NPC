@@ -13,3 +13,5 @@ code/obj/Debug/grid_and_a__npc.AssemblyInfo.cs
 code/obj/Debug/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs
 *.cache
 *.csproj
+*.cache
+Grid-Astar-Library/obj/Debug/grid_and_astar.GlobalUsings.g.cs
