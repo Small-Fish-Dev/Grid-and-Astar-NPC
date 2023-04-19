@@ -61,7 +61,7 @@ public partial class Grid
 		return currentGrid;
 	}
 
-	public bool Save()
+	public async Task<bool> Save()
 	{
 		Stopwatch savingWatch = new Stopwatch();
 		savingWatch.Start();
@@ -78,26 +78,31 @@ public partial class Grid
 		writer.Write( CellSize );
 		writer.Write( HeightClearance );
 
-		var cellsCount = 0;
-
-		foreach( var cellStack in Cells )
-			foreach ( var cell in cellStack.Value )
-				cellsCount++;
-
-		writer.Write( cellsCount );
-
-		foreach ( var cellStack in Cells )
+		await GameTask.RunInThreadAsync( () =>
 		{
-			foreach( var cell in cellStack.Value )
-			{
-				writer.Write( cell.Position );
-				foreach ( var vertex in cell.Vertices )
-					writer.Write( vertex );
-			}
-		}
+			var cellsCount = 0;
 
-		savingWatch.Stop();
-		Log.Info( $"Saving completed in {savingWatch.ElapsedMilliseconds}ms" );
+			foreach ( var cellStack in Cells )
+				foreach ( var cell in cellStack.Value )
+					cellsCount++;
+
+			writer.Write( cellsCount );
+
+			foreach ( var cellStack in Cells )
+			{
+				foreach ( var cell in cellStack.Value )
+				{
+					writer.Write( cell.Position );
+					foreach ( var vertex in cell.Vertices )
+						writer.Write( vertex );
+				}
+			}
+
+			savingWatch.Stop();
+			Log.Info( $"Saving completed in {savingWatch.ElapsedMilliseconds}ms" );
+		} );
+
+		
 
 		return true;
 
