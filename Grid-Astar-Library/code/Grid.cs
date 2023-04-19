@@ -145,11 +145,9 @@ public partial class Grid
 	/// <param name="heightClearance"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Initialize( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public async static Task<Grid> Create( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
-		Stopwatch traceDownWatch = new Stopwatch();
 		Stopwatch totalWatch = new Stopwatch();
-		traceDownWatch.Start();
 		totalWatch.Start();
 
 		Log.Info( "Initializing grid..." );
@@ -172,7 +170,6 @@ public partial class Grid
 
 			for ( int column = minimumGrid.y; column <= maximumGrid.y; column++ )
 			{
-				Log.Info( $"Starting column {column}" );
 				for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
 				{
 					var startPosition = new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize );
@@ -215,19 +212,32 @@ public partial class Grid
 			}
 		} );
 
-
-		traceDownWatch.Stop();
-		Log.Info( $"TraceDown completed in {traceDownWatch.ElapsedMilliseconds}ms" );
-
 		totalWatch.Stop();
 		Log.Info( $"Grid initialized in {totalWatch.ElapsedMilliseconds}ms" );
 
-		if ( Grids.ContainsKey( identifier ) )
-			Grids[identifier] = currentGrid;
-		else
-			Grids.Add( identifier, currentGrid );
+		await currentGrid.Initialize();
 
 		return currentGrid;
+	}
+
+	public async Task<bool> Initialize()
+	{
+		if ( Grids.ContainsKey( Identifier ) )
+			Grids[Identifier] = this;
+		else
+			Grids.Add( Identifier, this );
+
+		await this.Save();
+
+		return true;
+	}
+
+	public void Delete()
+	{
+		Event.Unregister( this );
+
+		if ( Grids.ContainsKey( Identifier ) )
+			Grids[Identifier] = null;
 	}
 
 	/// <summary>
@@ -249,63 +259,49 @@ public partial class Grid
 	[ConCmd.Server( "RegenerateMainGrid" )]
 	public async static void RegenerateMainGrid()
 	{
-		await Grid.Initialize( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
-		Main.Save();
+		BroadcastMainGrid();
+		await Grid.Create( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
+	}
+
+	[ClientRpc]
+	public async static void BroadcastMainGrid()
+	{
+		await Grid.Create( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
 	}
 
 	[ConCmd.Server( "CreateGrid" )]
-	public static void CreateGrid( string identifier )
+	public async static void CreateGrid( string identifier )
 	{
 		var caller = ConsoleSystem.Caller;
-		//var newGrid = Grid.Initialize( new BBox( caller.Position - 500f, caller.Position + 500f ), identifier );
-		//newGrid.Save();
+		await Grid.Create( new BBox( caller.Position - 500f, caller.Position + 500f ), identifier );
 	}
 
 	[ConCmd.Server( "LoadGrid" )]
-	public static void LoadGrid( string identifier = "main" )
+	public async static void LoadGrid( string identifier = "main" )
 	{
-		Grid.Load( identifier );
-	}
-
-	[ConCmd.Server( "DisplayGrid" )]
-	public static void DisplayGrid( float time )
-	{
-		foreach ( var cellStack in Main.Cells )
-		{
-			foreach ( var cell in cellStack.Value )
-			{
-				cell.Draw( cell.Occupied ? Color.Red : Color.White, time, true, false );
-			}
-		}
+		await Grid.Load( identifier );
 	}
 
 	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
 	public static void GridOverlay()
 	{
-		if ( !Game.IsServer ) return;
+		if ( !Game.IsClient ) return;
 
-		foreach( var client in Game.Clients )
+		if ( Time.Tick % 10 == 0 )
 		{
-			if ( client.Pawn != null )
+			foreach ( var grid in Grids )
 			{
-				if ( Time.Tick % 10 == 0 )
+				foreach ( var cellStack in grid.Value.Cells )
 				{
-					foreach ( var grid in Grids )
+					foreach ( var cell in cellStack.Value )
 					{
-						foreach ( var cellStack in grid.Value.Cells )
-						{
-							foreach ( var cell in cellStack.Value )
-							{
-								if ( cell.Position.DistanceSquared( client.Pawn.Position ) < 500000f )
-									cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
-							}
-						}
+						if ( cell.Position.DistanceSquared( Game.LocalPawn.Position ) < 500000f )
+							cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
 					}
 				}
 			}
 		}
 	}
-
 }
 
 
