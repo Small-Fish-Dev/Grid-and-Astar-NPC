@@ -97,8 +97,8 @@ public partial class Grid
 		if ( cellsAtCoordinates.Count == 1 ) return cellsAtCoordinates[0];
 
 		// Get the nearest cell which is under the given coordinates (Even if a cell above is closer, it's not useable)
-		var nearestCell = cellsAtCoordinates.Where( x => x.Position.z - CellSize / 2 < position.z )
-			.OrderBy( x => x.Position.z )
+		var nearestCell = cellsAtCoordinates.Where( x => x.Position.z - CellSize < position.z )
+			.OrderByDescending( x => x.Position.z )
 			.FirstOrDefault();
 
 		return nearestCell;
