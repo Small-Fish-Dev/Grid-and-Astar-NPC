@@ -105,14 +105,14 @@ public partial class Cell
 		GridPosition = Position.ToIntVector2( grid.CellSize );
 		Vertices = vertices;
 
-		var bbox = new BBox( new Vector3( -grid.CellSize / 2, -grid.CellSize / 2, 0f ), new Vector3( grid.CellSize / 2, grid.CellSize / 2, 48f ) );
+		/*var bbox = new BBox( new Vector3( -grid.CellSize / 2, -grid.CellSize / 2, 0f ), new Vector3( grid.CellSize / 2, grid.CellSize / 2, 48f ) );
 		var occupyTrace = Sandbox.Trace.Box( bbox, Position + Vector3.Up * 48f, Position)
 			.WithoutTags( "NoGridOccupancy" )
 			.EntitiesOnly()
 			.Run();
 
 		if ( occupyTrace.Hit )
-			Occupied = true;
+			Occupied = true;*/
 	}
 
 	// Perhaps there's a way to check these automatically, but I tried! :-)
