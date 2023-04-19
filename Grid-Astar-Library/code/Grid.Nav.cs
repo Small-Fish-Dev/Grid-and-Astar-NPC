@@ -2,7 +2,7 @@
 
 public partial class Grid
 {
-	public List<Cell> ComputePath( Cell startingCell, Cell targetCell )
+	public async Task<List<Cell>> ComputePath( Cell startingCell, Cell targetCell )
 	{
 		List<Cell> finalPath = new();
 
@@ -11,38 +11,43 @@ public partial class Grid
 		Heap<Cell> openSet = new Heap<Cell>( Cells.Count );
 		HashSet<Cell> closedSet = new();
 		openSet.Add( startingCell );
-		
-		while ( openSet.Count > 0 )
+
+		await GameTask.RunInThreadAsync( () =>
 		{
-
-			Cell currentNode = openSet.RemoveFirst();
-			closedSet.Add( currentNode );
-
-			if ( currentNode == targetCell )
+			while ( openSet.Count > 0 )
 			{
-				retracePath( ref finalPath, startingCell, currentNode );
-				break;
-			}
 
-			foreach ( var neighbour in currentNode.GetNeighbours() )
-			{
-				if ( neighbour.Occupied || closedSet.Contains( neighbour ) ) continue;
+				Cell currentNode = openSet.RemoveFirst();
+				closedSet.Add( currentNode );
 
-				float newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour );
-				bool isInOpenSet = openSet.Contains( neighbour );
-
-				if ( newMovementCostToNeighbour < neighbour.gCost || !isInOpenSet )
+				if ( currentNode == targetCell )
 				{
-					neighbour.gCost = newMovementCostToNeighbour;
-					neighbour.hCost = neighbour.Distance( targetCell );
-					neighbour.Parent = currentNode;
+					retracePath( ref finalPath, startingCell, currentNode );
+					break;
+				}
 
-					if ( !isInOpenSet )
-						openSet.Add( neighbour );
+				currentNode.Draw( Color.White, 1f );
+
+				foreach ( var neighbour in currentNode.GetNeighbours() )
+				{
+					if ( neighbour.Occupied || closedSet.Contains( neighbour ) ) continue;
+
+					float newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour );
+					bool isInOpenSet = openSet.Contains( neighbour );
+
+					if ( newMovementCostToNeighbour < neighbour.gCost || !isInOpenSet )
+					{
+						neighbour.gCost = newMovementCostToNeighbour;
+						neighbour.hCost = neighbour.Distance( targetCell );
+						neighbour.Parent = currentNode;
+
+						if ( !isInOpenSet )
+							openSet.Add( neighbour );
+					}
 				}
 			}
-		}
-		
+		} );
+
 		return finalPath;
 	}
 
@@ -59,24 +64,24 @@ public partial class Grid
 		pathList.Reverse();
 	}
 
-	public List<Cell> ComputePath( Vector3 startingPosition, Vector3 endingPosition, bool findNearestDestination = false )
+	public async Task<List<Cell>> ComputePath( Vector3 startingPosition, Vector3 endingPosition, bool findNearestDestination = false )
 	{
-		return ComputePath( GetCell( startingPosition ), GetCell( endingPosition, findNearestDestination ) );
+		return await ComputePath( GetCell( startingPosition ), GetCell( endingPosition, findNearestDestination ) );
 	}
 
-	/*[ConCmd.Server( "TestPath" )]
-	public static void TestPath()
+	[ConCmd.Server( "TestPath" )]
+	public async static void TestPath()
 	{
-		foreach ( var player in Entity.All.OfType<Player>() )
+		foreach ( var client in Game.Clients )
 		{
-			var cells = Grid.Main.ComputePath( player.NearestCell, Grid.Main.GetCell( new IntVector2( -31, 27 ), 1000f ) );
+			var cells = await Grid.Main.ComputePath( Grid.Main.GetCell( new IntVector2( -40, 98 ), 1000f ), Grid.Main.GetCell( client.Pawn.Position + Vector3.Up * 100f, true ) );
 
-			foreach( var cell in cells )
+			foreach ( var cell in cells )
 			{
 				cell.Draw( 5 );
 			}
 		}
-	}*/
+	}
 }
 
 
