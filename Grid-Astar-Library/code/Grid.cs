@@ -145,7 +145,7 @@ public partial class Grid
 	/// <param name="heightClearance"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public static Grid Initialize( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public async static Task<Grid> Initialize( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
 		Stopwatch traceDownWatch = new Stopwatch();
 		Stopwatch totalWatch = new Stopwatch();
@@ -165,50 +165,56 @@ public partial class Grid
 		var minHeight = bounds.Mins.z;
 		var maxHeight = bounds.Maxs.z;
 
-		Log.Info( $"Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
-
-		for ( int column = minimumGrid.y; column <= maximumGrid.y; column++ )
+		await GameTask.RunInThreadAsync( () =>
 		{
-			for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
+
+			Log.Info( $"Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
+
+			for ( int column = minimumGrid.y; column <= maximumGrid.y; column++ )
 			{
-				var startPosition = new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize);
-				var endPosition = new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize );
-				var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
-				var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
-
-				if ( worldOnly )
-					positionTrace.WorldOnly();
-				else
-					positionTrace.WorldAndEntities();
-
-				var positionResult = positionTrace.Run();
-
-				while ( positionResult.Hit )
+				Log.Info( $"Starting column {column}" );
+				for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
 				{
-					if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
-					{
-						var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition, worldOnly );
-
-						if ( newCell != null )
-							currentGrid.AddCell( newCell );
-					}
-
-					var checkPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
-
-					while ( Sandbox.Trace.TestPoint( checkPosition, radius: cellSize / 2f ) )
-						checkPosition += Vector3.Down * heightClearance;
-
-					positionTrace = Sandbox.Trace.Box( checkBBox, checkPosition, endPosition );
+					var startPosition = new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize );
+					var endPosition = new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize );
+					var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
+					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
 					if ( worldOnly )
 						positionTrace.WorldOnly();
 					else
 						positionTrace.WorldAndEntities();
 
-					positionResult = positionTrace.Run();
+					var positionResult = positionTrace.Run();
+
+					while ( positionResult.Hit )
+					{
+						if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
+						{
+							var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition, worldOnly );
+
+							if ( newCell != null )
+								currentGrid.AddCell( newCell );
+						}
+
+						var checkPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
+
+						while ( Sandbox.Trace.TestPoint( checkPosition, radius: cellSize / 2f ) )
+							checkPosition += Vector3.Down * heightClearance;
+
+						positionTrace = Sandbox.Trace.Box( checkBBox, checkPosition, endPosition );
+
+						if ( worldOnly )
+							positionTrace.WorldOnly();
+						else
+							positionTrace.WorldAndEntities();
+
+						positionResult = positionTrace.Run();
+					}
 				}
 			}
-		}
+		} );
+
 
 		traceDownWatch.Stop();
 		Log.Info( $"TraceDown completed in {traceDownWatch.ElapsedMilliseconds}ms" );
@@ -241,9 +247,9 @@ public partial class Grid
 	}
 
 	[ConCmd.Server( "RegenerateMainGrid" )]
-	public static void RegenerateMainGrid()
+	public async static void RegenerateMainGrid()
 	{
-		Grid.Initialize( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
+		await Grid.Initialize( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
 		Main.Save();
 	}
 
@@ -251,8 +257,8 @@ public partial class Grid
 	public static void CreateGrid( string identifier )
 	{
 		var caller = ConsoleSystem.Caller;
-		var newGrid = Grid.Initialize( new BBox( caller.Position - 500f, caller.Position + 500f ), identifier );
-		newGrid.Save();
+		//var newGrid = Grid.Initialize( new BBox( caller.Position - 500f, caller.Position + 500f ), identifier );
+		//newGrid.Save();
 	}
 
 	[ConCmd.Server( "LoadGrid" )]
