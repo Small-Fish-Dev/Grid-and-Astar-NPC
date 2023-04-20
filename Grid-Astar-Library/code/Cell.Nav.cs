@@ -26,5 +26,19 @@ public partial class Node : IHeapItem<Node>
 			compare = hCost.CompareTo( other.hCost );
 		return -compare;
 	}
+	public override bool Equals( object obj )
+	{
+		return Equals( obj as Node );
+	}
+
+	public bool Equals( Node obj )
+	{
+		return obj != null && obj.GetHashCode() == this.GetHashCode();
+	}
+
+	public override int GetHashCode()
+	{
+		return Current.GetHashCode();
+	}
 
 }
