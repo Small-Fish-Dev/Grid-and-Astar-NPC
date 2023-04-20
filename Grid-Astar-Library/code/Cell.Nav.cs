@@ -1,20 +1,25 @@
 ﻿namespace GridAStar;
 
-public partial class Cell : IHeapItem<Cell>
+public partial class Node : IHeapItem<Node>
 {
-
-	public Cell Parent;
+	public Cell Current;
+	public Node Parent;
 	public float gCost;
 	public float hCost;
 	public float fCost => gCost + hCost;
 	public int HeapIndex { get; set; }
 
-	public float Distance( Cell cell )
+	public Node( Cell cell )
 	{
-		return Position.DistanceSquared( cell.Position );
+		Current = cell;
 	}
 
-	public int CompareTo( Cell other )
+	public float Distance( Cell other )
+	{
+		return Current.Position.DistanceSquared( other.Position );
+	}
+
+	public int CompareTo( Node other )
 	{
 		var compare = fCost.CompareTo( other.fCost );
 		if ( compare == 0 )

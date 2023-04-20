@@ -8,41 +8,63 @@ public partial class Grid
 
 		if ( startingCell == null || targetCell == null ) return finalPath; // Escape if invalid end position Ex. if FindNearestDestination is false
 
-		Heap<Cell> openSet = new Heap<Cell>( Cells.Count );
-		HashSet<Cell> closedSet = new();
-		openSet.Add( startingCell );
+		var startingNode = new Node( startingCell );
+		var targetNode = new Node( targetCell );
+
+		Heap<Node> openSet = new Heap<Node>( Cells.Count );
+		HashSet<Node> closedSet = new();
+		HashSet<Cell> closedCellSet = new();
+		HashSet<Cell> openCellSet = new();
+		Dictionary<Cell, Node> cellNodePair = new();
+		openSet.Add( startingNode );
+		openCellSet.Add( startingCell );
+		cellNodePair.Add( startingCell, startingNode );
+		cellNodePair.Add( targetCell, targetNode );
 
 		await GameTask.RunInThreadAsync( () =>
 		{
 			while ( openSet.Count > 0 )
 			{
 
-				Cell currentNode = openSet.RemoveFirst();
+				var currentNode = openSet.RemoveFirst();
 				closedSet.Add( currentNode );
+				openCellSet.Remove( currentNode.Current );
+				closedCellSet.Add( currentNode.Current );
 
-				if ( currentNode == targetCell )
+				if ( currentNode == targetNode )
 				{
-					retracePath( ref finalPath, startingCell, currentNode );
+					retracePath( ref finalPath, startingNode, currentNode );
 					break;
 				}
 
-				currentNode.Draw( Color.White, 1f );
+				currentNode.Current.Draw( Color.White, 1f );
 
-				foreach ( var neighbour in currentNode.GetNeighbours() )
+				foreach ( var neighbour in currentNode.Current.GetNeighbours() )
 				{
-					if ( neighbour.Occupied || closedSet.Contains( neighbour ) ) continue;
+					if ( neighbour.Occupied || closedCellSet.Contains( neighbour ) ) continue;
+
+					bool isInOpenSet = openCellSet.Contains( neighbour );
+					Node neighbourNode;
+
+					if ( !isInOpenSet )
+					{
+						neighbourNode = new Node( neighbour );
+						openSet.Add( neighbourNode );
+						openCellSet.Add( neighbour );
+						cellNodePair.Add( neighbour, neighbourNode );
+					}
+					else
+					{
+						neighbourNode = cellNodePair[neighbour];
+					}
 
 					float newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour );
-					bool isInOpenSet = openSet.Contains( neighbour );
 
-					if ( newMovementCostToNeighbour < neighbour.gCost || !isInOpenSet )
+					if ( newMovementCostToNeighbour < neighbourNode.gCost || !isInOpenSet )
 					{
-						neighbour.gCost = newMovementCostToNeighbour;
-						neighbour.hCost = neighbour.Distance( targetCell );
-						neighbour.Parent = currentNode;
-
-						if ( !isInOpenSet )
-							openSet.Add( neighbour );
+						neighbourNode.gCost = newMovementCostToNeighbour;
+						neighbourNode.hCost = neighbourNode.Distance( targetCell );
+						neighbourNode.Parent = currentNode;
 					}
 				}
 			}
@@ -76,13 +98,13 @@ public partial class Grid
 
 	}
 
-	void retracePath( ref List<Cell> pathList, Cell startCell, Cell targetCell )
+	void retracePath( ref List<Cell> pathList, Node startNode, Node targetNode )
 	{
-		var currentNode = targetCell;
+		var currentNode = targetNode;
 
-		while ( currentNode != startCell )
+		while ( currentNode != startNode )
 		{
-			pathList.Add( currentNode );
+			pathList.Add( currentNode.Current );
 			currentNode = currentNode.Parent;
 		}
 
