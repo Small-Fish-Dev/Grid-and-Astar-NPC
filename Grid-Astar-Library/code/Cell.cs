@@ -116,7 +116,7 @@ public partial class Cell
 	}
 
 	// Perhaps there's a way to check these automatically, but I tried! :-)
-	public static Dictionary<IntVector2, List<IntVector2>> CompareVertices = new()
+	internal static Dictionary<IntVector2, List<IntVector2>> CompareVertices = new()
 	{
 		[new IntVector2( -1, -1 )] = new List<IntVector2>() { new IntVector2( 0, 3 ) },
 		[new IntVector2( -1, 0 )] = new List<IntVector2>() { new IntVector2( 1, 3 ), new IntVector2( 0, 2 ) },
@@ -144,6 +144,7 @@ public partial class Cell
 			var heightDifference = Math.Abs( Vertices[comparePair[0]] - cell.Vertices[comparePair[1]] );
 			if ( heightDifference >= 0.1f ) return false;
 		}
+
 		return true;
 	}
 

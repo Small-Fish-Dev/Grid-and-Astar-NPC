@@ -2,7 +2,7 @@
 
 public partial class Grid
 {
-	public async Task<List<Cell>> ComputePath( Cell startingCell, Cell targetCell )
+	public async Task<List<Cell>> ComputePath( Cell startingCell, Cell targetCell, bool reversed = false )
 	{
 		List<Cell> finalPath = new();
 
@@ -46,14 +46,39 @@ public partial class Grid
 					}
 				}
 			}
-		} );
+		} ); 
+		
+		if ( reversed )
+			finalPath.Reverse();
 
 		return finalPath;
 	}
 
+	/// <summary>
+	/// Compute two paths at the same time, From->To and To->From and return the first one that finishes, can massively speed up
+	/// </summary>
+	/// <param name="startingCell"></param>
+	/// <param name="targetCell"></param>
+	/// <returns></returns>
+	public async Task<List<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell )
+	{
+		var pathFromTo = ComputePath( startingCell, targetCell );
+		var pathToFrom = ComputePath( targetCell, startingCell );
+
+		List<Cell> result = new();
+
+		await GameTask.RunInThreadAsync( () =>
+		{
+			var result = GameTask.WhenAny( pathFromTo, pathToFrom );
+		} );
+
+		return result;
+
+	}
+
 	void retracePath( ref List<Cell> pathList, Cell startCell, Cell targetCell )
 	{
-		Cell currentNode = targetCell;
+		var currentNode = targetCell;
 
 		while ( currentNode != startCell )
 		{

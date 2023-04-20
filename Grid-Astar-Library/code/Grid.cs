@@ -296,7 +296,7 @@ public partial class Grid
 					foreach ( var cell in cellStack.Value )
 					{
 						if ( cell.Position.DistanceSquared( Game.LocalPawn.Position ) < 500000f )
-							cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
+							cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, true );
 					}
 				}
 			}
