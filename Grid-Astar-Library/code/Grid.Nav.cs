@@ -21,11 +21,10 @@ public partial class Grid
 		cellNodePair.Add( startingCell, startingNode );
 		cellNodePair.Add( targetCell, targetNode );
 
-		await GameTask.RunInThreadAsync( () =>
+		await GameTask.RunInThreadAsync( async () =>
 		{
 			while ( openSet.Count > 0 )
 			{
-
 				var currentNode = openSet.RemoveFirst();
 				closedSet.Add( currentNode );
 				openCellSet.Remove( currentNode.Current );
@@ -46,17 +45,10 @@ public partial class Grid
 					bool isInOpenSet = openCellSet.Contains( neighbour );
 					Node neighbourNode;
 
-					if ( !isInOpenSet )
-					{
-						neighbourNode = new Node( neighbour );
-						openSet.Add( neighbourNode );
-						openCellSet.Add( neighbour );
-						cellNodePair.Add( neighbour, neighbourNode );
-					}
-					else
-					{
+					if ( isInOpenSet )
 						neighbourNode = cellNodePair[neighbour];
-					}
+					else
+						neighbourNode = new Node( neighbour );
 
 					float newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour );
 
@@ -65,6 +57,13 @@ public partial class Grid
 						neighbourNode.gCost = newMovementCostToNeighbour;
 						neighbourNode.hCost = neighbourNode.Distance( targetCell );
 						neighbourNode.Parent = currentNode;
+
+						if ( !isInOpenSet )
+						{
+							openSet.Add( neighbourNode );
+							openCellSet.Add( neighbour );
+							cellNodePair.Add( neighbour, neighbourNode );
+						}
 					}
 				}
 			}
@@ -121,7 +120,7 @@ public partial class Grid
 	{
 		foreach ( var client in Game.Clients )
 		{
-			var cells = await Grid.Main.ComputePath( Grid.Main.GetCell( new IntVector2( -40, 98 ), 1000f ), Grid.Main.GetCell( client.Pawn.Position + Vector3.Up * 100f, true ) );
+			var cells = await Grid.Main.ComputePath( Grid.Main.GetCell( new IntVector2( 0, 0 ), 1000f ), Grid.Main.GetCell( client.Pawn.Position + Vector3.Up * 100f, true ) );
 
 			foreach ( var cell in cells )
 			{
