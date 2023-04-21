@@ -1,8 +1,10 @@
-﻿namespace GridAStar;
+﻿using System.Threading;
+
+namespace GridAStar;
 
 public partial class Grid
 {
-	public async Task<List<Cell>> ComputePath( Cell startingCell, Cell targetCell, bool reversed = false )
+	public async Task<List<Cell>> ComputePath( Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false )
 	{
 		List<Cell> finalPath = new();
 
@@ -23,14 +25,12 @@ public partial class Grid
 
 		await GameTask.RunInThreadAsync( () =>
 		{
-			while ( openSet.Count > 0 )
+			while ( openSet.Count > 0 && !token.IsCancellationRequested )
 			{
 				var currentNode = openSet.RemoveFirst();
 				closedSet.Add( currentNode );
 				openCellSet.Remove( currentNode.Current );
 				closedCellSet.Add( currentNode.Current );
-
-				currentNode.Current.Draw( 0.1f );
 
 				if ( currentNode.Current == targetNode.Current )
 				{
@@ -70,7 +70,10 @@ public partial class Grid
 					}
 				}
 			}
-		} ); 
+		} );
+
+		if ( token.IsCancellationRequested )
+			return null;
 		
 		if ( reversed )
 			finalPath.Reverse();
@@ -86,12 +89,15 @@ public partial class Grid
 	/// <returns></returns>
 	public async Task<List<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell )
 	{
-		var fromTo = ComputePath( startingCell, targetCell );
-		var toFrom = ComputePath( targetCell, startingCell );
+
+		var ctoken = new CancellationTokenSource();
+
+		var fromTo = ComputePath( startingCell, targetCell, ctoken.Token );
+		var toFrom = ComputePath( targetCell, startingCell, ctoken.Token, true );
 
 		var pathResult = await GameTask.WhenAny( fromTo, toFrom ).Result;
 
-		// Stop the other task
+		ctoken.Cancel();
 
 		return pathResult;
 
@@ -108,11 +114,6 @@ public partial class Grid
 		}
 
 		pathList.Reverse();
-	}
-
-	public async Task<List<Cell>> ComputePath( Vector3 startingPosition, Vector3 endingPosition, bool findNearestDestination = false )
-	{
-		return await ComputePath( GetCell( startingPosition ), GetCell( endingPosition, findNearestDestination ) );
 	}
 
 	[ConCmd.Server( "TestPath" )]
