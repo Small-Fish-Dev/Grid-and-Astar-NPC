@@ -86,15 +86,14 @@ public partial class Grid
 	/// <returns></returns>
 	public async Task<List<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell )
 	{
+		var fromTo = ComputePath( startingCell, targetCell );
+		var toFrom = ComputePath( targetCell, startingCell );
 
-		List<Cell> result = new();
+		var pathResult = await GameTask.WhenAny( fromTo, toFrom ).Result;
 
-		var fromTo = GameTask.RunInThreadAsync( () => ComputePath( startingCell, targetCell ) );
-		var toFrom = GameTask.RunInThreadAsync( () => ComputePath( targetCell, startingCell ) );
+		// Stop the other task
 
-		result = await GameTask.WhenAny( fromTo, toFrom ).Result;
-
-		return result;
+		return pathResult;
 
 	}
 
@@ -121,6 +120,7 @@ public partial class Grid
 	{
 		foreach ( var client in Game.Clients )
 		{
+			// Check distance before?
 			var cells = await Grid.Main.ComputePathParallel( Grid.Main.GetCell( new IntVector2( -60, 60 ), 1000f ), Grid.Main.GetCell( client.Pawn.Position + Vector3.Up * 100f, true ) );
 			
 			foreach ( var cell in cells )

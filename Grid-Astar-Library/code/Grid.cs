@@ -47,7 +47,7 @@ public partial class Grid
 	public float CellSize { get; set; }
 	public float HeightClearance { get; set; }
 
-	public Grid() { }
+public Grid() { }
 
 	public Grid( string identifier ) : this()
 	{
@@ -220,24 +220,29 @@ public partial class Grid
 		return currentGrid;
 	}
 
-	public async Task<bool> Initialize()
+	public async Task<bool> Initialize( bool save = true )
 	{
 		if ( Grids.ContainsKey( Identifier ) )
 			Grids[Identifier] = this;
 		else
 			Grids.Add( Identifier, this );
 
-		await this.Save();
+		if ( save )
+			await this.Save();
 
 		return true;
 	}
 
-	public void Delete()
+	public void Delete( bool deleteSave = false )
 	{
 		Event.Unregister( this );
 
 		if ( Grids.ContainsKey( Identifier ) )
 			Grids[Identifier] = null;
+
+		if ( deleteSave )
+			DeleteSave();
+
 	}
 
 	/// <summary>
@@ -280,6 +285,12 @@ public partial class Grid
 	public async static void LoadGrid( string identifier = "main" )
 	{
 		await Grid.Load( identifier );
+	}
+
+	[ConCmd.Server( "DeleteGrid" )]
+	public static void DeleteGrid( string identifier = "main" )
+	{
+		DeleteSave( identifier );
 	}
 
 	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]

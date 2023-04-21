@@ -1,4 +1,5 @@
 ﻿using Sandbox;
+using System.Data.Common;
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -11,21 +12,17 @@ public static partial class GridSettings
 
 public partial class Grid
 {
+	public string SavePath => GetSavePath( Identifier );
+	public static string GetSavePath( string identifier = "main" ) => GridSettings.DEFAULT_SAVE_PATH.Replace( "%identifier%", identifier );
+	public static bool Exists( string identifier = "main" ) => FileSystem.Data.FileExists( Grid.GetSavePath( identifier ) );
+	public bool Exists() => FileSystem.Data.FileExists( SavePath );
 
 	public async static Task<Grid> Load( string identifier = "main" )
 	{
-		Stopwatch loadingWatch = new Stopwatch();
-		loadingWatch.Start();
-
-		var filePath = GridSettings.DEFAULT_SAVE_PATH.Replace( "%identifier%", identifier );
-
-		if ( !FileSystem.Data.FileExists( filePath ) )
-		{
-			loadingWatch.Stop();
+		if ( !Grid.Exists( identifier ) )
 			return null;
-		}
 
-		using var stream = FileSystem.Data.OpenRead( filePath );
+		using var stream = FileSystem.Data.OpenRead( GetSavePath( identifier ) );
 		using var reader = new BinaryReader( stream );
 
 		var currentGrid = new Grid( reader.ReadString() );
@@ -48,24 +45,16 @@ public partial class Grid
 				var cell = new Cell( currentGrid, cellPosition, cellVertices );
 				currentGrid.AddCell( cell );
 			}
-
-			loadingWatch.Stop();
-			Log.Info( $"Loading completed in {loadingWatch.ElapsedMilliseconds}ms" );
 		} );
 
-		await currentGrid.Initialize();
+		await currentGrid.Initialize( false );
 
 		return currentGrid;
 	}
 
 	public async Task<bool> Save()
 	{
-		Stopwatch savingWatch = new Stopwatch();
-		savingWatch.Start();
-
-		var filePath = GridSettings.DEFAULT_SAVE_PATH.Replace( "%identifier%", Identifier );
-
-		using var stream = FileSystem.Data.OpenWrite( filePath, System.IO.FileMode.OpenOrCreate );
+		using var stream = FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate );
 		using var writer = new BinaryWriter( stream );
 
 		writer.Write( Identifier );
@@ -94,17 +83,23 @@ public partial class Grid
 						writer.Write( vertex );
 				}
 			}
-
-			savingWatch.Stop();
-			Log.Info( $"Saving completed in {savingWatch.ElapsedMilliseconds}ms" );
 		} );
-
-		
 
 		return true;
 
 	}
+	public static bool DeleteSave( string identifier = "main" )
+	{
+		if ( Exists( identifier ) )
+		{
+			FileSystem.Data.DeleteFile( GetSavePath( identifier ) );
+			return true;
+		}
 
+		return false;
+	}
+
+	public bool DeleteSave() => Grid.DeleteSave( Identifier );
 }
 
 
