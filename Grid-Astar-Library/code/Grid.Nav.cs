@@ -1,4 +1,6 @@
-﻿namespace GridAStar;
+﻿using System.Threading;
+
+namespace GridAStar;
 
 public partial class Grid
 {
@@ -21,7 +23,7 @@ public partial class Grid
 		cellNodePair.Add( startingCell, startingNode );
 		cellNodePair.Add( targetCell, targetNode );
 
-		await GameTask.RunInThreadAsync( async () =>
+		await GameTask.RunInThreadAsync( () =>
 		{
 			while ( openSet.Count > 0 )
 			{
@@ -30,13 +32,11 @@ public partial class Grid
 				openCellSet.Remove( currentNode.Current );
 				closedCellSet.Add( currentNode.Current );
 
-				if ( currentNode == targetNode )
+				if ( currentNode.Current == targetNode.Current )
 				{
 					retracePath( ref finalPath, startingNode, currentNode );
 					break;
 				}
-
-				currentNode.Current.Draw( Color.White, 1f );
 
 				foreach ( var neighbour in currentNode.Current.GetNeighbours() )
 				{
@@ -62,7 +62,10 @@ public partial class Grid
 						{
 							openSet.Add( neighbourNode );
 							openCellSet.Add( neighbour );
-							cellNodePair.Add( neighbour, neighbourNode );
+							if ( !cellNodePair.ContainsKey( neighbour ) )
+								cellNodePair.Add( neighbour, neighbourNode );
+							else
+								cellNodePair[neighbour] = neighbourNode;
 						}
 					}
 				}
@@ -83,15 +86,14 @@ public partial class Grid
 	/// <returns></returns>
 	public async Task<List<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell )
 	{
-		var pathFromTo = ComputePath( startingCell, targetCell );
-		var pathToFrom = ComputePath( targetCell, startingCell );
 
-		List<Cell> result = new();
+		List<Cell> result = new(); 
 
 		await GameTask.RunInThreadAsync( () =>
 		{
-			var result = GameTask.WhenAny( pathFromTo, pathToFrom );
+			var result = GameTask.WhenAny( ComputePath( startingCell, targetCell ), ComputePath( targetCell, startingCell ) );
 		} );
+
 
 		return result;
 
@@ -121,10 +123,10 @@ public partial class Grid
 		foreach ( var client in Game.Clients )
 		{
 			var cells = await Grid.Main.ComputePath( Grid.Main.GetCell( new IntVector2( 0, 0 ), 1000f ), Grid.Main.GetCell( client.Pawn.Position + Vector3.Up * 100f, true ) );
-
+			
 			foreach ( var cell in cells )
 			{
-				cell.Draw( 5 );
+				cell.Draw( Color.Red, 5, false );
 			}
 		}
 	}
