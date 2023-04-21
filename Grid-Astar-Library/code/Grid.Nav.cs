@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public partial class Grid
 {
@@ -31,6 +29,8 @@ public partial class Grid
 				closedSet.Add( currentNode );
 				openCellSet.Remove( currentNode.Current );
 				closedCellSet.Add( currentNode.Current );
+
+				currentNode.Current.Draw( 0.1f );
 
 				if ( currentNode.Current == targetNode.Current )
 				{
@@ -87,13 +87,12 @@ public partial class Grid
 	public async Task<List<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell )
 	{
 
-		List<Cell> result = new(); 
+		List<Cell> result = new();
 
-		await GameTask.RunInThreadAsync( () =>
-		{
-			var result = GameTask.WhenAny( ComputePath( startingCell, targetCell ), ComputePath( targetCell, startingCell ) );
-		} );
+		var fromTo = GameTask.RunInThreadAsync( () => ComputePath( startingCell, targetCell ) );
+		var toFrom = GameTask.RunInThreadAsync( () => ComputePath( targetCell, startingCell ) );
 
+		result = await GameTask.WhenAny( fromTo, toFrom ).Result;
 
 		return result;
 
@@ -122,11 +121,11 @@ public partial class Grid
 	{
 		foreach ( var client in Game.Clients )
 		{
-			var cells = await Grid.Main.ComputePath( Grid.Main.GetCell( new IntVector2( 0, 0 ), 1000f ), Grid.Main.GetCell( client.Pawn.Position + Vector3.Up * 100f, true ) );
+			var cells = await Grid.Main.ComputePathParallel( Grid.Main.GetCell( new IntVector2( -60, 60 ), 1000f ), Grid.Main.GetCell( client.Pawn.Position + Vector3.Up * 100f, true ) );
 			
 			foreach ( var cell in cells )
 			{
-				cell.Draw( Color.Red, 5, false );
+				cell.Draw( Color.Red, 1, false );
 			}
 		}
 	}
