@@ -9,10 +9,23 @@ global using System.Diagnostics;
 
 namespace GridAStarNPC;
 
-public partial class GridAStar : GameManager
+public partial class GridGame : GameManager
 {
-	public GridAStar()
+	public GridGame()
 	{
+		if ( Game.IsServer )
+		{
+			if ( GridAStar.Grid.Exists() )
+				GridAStar.Grid.Load();
+		}
+		else
+		{
+			if ( GridAStar.Grid.Exists() )
+				GridAStar.Grid.Load();
+			else
+				GridAStar.Grid.Create( Game.PhysicsWorld.Body.GetBounds() );
+		}
+
 	}
 
 	public override void ClientJoined( IClient client )
@@ -32,5 +45,14 @@ public partial class GridAStar : GameManager
 			tx.Position = tx.Position + Vector3.Up * 50.0f;
 			pawn.Transform = tx;
 		}
+	}
+
+	public override void PostLevelLoaded()
+	{
+		base.PostLevelLoaded();
+
+		if ( Game.IsServer )
+			if ( !GridAStar.Grid.Exists() )
+				GridAStar.Grid.Create( Game.PhysicsWorld.Body.GetBounds() );
 	}
 }
