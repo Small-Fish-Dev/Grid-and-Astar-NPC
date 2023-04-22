@@ -62,7 +62,7 @@ public partial class Grid
 		{
 			var cells = await Grid.Main.ComputePathParallel( Grid.Main, client.Pawn.Position, Vector3.Random * 3000f, true );
 
-			for ( int i = 0; i < cells.Count; i++ )
+			for ( int i = 0; i < cells.Length; i++ )
 			{
 				cells[i].Draw( Color.Red, 3, false );
 				DebugOverlay.Text( i.ToString(), cells[i].Position, duration: 3 );

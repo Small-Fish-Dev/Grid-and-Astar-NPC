@@ -269,7 +269,7 @@ public partial class Grid
 
 		foreach ( var cellStack in Cells )
 			foreach ( var cell in cellStack.Value )
-				if ( cell.GetNeighbours().Count < 8 )
+				if ( cell.GetNeighbours().Count() < 8 )
 					outerCells.Add( cell );
 
 		return outerCells;
