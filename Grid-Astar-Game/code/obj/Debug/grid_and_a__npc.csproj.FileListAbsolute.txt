@@ -1,5 +1,0 @@
-C:\Users\uberm\Desktop\Addons\grid_and_a_npc\Grid-Astar-Game\code\obj\Debug\grid_and_a__npc.csproj.AssemblyReference.cache
-C:\Users\uberm\Desktop\Addons\grid_and_a_npc\Grid-Astar-Game\code\obj\Debug\grid_and_a__npc.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\uberm\Desktop\Addons\grid_and_a_npc\Grid-Astar-Game\code\obj\Debug\grid_and_a__npc.AssemblyInfoInputs.cache
-C:\Users\uberm\Desktop\Addons\grid_and_a_npc\Grid-Astar-Game\code\obj\Debug\grid_and_a__npc.AssemblyInfo.cs
-C:\Users\uberm\Desktop\Addons\grid_and_a_npc\Grid-Astar-Game\code\obj\Debug\grid_and_a__npc.csproj.CoreCompileInputs.cache
