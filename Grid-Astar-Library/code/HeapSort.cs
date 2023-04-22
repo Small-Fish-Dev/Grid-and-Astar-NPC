@@ -12,7 +12,12 @@ public class Heap<T> where T : IHeapItem<T>
 
 	public Heap( int maxHeapSize )
 	{
-		items = new T[maxHeapSize];
+		items = ArrayPool<T>.Shared.Rent( maxHeapSize );
+	}
+
+	~Heap()
+	{
+		ArrayPool<T>.Shared.Return( items );
 	}
 
 	public void Add( T item )
