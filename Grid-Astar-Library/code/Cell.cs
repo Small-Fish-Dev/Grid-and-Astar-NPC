@@ -80,11 +80,18 @@ public partial class Cell
 			validCoordinates[i] = testResult.HitPosition.z;
 		}
 
-		var difference1 = Math.Abs( validCoordinates[0] - validCoordinates[3] );
-		var difference2 = Math.Abs( validCoordinates[1] - validCoordinates[2] );
-		var differenceMedian = (difference1 + difference2) / 2f;
+		var oppositeDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[3] );
+		var oppositeDifference2 = Math.Abs( validCoordinates[1] - validCoordinates[2] );
+		var differenceAverage = (oppositeDifference1 + oppositeDifference2) / 2f;
 
-		if ( differenceMedian > maxHeight )
+		var neighbourDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[1] );
+		var neighbourDifference2 = Math.Abs( validCoordinates[0] - validCoordinates[2] );
+		var neighbourDifference3 = Math.Abs( validCoordinates[1] - validCoordinates[3] );
+		var neighbourDifference4 = Math.Abs( validCoordinates[2] - validCoordinates[3] );
+
+		var stepTooSteep = neighbourDifference1 > stepSize || neighbourDifference2 > stepSize || neighbourDifference3 > stepSize || neighbourDifference4 > stepSize;
+
+		if ( differenceAverage > maxHeight || stepTooSteep )
 			return false;
 
 		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
