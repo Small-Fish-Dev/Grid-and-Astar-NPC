@@ -1,11 +1,14 @@
-﻿namespace GridAStar;
+﻿using System.Buffers;
+
+namespace GridAStar;
 
 // Thank you Debastian!
 public class Heap<T> where T : IHeapItem<T>
 {
+	public int Count => currentItemCount;
 
-	T[] items;
-	int currentItemCount;
+	private readonly T[] items;
+	private int currentItemCount;
 
 	public Heap( int maxHeapSize )
 	{
@@ -35,20 +38,12 @@ public class Heap<T> where T : IHeapItem<T>
 		SortUp( item );
 	}
 
-	public int Count
-	{
-		get
-		{
-			return currentItemCount;
-		}
-	}
-
 	public bool Contains( T item )
 	{
 		return Equals( items[item.HeapIndex], item );
 	}
 
-	void SortDown( T item )
+	private void SortDown( T item )
 	{
 		while ( true )
 		{
@@ -86,7 +81,7 @@ public class Heap<T> where T : IHeapItem<T>
 		}
 	}
 
-	void SortUp( T item )
+	private void SortUp( T item )
 	{
 		int parentIndex = (item.HeapIndex - 1) / 2;
 
@@ -106,7 +101,7 @@ public class Heap<T> where T : IHeapItem<T>
 		}
 	}
 
-	void Swap( T itemA, T itemB )
+	private void Swap( T itemA, T itemB )
 	{
 		items[itemA.HeapIndex] = itemB;
 		items[itemB.HeapIndex] = itemA;
@@ -114,16 +109,9 @@ public class Heap<T> where T : IHeapItem<T>
 		itemA.HeapIndex = itemB.HeapIndex;
 		itemB.HeapIndex = itemAIndex;
 	}
-
-
-
 }
 
 public interface IHeapItem<T> : IComparable<T>
 {
-	int HeapIndex
-	{
-		get;
-		set;
-	}
+	int HeapIndex { get; set; }
 }
