@@ -17,6 +17,11 @@ public partial class Grid
 	public static bool Exists( string identifier = "main" ) => FileSystem.Data.FileExists( Grid.GetSavePath( identifier ) );
 	public bool Exists() => FileSystem.Data.FileExists( SavePath );
 
+	/// <summary>
+	/// Load the grid from the save file
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <returns></returns>
 	public async static Task<Grid> Load( string identifier = "main" )
 	{
 		if ( !Grid.Exists( identifier ) )
@@ -49,9 +54,16 @@ public partial class Grid
 
 		await currentGrid.Initialize( false );
 
+		stream.Close();
+		reader.Close();
+
 		return currentGrid;
 	}
 
+	/// <summary>
+	/// Save the grid on a file
+	/// </summary>
+	/// <returns></returns>
 	public async Task<bool> Save()
 	{
 		using var stream = FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate );
@@ -85,9 +97,18 @@ public partial class Grid
 			}
 		} );
 
+		stream.Close();
+		writer.Close();
+
 		return true;
 
 	}
+
+	/// <summary>
+	/// Delete the saved file
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <returns></returns>
 	public static bool DeleteSave( string identifier = "main" )
 	{
 		if ( Exists( identifier ) )
@@ -99,6 +120,10 @@ public partial class Grid
 		return false;
 	}
 
+	/// <summary>
+	/// Delete the saved file
+	/// </summary>
+	/// <returns></returns>
 	public bool DeleteSave() => Grid.DeleteSave( Identifier );
 }
 
