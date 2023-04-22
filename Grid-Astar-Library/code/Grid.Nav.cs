@@ -185,18 +185,6 @@ public partial class Grid
 
 		pathList.Reverse();
 	}
-
-	[ConCmd.Server( "TestPath" )]
-	public async static void TestPath()
-	{
-		foreach ( var client in Game.Clients )
-		{
-			var cells = await Grid.Main.ComputePath( Grid.Main, client.Pawn.Position, Vector3.Random * 3000f, true );
-
-			foreach ( var cell in cells )
-				cell.Draw( Color.Red, 1, false );
-		}
-	}
 }
 
 

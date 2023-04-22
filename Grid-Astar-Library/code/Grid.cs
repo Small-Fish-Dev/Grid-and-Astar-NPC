@@ -47,7 +47,7 @@ public partial class Grid
 	public float CellSize { get; set; }
 	public float HeightClearance { get; set; }
 
-public Grid() { }
+	public Grid() { }
 
 	public Grid( string identifier ) : this()
 	{
@@ -259,59 +259,6 @@ public Grid() { }
 					outerCells.Add( cell );
 
 		return outerCells;
-	}
-
-	[ConCmd.Server( "RegenerateMainGrid" )]
-	public async static void RegenerateMainGrid()
-	{
-		BroadcastMainGrid();
-		await Grid.Create( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
-	}
-
-	[ClientRpc]
-	public async static void BroadcastMainGrid()
-	{
-		await Grid.Create( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
-	}
-
-	[ConCmd.Server( "CreateGrid" )]
-	public async static void CreateGrid( string identifier )
-	{
-		var caller = ConsoleSystem.Caller;
-		await Grid.Create( new BBox( caller.Position - 500f, caller.Position + 500f ), identifier );
-	}
-
-	[ConCmd.Server( "LoadGrid" )]
-	public async static void LoadGrid( string identifier = "main" )
-	{
-		await Grid.Load( identifier );
-	}
-
-	[ConCmd.Server( "DeleteGrid" )]
-	public static void DeleteGrid( string identifier = "main" )
-	{
-		DeleteSave( identifier );
-	}
-
-	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
-	public static void GridOverlay()
-	{
-		if ( !Game.IsClient ) return;
-
-		if ( Time.Tick % 10 == 0 )
-		{
-			foreach ( var grid in Grids )
-			{
-				foreach ( var cellStack in grid.Value.Cells )
-				{
-					foreach ( var cell in cellStack.Value )
-					{
-						if ( cell.Position.DistanceSquared( Game.LocalPawn.Position ) < 500000f )
-							cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, true );
-					}
-				}
-			}
-		}
 	}
 }
 
