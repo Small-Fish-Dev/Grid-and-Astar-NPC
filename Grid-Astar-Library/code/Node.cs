@@ -14,10 +14,8 @@ public partial class Node : IHeapItem<Node>
 		Current = cell;
 	}
 
-	public float Distance( Cell other )
-	{
-		return Current.Position.DistanceSquared( other.Position );
-	}
+	public float Distance( Cell other ) => Current.Position.DistanceSquared( other.Position );
+	public float Distance( Node other ) => Current.Position.DistanceSquared( other.Current.Position );
 
 	public int CompareTo( Node other )
 	{

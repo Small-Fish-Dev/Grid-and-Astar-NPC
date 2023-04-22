@@ -11,9 +11,7 @@ public static partial class Vector3Extensions
 	/// <returns></returns>
 	public static IntVector3 ToIntVector3( this Vector3 self, int divideBy = 1 )
 	{
-
 		return new IntVector3( (int)Math.Round( self.x / divideBy ), (int)Math.Round( self.y / divideBy ), (int)Math.Round( self.z / divideBy ) );
-
 	}
 
 }

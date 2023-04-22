@@ -11,9 +11,7 @@ public static partial class Vector2Extensions
 	/// <returns></returns>
 	public static IntVector2 ToIntVector2( this Vector2 self, float divideBy = 1 )
 	{
-
 		return new IntVector2( (int)Math.Round( self.x / divideBy ), (int)Math.Round( self.y / divideBy ) );
-
 	}
 
 	/// <summary>
@@ -24,9 +22,7 @@ public static partial class Vector2Extensions
 	/// <returns></returns>
 	public static IntVector2 ToIntVector2( this Vector3 self, float divideBy = 1f )
 	{
-
 		return new IntVector2( (int)Math.Round( self.x / divideBy ), (int)Math.Round( self.y / divideBy ) );
-
 	}
 
 }
