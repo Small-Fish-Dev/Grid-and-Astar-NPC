@@ -60,10 +60,13 @@ public partial class Grid
 	{
 		foreach ( var client in Game.Clients )
 		{
-			var cells = await Grid.Main.ComputePath( Grid.Main, client.Pawn.Position, Vector3.Random * 3000f, true );
+			var cells = await Grid.Main.ComputePathParallel( Grid.Main, client.Pawn.Position, Vector3.Random * 3000f, true );
 
-			foreach ( var cell in cells )
-				cell.Draw( Color.Red, 1, false );
+			for ( int i = 0; i < cells.Count; i++ )
+			{
+				cells[i].Draw( Color.Red, 3, false );
+				DebugOverlay.Text( i.ToString(), cells[i].Position, duration: 3 );
+			}
 		}
 	}
 }
