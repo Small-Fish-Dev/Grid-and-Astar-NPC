@@ -6,6 +6,7 @@ global using System.Collections;
 global using System.Linq;
 global using System.Collections.Generic;
 global using System.Diagnostics;
+global using System.Threading.Tasks;
 
 namespace GridAStarNPC;
 
