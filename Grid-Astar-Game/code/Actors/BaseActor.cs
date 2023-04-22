@@ -2,8 +2,8 @@
 
 public abstract partial class BaseActor : AnimatedEntity
 {
-	public virtual float CollisionWidth { get; set; } = 40f;
-	public virtual float CollisionHeight { get; set; } = 72f;
+	public virtual float CollisionWidth { get; set; } = 24f;
+	public virtual float CollisionHeight { get; set; } = 60f;
 	public BBox CollisionBox => new( new Vector3( -CollisionWidth / 2f, -CollisionWidth / 2f, 0f ), new Vector3( CollisionWidth / 2f, CollisionWidth / 2f, CollisionHeight ) );
 	public Capsule CollisionCapsule => new Capsule( new Vector3( 0f, 0f, CollisionBox.Mins.z ), new Vector3( 0f, 0f, CollisionBox.Maxs.z ), CollisionWidth / 2f );
 
@@ -30,6 +30,7 @@ public abstract partial class BaseActor : AnimatedEntity
 	{
 		SetModel( "models/citizen/citizen.vmdl" );
 		SetupPhysicsFromCapsule( PhysicsMotionType.Keyframed, CollisionCapsule );
+		Tags.Add( "Actor" );
 
 		EnableAllCollisions = true;
 		EnableDrawing = true;

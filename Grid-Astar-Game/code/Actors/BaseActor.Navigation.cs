@@ -1,4 +1,6 @@
-﻿namespace GridAStarNPC;
+﻿using GridAStar;
+
+namespace GridAStarNPC;
 
 public abstract partial class BaseActor
 {
@@ -26,15 +28,20 @@ public abstract partial class BaseActor
 		if ( targetCell == null ) return false;
 		if ( targetCell == NearestCell ) return false;
 
-		targetPathCell = targetCell;
-
-		var computedPath = await CurrentGrid.ComputePath( NearestCell, targetPathCell );
+		var computedPath = await CurrentGrid.ComputePath( NearestCell, targetCell );
 
 		if ( computedPath == null || computedPath.Count < 1 ) return false;
 
 		currentPath = computedPath;
 		currentPathIndex = 0;
 		HasArrivedDestination = false;
+		targetPathCell = lastPathCell;
+
+		for ( int i = 0; i < computedPath.Count; i++ )
+		{
+			computedPath[i].Draw( Color.Red, 3, false );
+			DebugOverlay.Text( i.ToString(), computedPath[i].Position, duration: 3 );
+		}
 
 		return true;
 	}
@@ -52,7 +59,7 @@ public abstract partial class BaseActor
 			if ( targetPathCell != lastPathCell ) // If the target cell is not the current navpath's last cell, retrace path
 				await NavigateTo( targetPathCell );
 
-			if ( IsFollowingPath && Position.Distance( currentPathCell.Position ) >= CurrentGrid.CellSize ) // Or if you strayed away from the path too far
+			if ( IsFollowingPath && Position.DistanceSquared( currentPathCell.Position ) > CurrentGrid.CellSize * CurrentGrid.CellSize ) // Or if you strayed away from the path too far
 				await NavigateTo( targetPathCell );
 
 			lastRetraceCheck = PathRetraceFrequency;
@@ -66,12 +73,7 @@ public abstract partial class BaseActor
 
 		Direction = (nextPathCell.Position - Position).Normal;
 
-		if ( IsFollowingSomeone )
-		{
-			IsRunning = Following.IsRunning;
-		}
-
-		if ( NearestCell == nextPathCell || Position.Distance( nextPathCell.Position ) <= CurrentGrid.CellSize / 4f )
+		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 ) * (CurrentGrid.CellSize / 2 ) )
 			currentPathIndex++;
 
 		if ( currentPathIndex >= currentPath.Count || currentPathCell == targetPathCell )

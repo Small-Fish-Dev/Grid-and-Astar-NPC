@@ -12,7 +12,7 @@ public abstract partial class BaseActor
 	public Vector3 WishVelocity => Direction.Normal * WishSpeed;
 	public Rotation WishRotation => Rotation.LookAt( Direction, Vector3.Up );
 	public float StepSize => 16f;
-	public float MaxWalkableAngle => 31f;
+	public float MaxWalkableAngle => 40f;
 
 
 	public TimeSince TimeSinceLostFooting = 0f;
@@ -32,10 +32,11 @@ public abstract partial class BaseActor
 			Velocity -= Vector3.Down * (TimeSinceLostFooting + 1f) * Game.PhysicsWorld.Gravity * Time.Delta * 5f;
 
 		var helper = new MoveHelper( Position, Velocity );
-		helper.MaxStandableAngle = 31f;
+		helper.MaxStandableAngle = MaxWalkableAngle;
 
 		helper.Trace = helper.Trace
 			.Size( CollisionBox.Mins, CollisionBox.Maxs )
+			.WithoutTags( "Actor" )
 			.Ignore( this );
 
 		helper.TryMoveWithStep( Time.Delta, StepSize );
