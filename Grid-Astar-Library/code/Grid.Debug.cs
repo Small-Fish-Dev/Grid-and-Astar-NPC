@@ -62,7 +62,7 @@ public partial class Grid
 	{
 		foreach ( var client in Game.Clients )
 		{
-			var cells = await Grid.Main.ComputePathParallel( Grid.Main, client.Pawn.Position, Vector3.Random * 3000f, true );
+			var cells = await Grid.Main.ComputePathParallel( client.Pawn.Position, Vector3.Random * 3000f, true );
 
 			for ( int i = 0; i < cells.Length; i++ )
 			{
