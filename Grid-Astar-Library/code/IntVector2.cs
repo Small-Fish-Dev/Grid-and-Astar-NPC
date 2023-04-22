@@ -3,7 +3,7 @@
 /// <summary>
 /// Like a Vector2, but with integers instead.
 /// </summary>
-public struct IntVector2
+public struct IntVector2 : IEquatable<IntVector2>
 {
 	public int x { get; set; }
 	public int y { get; set; }
@@ -64,5 +64,30 @@ public struct IntVector2
 	public override string ToString()
 	{
 		return $"{x},{y}";
+	}
+
+	public override bool Equals( object obj )
+	{
+		return obj is IntVector2 other && Equals( other );
+	}
+
+	public bool Equals( IntVector2 other )
+	{
+		return x == other.x && y == other.y;
+	}
+
+	public override int GetHashCode()
+	{
+		return HashCode.Combine( x, y );
+	}
+
+	public static bool operator ==( IntVector2 left, IntVector2 right )
+	{
+		return left.Equals( right );
+	}
+
+	public static bool operator !=( IntVector2 left, IntVector2 right )
+	{
+		return !(left == right);
 	}
 }
