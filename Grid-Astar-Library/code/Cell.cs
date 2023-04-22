@@ -1,6 +1,6 @@
 ﻿namespace GridAStar;
 
-public partial class Cell
+public partial class Cell : IEquatable<Cell>
 {
 	/// <summary>
 	/// The parent grid
