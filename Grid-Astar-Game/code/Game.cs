@@ -17,8 +17,10 @@ public partial class GridGame : GameManager
 		if ( Game.IsServer ) // Try loading the Grid on the server, if it's not found it will create it in the PostLevelLoaded method
 			GridAStar.Grid.Load();
 		else
-			if ( GridAStar.Grid.Load() == null ) // Try loading the Grid on the client, else it creates a new one
+		{
+			if ( GridAStar.Grid.Load().Result == null ) // Try loading the Grid on the client, else it creates a new one
 				GridAStar.Grid.Create( Game.PhysicsWorld.Body.GetBounds() );
+		}
 
 	}
 

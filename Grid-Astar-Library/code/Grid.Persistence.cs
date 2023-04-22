@@ -33,6 +33,7 @@ public partial class Grid
 		var currentGrid = new Grid( reader.ReadString() );
 		currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
 		currentGrid.StandableAngle = reader.ReadSingle();
+		currentGrid.StepSize = reader.ReadSingle();
 		currentGrid.CellSize = reader.ReadSingle();
 		currentGrid.HeightClearance = reader.ReadSingle();
 
@@ -73,6 +74,7 @@ public partial class Grid
 		writer.Write( Bounds.Mins );
 		writer.Write( Bounds.Maxs );
 		writer.Write( StandableAngle );
+		writer.Write( StepSize );
 		writer.Write( CellSize );
 		writer.Write( HeightClearance );
 

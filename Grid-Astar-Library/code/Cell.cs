@@ -46,13 +46,13 @@ public partial class Cell
 
 		float[] validCoordinates = new float[4];
 
-		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, worldOnly ) )
+		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, worldOnly ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
 	}
 
-	private static bool TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, bool worldOnly )
+	private static bool TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, float stepSize, bool worldOnly )
 	{
 		Vector3[] testCoordinates = new Vector3[4] {
 			new Vector3( -cellSize / 2, -cellSize / 2 ),
@@ -60,7 +60,7 @@ public partial class Cell
 			new Vector3( cellSize / 2, -cellSize / 2 ),
 			new Vector3( cellSize / 2, cellSize / 2 ) };
 
-		float maxHeight = cellSize * MathF.Tan( MathX.DegreeToRadian( standableAngle ) ) * 1.1f;
+		var maxHeight = Math.Min( cellSize * MathF.Tan( MathX.DegreeToRadian( standableAngle ) ), standableAngle / 2 ) * 1.1f;
 
 		// TODO: Maybe borrow the two adjacent coordinates from parent cell?
 		for ( int i = 0; i < 4; i++ )
@@ -79,6 +79,11 @@ public partial class Cell
 
 			validCoordinates[i] = testResult.HitPosition.z;
 		}
+
+		var heightDifference = validCoordinates.Max() - validCoordinates.Min();
+
+		if ( heightDifference > maxHeight )
+			return false;
 
 		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
 		var occupyTrace = Sandbox.Trace.Box( bbox, position.WithZ( validCoordinates.Max() + 1f ) + Vector3.Up * 48f, position.WithZ( validCoordinates.Max() + 1f ) );
