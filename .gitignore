@@ -360,3 +360,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Custom
+Grid-Astar-Game/code/grid_and_a__npc.csproj
+Grid-Astar-Game/code/Properties/launchSettings.json
+Grid-Astar-Library/grid_and_astar.csproj
+Grid-Astar-Library/Properties/launchSettings.json
