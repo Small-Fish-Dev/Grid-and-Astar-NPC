@@ -32,6 +32,7 @@ public partial class Cell
 	/// </summary>
 	public Vector3 TopRight => Position.WithZ( Vertices[3] ) + new Vector3( Grid.CellSize / 2, Grid.CellSize / 2, 0f );
 	public float Height => Vertices.Max() - Vertices.Min();
+	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public bool Occupied { get; set; } = false;
 
 	/// <summary>

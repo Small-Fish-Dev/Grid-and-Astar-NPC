@@ -63,47 +63,57 @@ public partial class Grid
 	}
 
 	/// <summary>
-	/// Find the cell below the position given, findNearest = true will loop through all cells so make sure to only use it for finding a destination
+	/// Find the cell below the position given
 	/// </summary>
 	/// <param name="position"></param>
-	/// <param name="findNearest"></param>
+	/// <param name="onlyBelow"></param>
 	/// <returns></returns>
-	public Cell GetCell( Vector3 position, bool findNearest = false )
+	public Cell GetCell( Vector3 position, bool onlyBelow = true )
 	{
 		var coordinates2D = position.ToIntVector2( CellSize );
 		var cellsAtCoordinates = Cells.GetValueOrDefault( coordinates2D );
 
+		// If no cells were found at the coordinates
 		if ( cellsAtCoordinates == null )
 		{
-			if ( !findNearest )
-				return null; // Escape if there's no cell and we don't want to find the closest one
-
-			var minDistance = float.MaxValue;
-			Cell currentCell = null;
+			var closestCoordinates = new IntVector2( int.MaxValue, int.MaxValue );
+			var closestDistance = float.MaxValue;
 
 			foreach ( var cellStacks in Cells )
 			{
-				foreach ( var cell in cellStacks.Value )
+				var distance = cellStacks.Key.DistanceSquared( coordinates2D );
+
+				if ( distance < closestDistance )
 				{
-					var curDistance = cell.Position.Distance( position );
-					if ( curDistance < minDistance )
-					{
-						currentCell = cell;
-						minDistance = curDistance;
-					}
+					closestCoordinates = cellStacks.Key;
+					closestDistance = distance;
 				}
 			}
 
-			return currentCell; // Loop through all cells and return the closest if findNearest is true
+			cellsAtCoordinates = Cells.GetValueOrDefault( closestCoordinates );
 		}
-		if ( cellsAtCoordinates.Count == 1 ) return cellsAtCoordinates[0];
 
-		// Get the nearest cell which is under the given coordinates (Even if a cell above is closer, it's not useable)
-		var nearestCell = cellsAtCoordinates.Where( x => x.Position.z - CellSize < position.z )
-			.OrderByDescending( x => x.Position.z )
-			.FirstOrDefault();
+		if ( cellsAtCoordinates.Count == 1 ) return cellsAtCoordinates.First(); // If it's only one cell return it instantly
+		if ( cellsAtCoordinates == null ) return null; // Guess there were no cells at all??
 
-		return nearestCell;
+		if ( onlyBelow )
+		{
+			// Get the nearest cell which is under the given coordinates
+			var nearestCell = cellsAtCoordinates.Where( x => x.Bottom.z - StepSize < position.z )
+				.OrderByDescending( x => x.Position.z )
+				.FirstOrDefault();
+
+			return nearestCell;
+		}
+		else
+		{
+			// Get the nearest cell
+			var nearestCell = cellsAtCoordinates
+				.OrderBy( x => x.Position.DistanceSquared( position ) )
+				.FirstOrDefault();
+
+			return nearestCell;
+		}
 	}
 
 	/// <summary>
