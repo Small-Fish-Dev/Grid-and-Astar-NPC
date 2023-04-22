@@ -60,12 +60,12 @@ public partial class Cell
 			new Vector3( cellSize / 2, -cellSize / 2 ),
 			new Vector3( cellSize / 2, cellSize / 2 ) };
 
-		var maxHeight = Math.Min( cellSize * MathF.Tan( MathX.DegreeToRadian( standableAngle ) ), standableAngle / 2 ) * 1.1f;
+		var maxHeight = Math.Max( cellSize * MathF.Tan( MathX.DegreeToRadian( standableAngle ) ), stepSize );
 
 		// TODO: Maybe borrow the two adjacent coordinates from parent cell?
 		for ( int i = 0; i < 4; i++ )
 		{
-			var testTrace = Sandbox.Trace.Ray( position + testCoordinates[i].WithZ(maxHeight), position + testCoordinates[i].WithZ(-maxHeight) );
+			var testTrace = Sandbox.Trace.Ray( position + testCoordinates[i].WithZ(maxHeight * 2f), position + testCoordinates[i].WithZ(-maxHeight * 2f) );
 
 			if ( worldOnly )
 				testTrace.WorldOnly();
@@ -80,9 +80,11 @@ public partial class Cell
 			validCoordinates[i] = testResult.HitPosition.z;
 		}
 
-		var heightDifference = validCoordinates.Max() - validCoordinates.Min();
+		var difference1 = Math.Abs( validCoordinates[0] - validCoordinates[3] );
+		var difference2 = Math.Abs( validCoordinates[1] - validCoordinates[2] );
+		var differenceMedian = (difference1 + difference2) / 2f;
 
-		if ( heightDifference > maxHeight )
+		if ( differenceMedian > maxHeight )
 			return false;
 
 		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );

@@ -19,7 +19,7 @@ public partial class Grid
 	public async static void CreateGrid( string identifier )
 	{
 		var caller = ConsoleSystem.Caller;
-		await Grid.Create( new BBox( caller.Position - 500f, caller.Position + 500f ), identifier );
+		await Grid.Create( new BBox( caller.Position - 200f, caller.Position + 200f ), identifier );
 	}
 
 	[ConCmd.Server( "LoadGrid" )]
