@@ -93,8 +93,8 @@ public partial class Grid
 			cellsAtCoordinates = Cells.GetValueOrDefault( closestCoordinates );
 		}
 
-		if ( cellsAtCoordinates.Count == 1 ) return cellsAtCoordinates.First(); // If it's only one cell return it instantly
 		if ( cellsAtCoordinates == null ) return null; // Guess there were no cells at all??
+		if ( cellsAtCoordinates.Count == 1 ) return cellsAtCoordinates.First(); // If it's only one cell return it instantly
 
 		if ( onlyBelow )
 		{
@@ -269,7 +269,7 @@ public partial class Grid
 
 		foreach ( var cellStack in Cells )
 			foreach ( var cell in cellStack.Value )
-				if ( cell.GetNeighbours().Count < 8 )
+				if ( cell.GetNeighbours().Count() < 8 )
 					outerCells.Add( cell );
 
 		return outerCells;

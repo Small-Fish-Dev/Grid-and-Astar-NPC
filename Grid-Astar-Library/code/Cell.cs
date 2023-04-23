@@ -1,6 +1,6 @@
 ﻿namespace GridAStar;
 
-public partial class Cell
+public partial class Cell : IEquatable<Cell>
 {
 	/// <summary>
 	/// The parent grid
@@ -163,25 +163,23 @@ public partial class Cell
 		return true;
 	}
 
-	public List<Cell> GetNeighbours( bool ignoreHeight = false )
+	public IEnumerable<Cell> GetNeighbours( bool ignoreHeight = false )
 	{
-		var neighbours = new List<Cell>();
-		
-		for( int y = -1; y <= 1; y++ )
+		var height = ignoreHeight ? float.MaxValue : Position.z;
+
+		for ( int y = -1; y <= 1; y++ )
 		{
 			for ( int x = -1; x <= 1; x++ )
 			{
 				if ( x == 0 && y == 0 ) continue;
 
-				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + x, GridPosition.y + y ), ignoreHeight ? float.MaxValue : Position.z );
+				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + x, GridPosition.y + y ), height );
 				if ( cellFound == null ) continue;
 
 				if ( IsNeighbour( cellFound ) )
-					neighbours.Add( cellFound );
+					yield return cellFound;
 			}
 		}
-
-		return neighbours;
 	}
 
 	/// <summary>

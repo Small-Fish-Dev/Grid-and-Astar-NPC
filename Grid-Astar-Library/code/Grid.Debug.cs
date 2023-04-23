@@ -1,4 +1,6 @@
-﻿namespace GridAStar;
+﻿using System.Collections.Immutable;
+
+namespace GridAStar;
 
 public partial class Grid
 {
@@ -60,12 +62,59 @@ public partial class Grid
 	{
 		foreach ( var client in Game.Clients )
 		{
-			var cells = await Grid.Main.ComputePathParallel( Grid.Main, client.Pawn.Position, Vector3.Random * 3000f, true );
+			var cells = await Grid.Main.ComputePathParallel( client.Pawn.Position, Vector3.Random * 3000f, true );
 
-			for ( int i = 0; i < cells.Count; i++ )
+			for ( int i = 0; i < cells.Length; i++ )
 			{
 				cells[i].Draw( Color.Red, 3, false );
 				DebugOverlay.Text( i.ToString(), cells[i].Position, duration: 3 );
+			}
+		}
+	}
+
+	[ConCmd.Server( "StressPath" )]
+	public static async void StressPath( int runs = 100, int seed = 42069 )
+	{
+		var firstPlayer = Game.Clients.FirstOrDefault();
+		if ( firstPlayer is null )
+		{
+			Log.Warning( "There needs to be at least one player in the server for this to be used" );
+			return;
+		}
+
+		var random = new Random( seed );
+		var times = new double[runs];
+		var paths = new ImmutableArray<Cell>[runs];
+
+		var startingPosition = firstPlayer.Position;
+		for ( var i = 0; i < runs; i++ )
+		{
+			var targetPosition = new Vector3( random.Float( -1, 1 ), random.Float( -1, 1 ), random.Float( -1, 1 ) ) * 3000;
+
+			var startingCell = Grid.Main.GetCell( startingPosition, false );
+			var targetCell = Grid.Main.GetCell( targetPosition, false );
+
+			var timestamp = Stopwatch.GetTimestamp();
+			var path = await Grid.Main.ComputePathParallel( startingCell, targetCell );
+			var elapsed = Stopwatch.GetElapsedTime( timestamp );
+
+			times[i] = elapsed.TotalMilliseconds;
+			paths[i] = path;
+			Log.Info( $"Finished run #{i + 1}" );
+		}
+
+		Log.Info( $"-- {runs} Runs --" );
+		Log.Info( $"Fastest Run: {times.Min()}ms" );
+		Log.Info( $"Slowest Run: {times.Max()}ms" );
+		Log.Info( $"Average: {times.Average()}ms" );
+		Log.Info( $"Total Time: {times.Sum()}ms" );
+
+		foreach ( var path in paths )
+		{
+			for ( var i = 0; i < path.Length; i++ )
+			{
+				path[i].Draw( Color.Red, 10, false );
+				DebugOverlay.Text( i.ToString(), path[i].Position, duration: 10 );
 			}
 		}
 	}

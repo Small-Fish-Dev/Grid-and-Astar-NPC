@@ -1,17 +1,18 @@
 ﻿using GridAStar;
+using System.Collections.Immutable;
 
 namespace GridAStarNPC;
 
 public abstract partial class BaseActor
 {
-	internal List<GridAStar.Cell> currentPath { get; set; } = new List<GridAStar.Cell>();
-	public int CurrentPathLength => currentPath.Count;
+	internal ImmutableArray<GridAStar.Cell> currentPath { get; set; } = ImmutableArray<Cell>.Empty;
+	public int CurrentPathLength => currentPath.Length;
 	internal int currentPathIndex { get; set; } = -1; // -1 = Not set / Hasn't started
 	internal GridAStar.Cell currentPathCell => IsFollowingPath ? currentPath[currentPathIndex] : null;
-	internal GridAStar.Cell lastPathCell => currentPath.Count > 0 ? currentPath.Last() : null;
+	internal GridAStar.Cell lastPathCell => currentPath.Length > 0 ? currentPath[^1] : null;
 	internal GridAStar.Cell targetPathCell { get; set; } = null;
-	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )] : null;
-	public bool IsFollowingPath => currentPathIndex >= 0 && currentPath.Count > 0;
+	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath[Math.Min( currentPathIndex + 1, currentPath.Length - 1 )] : null;
+	public bool IsFollowingPath => currentPathIndex >= 0 && currentPath.Length > 0;
 	[Net] public BaseActor Following { get; set; } = null;
 	public bool IsFollowingSomeone => Following != null;
 	public bool HasArrivedDestination { get; internal set; } = false;
@@ -28,16 +29,16 @@ public abstract partial class BaseActor
 		if ( targetCell == null ) return false;
 		if ( targetCell == NearestCell ) return false;
 
-		var computedPath = await CurrentGrid.ComputePath( NearestCell, targetCell );
+		var computedPath = await CurrentGrid.ComputePathAsync( NearestCell, targetCell );
 
-		if ( computedPath == null || computedPath.Count < 1 ) return false;
+		if ( computedPath == null || computedPath.Length < 1 ) return false;
 
 		currentPath = computedPath;
 		currentPathIndex = 0;
 		HasArrivedDestination = false;
 		targetPathCell = lastPathCell;
 
-		for ( int i = 0; i < computedPath.Count; i++ )
+		for ( int i = 0; i < computedPath.Length; i++ )
 		{
 			computedPath[i].Draw( Color.Red, 3, false );
 			DebugOverlay.Text( i.ToString(), computedPath[i].Position, duration: 3 );
@@ -76,7 +77,7 @@ public abstract partial class BaseActor
 		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 ) * (CurrentGrid.CellSize / 2 ) )
 			currentPathIndex++;
 
-		if ( currentPathIndex >= currentPath.Count || currentPathCell == targetPathCell )
+		if ( currentPathIndex >= currentPath.Length || currentPathCell == targetPathCell )
 		{
 			HasArrivedDestination = true;
 			currentPathIndex = -1;
