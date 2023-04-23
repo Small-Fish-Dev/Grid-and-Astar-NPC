@@ -15,8 +15,9 @@ public static partial class GridSettings
 	public const float DEFAULT_STANDABLE_ANGLE = 40f;   // How steep the terrain can be on a cell before it gets discarded
 	public const float DEFAULT_STEP_SIZE = 12f;			// How big steps can be on a cell before it gets discarded
 	public const float DEFAULT_CELL_SIZE = 24f;         // How large each cell will be in hammer units
-	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;	// How much vertical space there should be
-	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also entities
+	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;  // How much vertical space there should be
+	public const float DEFAULT_WIDTH_CLEARANCE = 24f;	// How much horizontal space there should be
+	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also static entities
 }
 
 public partial class Grid
@@ -48,6 +49,8 @@ public partial class Grid
 	public float StepSize { get; set; }
 	public float CellSize { get; set; }
 	public float HeightClearance { get; set; }
+	public float WidthClearance { get; set; }
+	public bool WorldOnly { get; set; }
 
 	public Grid() { }
 
@@ -156,9 +159,10 @@ public partial class Grid
 	/// <param name="stepSize"></param>
 	/// <param name="cellSize"></param>
 	/// <param name="heightClearance"></param>
+	/// <param name="widthClearance"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Create( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public async static Task<Grid> Create( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -171,6 +175,8 @@ public partial class Grid
 		currentGrid.StepSize = stepSize;
 		currentGrid.CellSize = cellSize;
 		currentGrid.HeightClearance = heightClearance;
+		currentGrid.WidthClearance = widthClearance;
+		currentGrid.WorldOnly = worldOnly;
 
 		var minimumGrid = bounds.Mins.ToIntVector2( cellSize );
 		var maximumGrid = bounds.Maxs.ToIntVector2( cellSize );
@@ -202,7 +208,7 @@ public partial class Grid
 					{
 						if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
 						{
-							var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition, worldOnly );
+							var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
 
 							if ( newCell != null )
 								currentGrid.AddCell( newCell );

@@ -36,6 +36,8 @@ public partial class Grid
 		currentGrid.StepSize = reader.ReadSingle();
 		currentGrid.CellSize = reader.ReadSingle();
 		currentGrid.HeightClearance = reader.ReadSingle();
+		currentGrid.WidthClearance = reader.ReadSingle();
+		currentGrid.WorldOnly = reader.ReadBoolean();
 
 		await GameTask.RunInThreadAsync( () =>
 		{
@@ -77,6 +79,8 @@ public partial class Grid
 		writer.Write( StepSize );
 		writer.Write( CellSize );
 		writer.Write( HeightClearance );
+		writer.Write( WidthClearance );
+		writer.Write( WorldOnly );
 
 		await GameTask.RunInThreadAsync( () =>
 		{

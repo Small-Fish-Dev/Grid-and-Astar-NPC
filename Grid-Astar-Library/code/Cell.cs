@@ -40,14 +40,13 @@ public partial class Cell : IEquatable<Cell>
 	/// </summary>
 	/// <param name="grid">Parent grid</param>
 	/// <param name="position">Starting center of the cell</param>
-	/// <param name="worldOnly">If the parent cell is on a slope</param>
 	/// <returns></returns>
-	public static Cell TryCreate( Grid grid, Vector3 position, bool worldOnly = true )
+	public static Cell TryCreate( Grid grid, Vector3 position )
 	{
 
 		float[] validCoordinates = new float[4];
 
-		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, worldOnly ) )
+		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
