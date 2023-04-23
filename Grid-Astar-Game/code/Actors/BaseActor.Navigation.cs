@@ -73,6 +73,7 @@ public abstract partial class BaseActor
 		}
 
 		Direction = (nextPathCell.Position - Position).Normal;
+		DebugOverlay.Line( Position, Position + Direction * 5f, Color.Red );
 
 		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 ) * (CurrentGrid.CellSize / 2 ) )
 			currentPathIndex++;

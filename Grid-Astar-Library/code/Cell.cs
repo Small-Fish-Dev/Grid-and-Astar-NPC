@@ -63,7 +63,6 @@ public partial class Cell : IEquatable<Cell>
 
 		var maxHeight = Math.Max( cellSize * MathF.Tan( MathX.DegreeToRadian( standableAngle ) ), stepSize );
 
-		// TODO: Maybe borrow the two adjacent coordinates from parent cell?
 		for ( int i = 0; i < 4; i++ )
 		{
 			var testTrace = Sandbox.Trace.Ray( position + testCoordinates[i].WithZ(maxHeight * 2f), position + testCoordinates[i].WithZ(-maxHeight * 2f) );
@@ -79,20 +78,46 @@ public partial class Cell : IEquatable<Cell>
 			if ( !testResult.Hit ) return false;
 
 			validCoordinates[i] = testResult.HitPosition.z;
+			testCoordinates[i] = testResult.HitPosition;
+		}
+
+		var lowestToHighest = testCoordinates
+			.OrderBy( x => x.z )
+			.ToArray();
+		var lowestPosition = (lowestToHighest[0] + lowestToHighest[1]) / 2f + Vector3.Up;
+		var highestPosition = (lowestToHighest[2] + lowestToHighest[3]) / 2f + Vector3.Up;
+
+		var stepTrace = Sandbox.Trace.Ray( lowestPosition, highestPosition );
+
+		if ( worldOnly )
+			stepTrace.WorldOnly();
+		else
+			stepTrace.WorldAndEntities();
+
+		var stepResult = stepTrace.Run();
+
+		if ( stepResult.Hit )
+		{
+			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
+
+			if ( stepAngle > standableAngle )
+			{
+				var neighbourDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[1] );
+				var neighbourDifference2 = Math.Abs( validCoordinates[0] - validCoordinates[2] );
+				var neighbourDifference3 = Math.Abs( validCoordinates[1] - validCoordinates[3] );
+				var neighbourDifference4 = Math.Abs( validCoordinates[2] - validCoordinates[3] );
+
+				if ( neighbourDifference1 > stepSize || neighbourDifference2 > stepSize || neighbourDifference3 > stepSize || neighbourDifference4 > stepSize )
+					return false;
+			}
 		}
 
 		var oppositeDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[3] );
 		var oppositeDifference2 = Math.Abs( validCoordinates[1] - validCoordinates[2] );
-		var differenceAverage = (oppositeDifference1 + oppositeDifference2) / 2f;
+		var differenceAverage = (oppositeDifference1 + oppositeDifference2) / 2f; // In case the cell is skewed in a way which doesn't follow the axis
 
-		var neighbourDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[1] );
-		var neighbourDifference2 = Math.Abs( validCoordinates[0] - validCoordinates[2] );
-		var neighbourDifference3 = Math.Abs( validCoordinates[1] - validCoordinates[3] );
-		var neighbourDifference4 = Math.Abs( validCoordinates[2] - validCoordinates[3] );
 
-		var stepTooSteep = neighbourDifference1 > stepSize || neighbourDifference2 > stepSize || neighbourDifference3 > stepSize || neighbourDifference4 > stepSize;
-
-		if ( differenceAverage > maxHeight || stepTooSteep )
+		if ( differenceAverage > maxHeight )
 			return false;
 
 		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
