@@ -110,20 +110,32 @@ public partial class Cell : IEquatable<Cell>
 			.OrderBy( x => x.z )
 			.ToArray();
 
-		var stepTraceLowHigh = Sandbox.Trace.Ray( lowestToHighest[0], lowestToHighest[3] );
+		var stepTraceMidHigh = Sandbox.Trace.Ray( lowestToHighest[1] + Vector3.Up * stepSize, lowestToHighest[3] + Vector3.Up );
+		var stepTraceLowMid = Sandbox.Trace.Ray( lowestToHighest[0] + Vector3.Up * stepSize, lowestToHighest[2] + Vector3.Up );
 
 		if ( worldOnly )
-			stepTraceLowHigh.WorldOnly();
-		else
-			stepTraceLowHigh.WorldAndEntities();
-
-		var stepResultLowHigh = stepTraceLowHigh.Run();
-
-		if ( stepResultLowHigh.Hit )
 		{
-			var stepAngleLowHigh = Vector3.GetAngle( Vector3.Up, stepResultLowHigh.Normal );
+			stepTraceMidHigh.WorldOnly();
+			stepTraceLowMid.WorldOnly();
+		}
+		else
+		{
+			stepTraceMidHigh.WorldAndEntities();
+			stepTraceLowMid.WorldAndEntities();
+		}
 
-			if ( stepAngleLowHigh > standableAngle )
+		var stepResultMidHigh = stepTraceMidHigh.Run();
+		var stepResultLowMid = stepTraceLowMid.Run();
+
+
+		if ( stepResultMidHigh.Hit || stepResultLowMid.Hit )
+		{
+			var stepAngleMidHigh = Vector3.GetAngle( Vector3.Up, stepResultMidHigh.Normal );
+			var stepAngleLowMid = Vector3.GetAngle( Vector3.Up, stepResultLowMid.Normal );
+			DebugOverlay.TraceResult( stepResultMidHigh, 12f );
+			DebugOverlay.TraceResult( stepResultLowMid, 12f );
+
+			if ( stepResultMidHigh.Hit && stepAngleMidHigh > standableAngle || stepResultLowMid.Hit && stepAngleLowMid > standableAngle )
 			{
 				var neighbourDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[1] );
 				var neighbourDifference2 = Math.Abs( validCoordinates[0] - validCoordinates[2] );

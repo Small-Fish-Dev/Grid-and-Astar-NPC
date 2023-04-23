@@ -14,7 +14,7 @@ public static partial class GridSettings
 {
 	public const float DEFAULT_STANDABLE_ANGLE = 40f;   // How steep the terrain can be on a cell before it gets discarded
 	public const float DEFAULT_STEP_SIZE = 12f;			// How big steps can be on a cell before it gets discarded
-	public const float DEFAULT_CELL_SIZE = 24f;         // How large each cell will be in hammer units
+	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
 	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;  // How much vertical space there should be
 	public const float DEFAULT_WIDTH_CLEARANCE = 24f;	// How much horizontal space there should be
 	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also static entities
