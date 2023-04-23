@@ -81,43 +81,10 @@ public partial class Cell : IEquatable<Cell>
 			testCoordinates[i] = testResult.HitPosition;
 		}
 
-		var lowestToHighest = testCoordinates
-			.OrderBy( x => x.z )
-			.ToArray();
-		var lowestPosition = (lowestToHighest[0] + lowestToHighest[1]) / 2f + Vector3.Up;
-		var highestPosition = (lowestToHighest[2] + lowestToHighest[3]) / 2f + Vector3.Up;
+		if ( !TestForSteps( testCoordinates, validCoordinates, worldOnly, standableAngle, stepSize ) )
+			return false;
 
-		var stepTrace = Sandbox.Trace.Ray( lowestPosition, highestPosition );
-
-		if ( worldOnly )
-			stepTrace.WorldOnly();
-		else
-			stepTrace.WorldAndEntities();
-
-		var stepResult = stepTrace.Run();
-
-		if ( stepResult.Hit )
-		{
-			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
-
-			if ( stepAngle > standableAngle )
-			{
-				var neighbourDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[1] );
-				var neighbourDifference2 = Math.Abs( validCoordinates[0] - validCoordinates[2] );
-				var neighbourDifference3 = Math.Abs( validCoordinates[1] - validCoordinates[3] );
-				var neighbourDifference4 = Math.Abs( validCoordinates[2] - validCoordinates[3] );
-
-				if ( neighbourDifference1 > stepSize || neighbourDifference2 > stepSize || neighbourDifference3 > stepSize || neighbourDifference4 > stepSize )
-					return false;
-			}
-		}
-
-		var oppositeDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[3] );
-		var oppositeDifference2 = Math.Abs( validCoordinates[1] - validCoordinates[2] );
-		var differenceAverage = (oppositeDifference1 + oppositeDifference2) / 2f; // In case the cell is skewed in a way which doesn't follow the axis
-
-
-		if ( differenceAverage > maxHeight )
+		if ( !TestForAngle( validCoordinates, maxHeight ) )
 			return false;
 
 		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
@@ -135,6 +102,52 @@ public partial class Cell : IEquatable<Cell>
 		if ( occupyResult.Hit )
 			return false;
 		*/
+		return true;
+	}
+
+	private static bool TestForSteps( Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
+	{
+		var lowestToHighest = testCoordinates
+			.OrderBy( x => x.z )
+			.ToArray();
+
+		var stepTraceLowHigh = Sandbox.Trace.Ray( lowestToHighest[0], lowestToHighest[3] );
+
+		if ( worldOnly )
+			stepTraceLowHigh.WorldOnly();
+		else
+			stepTraceLowHigh.WorldAndEntities();
+
+		var stepResultLowHigh = stepTraceLowHigh.Run();
+
+		if ( stepResultLowHigh.Hit )
+		{
+			var stepAngleLowHigh = Vector3.GetAngle( Vector3.Up, stepResultLowHigh.Normal );
+
+			if ( stepAngleLowHigh > standableAngle )
+			{
+				var neighbourDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[1] );
+				var neighbourDifference2 = Math.Abs( validCoordinates[0] - validCoordinates[2] );
+				var neighbourDifference3 = Math.Abs( validCoordinates[1] - validCoordinates[3] );
+				var neighbourDifference4 = Math.Abs( validCoordinates[2] - validCoordinates[3] );
+
+				if ( neighbourDifference1 > stepSize || neighbourDifference2 > stepSize || neighbourDifference3 > stepSize || neighbourDifference4 > stepSize )
+					return false;
+			}
+		}
+
+		return true;
+	}
+
+	private static bool TestForAngle( float[] validCoordinates, float maxHeight )
+	{
+		var oppositeDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[3] );
+		var oppositeDifference2 = Math.Abs( validCoordinates[1] - validCoordinates[2] );
+		var differenceAverage = (oppositeDifference1 + oppositeDifference2) / 2f; // In case the cell is skewed in a way which doesn't follow the axis
+
+		if ( differenceAverage > maxHeight )
+			return false;
+
 		return true;
 	}
 
