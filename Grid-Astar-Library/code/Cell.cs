@@ -48,16 +48,18 @@ public partial class Cell : IEquatable<Cell>
 
 		float[] validCoordinates = new float[4];
 
-		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly ) )
+		var coordinatesAndStairs = TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly );
+		if ( !coordinatesAndStairs.Item1 )
 			return null;
 
-		if ( !TestForClearance( position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, Math.Abs( position.z - validCoordinates.Min() ) ) )
+		if ( !TestForClearance( position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.StepSize, position.z - validCoordinates.Min(), coordinatesAndStairs.Item2 ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
 	}
 
-	private static bool TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, float stepSize, bool worldOnly )
+	//(IsWalkable, IsSteps)
+	private static (bool,bool) TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, float stepSize, bool worldOnly )
 	{
 		Vector3[] testCoordinates = new Vector3[4] {
 			new Vector3( -cellSize / 2, -cellSize / 2 ),
@@ -78,8 +80,8 @@ public partial class Cell : IEquatable<Cell>
 
 			var testResult = testTrace.Run();
 
-			if ( testResult.StartedSolid ) return false;
-			if ( !testResult.Hit ) return false;
+			if ( testResult.StartedSolid ) return (false,false);
+			if ( !testResult.Hit ) return (false,false);
 
 			validCoordinates[i] = testResult.HitPosition.z;
 			testCoordinates[i] = testResult.HitPosition;
@@ -104,10 +106,11 @@ public partial class Cell : IEquatable<Cell>
 		*/
 	}
 
-	private static bool TestForClearance( Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float height )
+	private static bool TestForClearance( Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize, float height, bool isStairs )
 	{
-		var clearanceBBox = new BBox( new Vector3( -widthClearance / 2f, -widthClearance / 2f, 1f ), new Vector3( widthClearance / 2f, widthClearance / 2f, heightClearance - height - 1f ) );
-		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, position + Vector3.Up * height, position + Vector3.Up * height );
+		var clearanceBBox = new BBox( new Vector3( -widthClearance / 2f, -widthClearance / 2f, 0f ), new Vector3( widthClearance / 2f, widthClearance / 2f, 1f ) );
+		var startPos = position + Vector3.Up * heightClearance;
+		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position );
 
 		if ( worldOnly )
 			clearanceTrace.WorldOnly();
@@ -115,36 +118,45 @@ public partial class Cell : IEquatable<Cell>
 			clearanceTrace.WorldAndEntities();
 
 		var clearanceResult = clearanceTrace.Run();
+		var heightDifference = clearanceResult.EndPosition.z - ( position.z - height );
 
-		return !clearanceResult.Hit;
+		return (heightDifference <= stepSize + ( isStairs ? height : 0f ) );
 	}
 
-	private static bool TestForSteps( Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
+
+	//(IsWalkable, IsSteps)
+	private static (bool,bool) TestForSteps( Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
 	{
 		if ( stepSize <= 0.1f ) // At this point why bother
-			return false;
+			return (false,false);
 
 		var lowestToHighest = testCoordinates
 			.OrderBy( x => x.z )
 			.ToArray();
 
-		if ( !TestForStep( lowestToHighest[0], lowestToHighest[3], position, lowestToHighest[0], stepSize, standableAngle, worldOnly ) )
-			return false;
+		var stepTestMin = TestForStep( lowestToHighest[0], lowestToHighest[3], position, lowestToHighest[0], stepSize, standableAngle, worldOnly );
 
-		if ( !TestForStep( lowestToHighest[1], lowestToHighest[3], position, lowestToHighest[1], stepSize, standableAngle, worldOnly ) )
-			return false;
+		if ( !stepTestMin.Item1 )
+			return (false, stepTestMin.Item2);
 
-		return true;
+
+		var stepTestMid = TestForStep( lowestToHighest[1], lowestToHighest[3], position, lowestToHighest[1], stepSize, standableAngle, worldOnly );
+
+		if ( !stepTestMid.Item1 )
+			return (false, stepTestMid.Item2);
+
+		return (true,stepTestMin.Item2 || stepTestMid.Item2);
 	}
 
-	private static bool TestForStep( Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition, float stepSize, float standableAngle, bool worldOnly )
+	//(IsWalkable, IsSteps)
+	private static (bool, bool) TestForStep( Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition, float stepSize, float standableAngle, bool worldOnly )
 	{
 		var stepsTried = 0;
 		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / ( stepSize / 2f ) ) + 1, 3 );
 		var stepDistances = new float[maxSteps];
 
 		if ( highestPosition.z - lowestPosition.z <= stepSize / 2 ) // No stairs here
-			return true;
+			return (true,false);
 
 		while ( stepsTried < maxSteps )
 		{
@@ -164,10 +176,10 @@ public partial class Cell : IEquatable<Cell>
 
 			if ( stepsTried == 0 )
 				if ( stepResult.EndPosition.Distance( endPosition ) <= 0.3f ) // Pack it up, no stairs here
-					return true;
+					return (true,false);
 
 			if ( stepResult.Hit && stepAngle > standableAngle && stepAngle < 89.9f ) // MoveHelper straight up doesn't count it as a step if it's not 90°
-				return false;
+				return (false,false);
 
 			var distanceFromStart = startPosition.Distance( stepResult.EndPosition.WithZ( startPosition.z ) );
 
@@ -176,14 +188,14 @@ public partial class Cell : IEquatable<Cell>
 				var distanceDifference = Math.Abs( distanceFromStart - stepDistances[stepsTried - 2] );
 
 				if ( distanceDifference < 0.1f )
-					return false;
+					return (false,true);
 			}
 
 			stepDistances[stepsTried] = distanceFromStart;
 			stepsTried++;
 		}
 
-		return true;
+		return (true,true);
 	}
 
 	private static bool TestForAngle( float[] validCoordinates, float maxHeight )
