@@ -68,7 +68,7 @@ public abstract partial class BaseActor
 
 		for ( int i = 0; i < currentPath.Length; i++ )
 		{
-			currentPath[i].Draw( Color.White, Time.Delta );
+			//currentPath[i].Draw( Color.White, Time.Delta );
 			//DebugOverlay.Text( i.ToString(), currentPath[i].Position, duration: Time.Delta );
 		}
 

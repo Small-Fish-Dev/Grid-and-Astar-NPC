@@ -24,8 +24,15 @@ public partial class Grid
 	/// <returns></returns>
 	public async static Task<Grid> Load( string identifier = "main" )
 	{
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Loading grid {identifier}" );
 		if ( !Grid.Exists( identifier ) )
+		{
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} not found" );
 			return null;
+		}
+
+		var loadWatch = new Stopwatch();
+		loadWatch.Start();
 
 		using var stream = FileSystem.Data.OpenRead( GetSavePath( identifier ) );
 		using var reader = new BinaryReader( stream );
@@ -42,6 +49,7 @@ public partial class Grid
 		await GameTask.RunInThreadAsync( () =>
 		{
 			var cellsToRead = reader.ReadInt32();
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
 
 			for ( int i = 0; i < cellsToRead; i++ )
 			{
@@ -60,6 +68,9 @@ public partial class Grid
 		stream.Close();
 		reader.Close();
 
+		loadWatch.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} loaded in {loadWatch.ElapsedMilliseconds}ms" );
+
 		return currentGrid;
 	}
 
@@ -71,6 +82,11 @@ public partial class Grid
 	{
 		using var stream = FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate );
 		using var writer = new BinaryWriter( stream );
+
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Saving grid {Identifier}" );
+
+		var saveWatch = new Stopwatch();
+		saveWatch.Start();
 
 		writer.Write( Identifier );
 		writer.Write( Bounds.Mins );
@@ -105,6 +121,9 @@ public partial class Grid
 
 		stream.Close();
 		writer.Close();
+
+		saveWatch.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} saved in {saveWatch.ElapsedMilliseconds}ms" );
 
 		return true;
 

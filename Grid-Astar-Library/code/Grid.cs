@@ -10,6 +10,7 @@ global using System.Threading.Tasks;
 
 namespace GridAStar;
 
+// Set STEP_SIZE or WIDTH_CLEARANCE to 0 to disable them ( Faster grid generation )
 public static partial class GridSettings
 {
 	public const float DEFAULT_STANDABLE_ANGLE = 40f;   // How steep the terrain can be on a cell before it gets discarded
@@ -167,7 +168,7 @@ public partial class Grid
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
 
-		Log.Info( "Initializing grid..." );
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Creating grid {identifier}" );
 
 		var currentGrid = new Grid( identifier );
 		currentGrid.Bounds = bounds;
@@ -186,7 +187,7 @@ public partial class Grid
 		await GameTask.RunInThreadAsync( () =>
 		{
 
-			Log.Info( $"Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
 
 			for ( int column = minimumGrid.y; column <= maximumGrid.y; column++ )
 			{
@@ -233,7 +234,7 @@ public partial class Grid
 		} );
 
 		totalWatch.Stop();
-		Log.Info( $"Grid initialized in {totalWatch.ElapsedMilliseconds}ms" );
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
 
 		await currentGrid.Initialize();
 
