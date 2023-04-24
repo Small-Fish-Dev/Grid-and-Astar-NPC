@@ -24,7 +24,7 @@ public abstract partial class BaseActor
 	/// </summary>
 	/// <param name="targetCell"></param>
 	/// <returns></returns>
-	public virtual async Task<bool> NavigateTo( GridAStar.Cell targetCell)
+	public virtual async Task<bool> NavigateTo( GridAStar.Cell targetCell )
 	{
 		if ( targetCell == null ) return false;
 		if ( targetCell == NearestCell ) return false;
@@ -37,12 +37,6 @@ public abstract partial class BaseActor
 		currentPathIndex = 0;
 		HasArrivedDestination = false;
 		targetPathCell = lastPathCell;
-
-		for ( int i = 0; i < computedPath.Length; i++ )
-		{
-			computedPath[i].Draw( Color.Red, 3, false );
-			DebugOverlay.Text( i.ToString(), computedPath[i].Position, duration: 3 );
-		}
 
 		return true;
 	}
@@ -60,7 +54,7 @@ public abstract partial class BaseActor
 			if ( targetPathCell != lastPathCell ) // If the target cell is not the current navpath's last cell, retrace path
 				await NavigateTo( targetPathCell );
 
-			if ( IsFollowingPath && Position.DistanceSquared( currentPathCell.Position ) > CurrentGrid.CellSize * CurrentGrid.CellSize ) // Or if you strayed away from the path too far
+			if ( IsFollowingPath && Position.DistanceSquared( currentPathCell.Position ) > (CurrentGrid.CellSize * 1.42f) * (CurrentGrid.CellSize * 1.42f) ) // Or if you strayed away from the path too far
 				await NavigateTo( targetPathCell );
 
 			lastRetraceCheck = PathRetraceFrequency;
@@ -71,6 +65,14 @@ public abstract partial class BaseActor
 			Direction = Vector3.Zero;
 			return;
 		}
+
+		for ( int i = 0; i < currentPath.Length; i++ )
+		{
+			currentPath[i].Draw( Color.White, Time.Delta );
+			//DebugOverlay.Text( i.ToString(), currentPath[i].Position, duration: Time.Delta );
+		}
+
+		IsRunning = CurrentPathLength > 20;
 
 		Direction = (nextPathCell.Position - Position).Normal;
 		DebugOverlay.Line( Position, Position + Direction * 5f, Color.Red );

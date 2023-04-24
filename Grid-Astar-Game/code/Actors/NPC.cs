@@ -1,4 +1,7 @@
-﻿namespace GridAStarNPC;
+﻿using GridAStar;
+using System;
+
+namespace GridAStarNPC;
 
 public partial class NPC : BaseActor
 {
@@ -12,7 +15,7 @@ public partial class NPC : BaseActor
 		CurrentGrid = initialGrid;
 	}
 
-	public Vector2 TimeBetweenIdleMove => new Vector2( 1f, 3f );
+	public Vector2 TimeBetweenIdleMove => new Vector2( 7f, 12f );
 	internal TimeUntil nextIdleMode { get; set; } = 0f;
 
 	public override void Spawn()
@@ -31,8 +34,11 @@ public partial class NPC : BaseActor
 		{
 			if ( nextIdleMode && !IsFollowingPath )
 			{
-				var randomSpot = GetCellInDirection( Vector3.Random.WithZ(0).Normal, Game.Random.Int( 3, 7 ) );
-				NavigateTo( randomSpot );
+				var random = Vector3.Random;
+				var targetPosition = random * 3000;
+				var targetCell = CurrentGrid.GetCell( targetPosition, false );
+
+				NavigateTo( targetCell );
 				nextIdleMode = Game.Random.Float( TimeBetweenIdleMove.x, TimeBetweenIdleMove.y );
 			}
 		}
