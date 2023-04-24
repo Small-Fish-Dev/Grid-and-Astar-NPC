@@ -51,7 +51,7 @@ public partial class Cell : IEquatable<Cell>
 		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly ) )
 			return null;
 
-		if ( !TestForClearance( position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.StepSize ) )
+		if ( !TestForClearance( position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, Math.Abs( position.z - validCoordinates.Min() ) ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
@@ -104,10 +104,10 @@ public partial class Cell : IEquatable<Cell>
 		*/
 	}
 
-	private static bool TestForClearance( Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize )
+	private static bool TestForClearance( Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float height )
 	{
-		var clearanceBBox = new BBox( new Vector3( -widthClearance / 2f, -widthClearance / 2f, 1f ), new Vector3( widthClearance / 2f, widthClearance / 2f, heightClearance - stepSize - 1f ) );
-		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, position + Vector3.Up * stepSize, position + Vector3.Up * stepSize );
+		var clearanceBBox = new BBox( new Vector3( -widthClearance / 2f, -widthClearance / 2f, 1f ), new Vector3( widthClearance / 2f, widthClearance / 2f, heightClearance - height - 1f ) );
+		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, position + Vector3.Up * height, position + Vector3.Up * height );
 
 		if ( worldOnly )
 			clearanceTrace.WorldOnly();
