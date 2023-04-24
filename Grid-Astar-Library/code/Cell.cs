@@ -80,11 +80,7 @@ public partial class Cell : IEquatable<Cell>
 			testCoordinates[i] = testResult.HitPosition;
 		}
 
-		if ( !TestForSteps( testCoordinates, validCoordinates, worldOnly, standableAngle, stepSize ) )
-			return false;
-
-		if ( !TestForAngle( validCoordinates, maxHeight ) )
-			return false;
+		return TestForSteps( position, testCoordinates, validCoordinates, worldOnly, standableAngle, stepSize );
 
 		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
 		var occupyTrace = Sandbox.Trace.Box( bbox, position.WithZ( validCoordinates.Max() + 1f ) + Vector3.Up * 48f, position.WithZ( validCoordinates.Max() + 1f ) );
@@ -101,50 +97,77 @@ public partial class Cell : IEquatable<Cell>
 		if ( occupyResult.Hit )
 			return false;
 		*/
-		return true;
 	}
 
-	private static bool TestForSteps( Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
+	private static bool TestForSteps( Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
 	{
+		if ( stepSize <= 0.1f ) // At this point why bother
+			return false;
+
 		var lowestToHighest = testCoordinates
 			.OrderBy( x => x.z )
 			.ToArray();
 
-		var stepTraceMidHigh = Sandbox.Trace.Ray( lowestToHighest[1] + Vector3.Up * stepSize, lowestToHighest[3] + Vector3.Up );
-		var stepTraceLowMid = Sandbox.Trace.Ray( lowestToHighest[0] + Vector3.Up * stepSize, lowestToHighest[2] + Vector3.Up );
+		if ( !TestForStep( lowestToHighest[0], lowestToHighest[3], position, lowestToHighest[0], stepSize, standableAngle, worldOnly ) )
+			return false;
 
-		if ( worldOnly )
+		if ( !TestForStep( lowestToHighest[1], lowestToHighest[3], position, lowestToHighest[1], stepSize, standableAngle, worldOnly ) )
+			return false;
+
+		return true;
+	}
+
+	private static bool TestForStep( Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition, float stepSize, float standableAngle, bool worldOnly )
+	{
+		var stepsTried = 0;
+		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / ( stepSize / 2f ) ) + 1, 3 );
+		var stepDistances = new float[maxSteps];
+
+		if ( highestPosition.z - lowestPosition.z <= stepSize / 2 ) // No stairs here
+			return true;
+
+		while ( stepsTried < maxSteps )
 		{
-			stepTraceMidHigh.WorldOnly();
-			stepTraceLowMid.WorldOnly();
-		}
-		else
-		{
-			stepTraceMidHigh.WorldAndEntities();
-			stepTraceLowMid.WorldAndEntities();
-		}
+			var stepPositionStart = startPosition + Vector3.Up * (stepSize / 2f * stepsTried + 0.1f);
+			var stepPositionEnd = endPosition.WithZ( stepPositionStart.z );
+			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
+			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
+			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + 0.2f ) );
 
-		var stepResultMidHigh = stepTraceMidHigh.Run();
-		var stepResultLowMid = stepTraceLowMid.Run();
+			if ( worldOnly )
+				stepTrace.WorldOnly();
+			else
+				stepTrace.WorldAndEntities();
 
+			var stepResult = stepTrace.Run();
+			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
 
-		if ( stepResultMidHigh.Hit || stepResultLowMid.Hit )
-		{
-			var stepAngleMidHigh = Vector3.GetAngle( Vector3.Up, stepResultMidHigh.Normal );
-			var stepAngleLowMid = Vector3.GetAngle( Vector3.Up, stepResultLowMid.Normal );
-			DebugOverlay.TraceResult( stepResultMidHigh, 12f );
-			DebugOverlay.TraceResult( stepResultLowMid, 12f );
+			if ( stepsTried == 0 )
+				if ( stepResult.EndPosition.Distance( endPosition ) <= 0.3f ) // Pack it up, no stairs here
+					return true;
 
-			if ( stepResultMidHigh.Hit && stepAngleMidHigh > standableAngle || stepResultLowMid.Hit && stepAngleLowMid > standableAngle )
+			if ( stepResult.Hit && stepAngle > standableAngle && stepAngle < 89.9f ) // MoveHelper straight up doesn't count it as a step if it's not 90°
+				return false;
+
+			var distanceFromStart = startPosition.Distance( stepResult.EndPosition.WithZ( startPosition.z ) );
+
+			if ( stepsTried >= 2 )
 			{
-				var neighbourDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[1] );
-				var neighbourDifference2 = Math.Abs( validCoordinates[0] - validCoordinates[2] );
-				var neighbourDifference3 = Math.Abs( validCoordinates[1] - validCoordinates[3] );
-				var neighbourDifference4 = Math.Abs( validCoordinates[2] - validCoordinates[3] );
 
-				if ( neighbourDifference1 > stepSize || neighbourDifference2 > stepSize || neighbourDifference3 > stepSize || neighbourDifference4 > stepSize )
+				//DebugOverlay.Line( stepResult.StartPosition, stepResult.EndPosition, 15f );
+				//DebugOverlay.Text( stepResult.EndPosition.ToString(), stepResult.EndPosition, 2, Color.White, 15f, 150f );
+				//DebugOverlay.Text( maxSteps.ToString(), stepResult.EndPosition, 6, Color.White, 15f, 150f );
+				//DebugOverlay.Sphere( lastPositionHit, 1f, Color.Blue, 15f, false );
+				var distanceDifference = Math.Abs( distanceFromStart - stepDistances[stepsTried - 2] );
+
+				if ( distanceDifference < 0.1f )
+				{
 					return false;
+				}
 			}
+
+			stepDistances[stepsTried] = distanceFromStart;
+			stepsTried++;
 		}
 
 		return true;
