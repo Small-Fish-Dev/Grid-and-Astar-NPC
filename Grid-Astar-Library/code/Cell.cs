@@ -1,4 +1,6 @@
-﻿namespace GridAStar;
+﻿using System.Runtime.CompilerServices;
+
+namespace GridAStar;
 
 public partial class Cell : IEquatable<Cell>
 {
@@ -47,6 +49,9 @@ public partial class Cell : IEquatable<Cell>
 		float[] validCoordinates = new float[4];
 
 		if ( !TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly ) )
+			return null;
+
+		if ( !TestForClearance( position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.StepSize ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
@@ -97,6 +102,21 @@ public partial class Cell : IEquatable<Cell>
 		if ( occupyResult.Hit )
 			return false;
 		*/
+	}
+
+	private static bool TestForClearance( Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize )
+	{
+		var clearanceBBox = new BBox( new Vector3( -widthClearance / 2f, -widthClearance / 2f, 1f ), new Vector3( widthClearance / 2f, widthClearance / 2f, heightClearance - stepSize - 1f ) );
+		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, position + Vector3.Up * stepSize, position + Vector3.Up * stepSize );
+
+		if ( worldOnly )
+			clearanceTrace.WorldOnly();
+		else
+			clearanceTrace.WorldAndEntities();
+
+		var clearanceResult = clearanceTrace.Run();
+
+		return !clearanceResult.Hit;
 	}
 
 	private static bool TestForSteps( Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
@@ -153,17 +173,10 @@ public partial class Cell : IEquatable<Cell>
 
 			if ( stepsTried >= 2 )
 			{
-
-				//DebugOverlay.Line( stepResult.StartPosition, stepResult.EndPosition, 15f );
-				//DebugOverlay.Text( stepResult.EndPosition.ToString(), stepResult.EndPosition, 2, Color.White, 15f, 150f );
-				//DebugOverlay.Text( maxSteps.ToString(), stepResult.EndPosition, 6, Color.White, 15f, 150f );
-				//DebugOverlay.Sphere( lastPositionHit, 1f, Color.Blue, 15f, false );
 				var distanceDifference = Math.Abs( distanceFromStart - stepDistances[stepsTried - 2] );
 
 				if ( distanceDifference < 0.1f )
-				{
 					return false;
-				}
 			}
 
 			stepDistances[stepsTried] = distanceFromStart;
