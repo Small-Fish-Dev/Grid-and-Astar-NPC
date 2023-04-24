@@ -38,7 +38,9 @@ public partial class Grid
 		using var reader = new BinaryReader( stream );
 
 		var currentGrid = new Grid( reader.ReadString() );
+		currentGrid.Position = reader.ReadVector3();
 		currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
+		currentGrid.Rotation = reader.ReadRotation();
 		currentGrid.StandableAngle = reader.ReadSingle();
 		currentGrid.StepSize = reader.ReadSingle();
 		currentGrid.CellSize = reader.ReadSingle();
@@ -89,8 +91,10 @@ public partial class Grid
 		saveWatch.Start();
 
 		writer.Write( Identifier );
+		writer.Write( Position );
 		writer.Write( Bounds.Mins );
 		writer.Write( Bounds.Maxs );
+		writer.Write( Rotation );
 		writer.Write( StandableAngle );
 		writer.Write( StepSize );
 		writer.Write( CellSize );

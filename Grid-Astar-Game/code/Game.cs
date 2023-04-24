@@ -14,13 +14,14 @@ public partial class GridGame : GameManager
 {
 	public GridGame()
 	{
+		/*
 		if ( Game.IsServer ) // Try loading the Grid on the server, if it's not found it will create it in the PostLevelLoaded method
 			GridAStar.Grid.Load();
 		else
 		{
 			if ( GridAStar.Grid.Load().Result == null ) // Try loading the Grid on the client, else it creates a new one
-				GridAStar.Grid.Create( Game.PhysicsWorld.Body.GetBounds() );
-		}
+				GridAStar.Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() );
+		}*/
 
 	}
 
@@ -47,8 +48,9 @@ public partial class GridGame : GameManager
 	{
 		base.PostLevelLoaded();
 
-		if ( Game.IsServer )
+		/*if ( Game.IsServer )
 			if ( !GridAStar.Grid.Exists() )
-				GridAStar.Grid.Create( Game.PhysicsWorld.Body.GetBounds() ); // If no main grid was created before, create one now
+				GridAStar.Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // If no main grid was created before, create one now
+		*/
 	}
 }

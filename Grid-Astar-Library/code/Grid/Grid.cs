@@ -45,7 +45,9 @@ public partial class Grid
 
 	public string Identifier { get; set; }
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
+	public Vector3 Position { get; set; }
 	public BBox Bounds { get; set; }
+	public Rotation Rotation { get; set; }
 	public float StandableAngle { get; set; }
 	public float StepSize { get; set; }
 	public float CellSize { get; set; }
@@ -154,8 +156,10 @@ public partial class Grid
 	/// <summary>
 	/// Creates a new grid and generates cells within the bounds given
 	/// </summary>
-	/// <param name="identifier"></param>
+	/// <param name="position"></param>
 	/// <param name="bounds"></param>
+	/// <param name="rotation"></param>
+	/// <param name="identifier"></param>
 	/// <param name="standableAngle"></param>
 	/// <param name="stepSize"></param>
 	/// <param name="cellSize"></param>
@@ -163,7 +167,7 @@ public partial class Grid
 	/// <param name="widthClearance"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Create( BBox bounds, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -171,7 +175,9 @@ public partial class Grid
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Creating grid {identifier}" );
 
 		var currentGrid = new Grid( identifier );
+		currentGrid.Position = position;
 		currentGrid.Bounds = bounds;
+		currentGrid.Rotation = rotation;
 		currentGrid.StandableAngle = standableAngle;
 		currentGrid.StepSize = stepSize;
 		currentGrid.CellSize = cellSize;
@@ -193,8 +199,8 @@ public partial class Grid
 			{
 				for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
 				{
-					var startPosition = new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize );
-					var endPosition = new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize );
+					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize ) * rotation;
+					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize ) * rotation;
 					var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 

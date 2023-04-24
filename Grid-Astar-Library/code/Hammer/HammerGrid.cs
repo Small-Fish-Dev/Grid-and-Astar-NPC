@@ -31,8 +31,20 @@ public partial class HammerGrid : ModelEntity
 	{
 		base.Spawn();
 
-		Log.Error( "FUCK" );
-		DebugOverlay.Box( Position + CollisionBounds.Mins, Position + CollisionBounds.Maxs, Color.Red, 30f );
+		EnableDrawing = false;
+
+		if ( GridAStar.Grid.Load( Identifier ).Result == null ) // Try loading the Grid on the client, else it creates a new one
+			GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, WorldOnly );
+	}
+
+	public override void ClientSpawn()
+	{
+		base.ClientSpawn();
+
+		EnableDrawing = false;
+
+		if ( GridAStar.Grid.Load( Identifier ).Result == null ) // Try loading the Grid on the client, else it creates a new one
+			GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, WorldOnly );
 	}
 
 

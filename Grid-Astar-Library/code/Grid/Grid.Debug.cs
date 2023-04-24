@@ -8,20 +8,20 @@ public partial class Grid
 	public async static void RegenerateMainGrid()
 	{
 		BroadcastMainGrid();
-		await Grid.Create( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
+		await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
 	}
 
 	[ClientRpc]
 	public async static void BroadcastMainGrid()
 	{
-		await Grid.Create( Game.PhysicsWorld.Body.GetBounds() ); // Initialize the main grid
+		await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
 	}
 
 	[ConCmd.Server( "CreateGrid" )]
 	public async static void CreateGrid( string identifier )
 	{
 		var caller = ConsoleSystem.Caller;
-		await Grid.Create( new BBox( caller.Position - 200f, caller.Position + 200f ), identifier );
+		await Grid.Create( caller.Position, new BBox( -200f, 200f ), new Rotation(), identifier );
 	}
 
 	[ConCmd.Server( "LoadGrid" )]
