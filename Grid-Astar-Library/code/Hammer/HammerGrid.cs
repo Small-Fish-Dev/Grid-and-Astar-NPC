@@ -23,6 +23,8 @@ public partial class HammerGrid : ModelEntity
 	[Net, Property, Description( "Ignore entities while creating the grid (Static props placed in hammer count as the world, otherwise they don't)" )]
 	public bool WorldOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
+	public bool Loaded { get; set; } = false;
+	public static bool AllLoaded { get; set; } = false;
 
 	public HammerGrid()
 	{
@@ -38,17 +40,56 @@ public partial class HammerGrid : ModelEntity
 	[Event.Entity.PostSpawn]
 	public static void LoadAllGrids()
 	{
-		var allGrids = Entity.All.OfType<HammerGrid>();
-
-		GameTask.RunInThreadAsync( async () =>
+		if ( !AllLoaded )
 		{
-			foreach ( var grid in allGrids )
+			var allGrids = Entity.All.OfType<HammerGrid>();
+
+			GameTask.RunInThreadAsync( async () =>
 			{
-				if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // Try loading the Grid on the client, else it creates a new one
-					await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.SaveIdentifier, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
-			}
-		} );
+				foreach ( var grid in allGrids )
+				{
+					if ( !grid.Loaded )
+					{
+						if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // Try loading the Grid on the client, else it creates a new one
+						{
+							await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.SaveIdentifier, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
+
+							grid.Loaded = true;
+						}
+					}
+				}
+
+				AllLoaded = true;
+			} );
+		}
 	}
 
+	[Event.Client.Frame]
+	public static void LoadAllGridsClient()
+	{
+		if ( !AllLoaded )
+		{
+			AllLoaded = true; // There's no even for client's post load :-/
+
+			var allGrids = Entity.All.OfType<HammerGrid>();
+
+			GameTask.RunInThreadAsync( async () =>
+			{
+				foreach ( var grid in allGrids )
+				{
+					if ( !grid.Loaded )
+					{
+						if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // Try loading the Grid on the client, else it creates a new one
+						{
+							await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.SaveIdentifier, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
+
+							grid.Loaded = true;
+						}
+					}
+				}
+
+			} );
+		}
+	}
 
 }
