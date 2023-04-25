@@ -185,10 +185,12 @@ public partial class Grid
 		currentGrid.WidthClearance = widthClearance;
 		currentGrid.WorldOnly = worldOnly;
 
-		var minimumGrid = bounds.Mins.ToIntVector2( cellSize );
-		var maximumGrid = bounds.Maxs.ToIntVector2( cellSize );
-		var minHeight = bounds.Mins.z;
-		var maxHeight = bounds.Maxs.z;
+		var rotatedBounds = bounds.GetRotatedBounds( rotation );
+
+		var minimumGrid = rotatedBounds.Mins.ToIntVector2( cellSize );
+		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( cellSize );
+		var minHeight = rotatedBounds.Mins.z;
+		var maxHeight = rotatedBounds.Maxs.z;
 
 		await GameTask.RunInThreadAsync( () =>
 		{
@@ -199,8 +201,8 @@ public partial class Grid
 			{
 				for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
 				{
-					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize ) * rotation;
-					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize ) * rotation;
+					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize );
+					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize );
 					var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
@@ -211,22 +213,25 @@ public partial class Grid
 
 					var positionResult = positionTrace.Run();
 
-					while ( positionResult.Hit )
+					while ( positionResult.Hit && startPosition.z >= endPosition.z )
 					{
-						if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
+						if ( bounds.IsRotatedPointWithinBounds( positionResult.HitPosition, position, rotation ) )
 						{
-							var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
+							if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
+							{
+								var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
 
-							if ( newCell != null )
-								currentGrid.AddCell( newCell );
+								if ( newCell != null )
+									currentGrid.AddCell( newCell );
+							}
 						}
 
-						var checkPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
+						startPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
 
-						while ( Sandbox.Trace.TestPoint( checkPosition, radius: cellSize / 2f ) )
-							checkPosition += Vector3.Down * heightClearance;
+						while ( Sandbox.Trace.TestPoint( startPosition, radius: cellSize / 2f ) )
+							startPosition += Vector3.Down * heightClearance;
 
-						positionTrace = Sandbox.Trace.Box( checkBBox, checkPosition, endPosition );
+						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
 						if ( worldOnly )
 							positionTrace.WorldOnly();

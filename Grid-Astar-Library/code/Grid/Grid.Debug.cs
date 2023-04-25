@@ -39,7 +39,7 @@ public partial class Grid
 	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
 	public static void GridOverlay()
 	{
-		if ( !Game.IsClient ) return;
+		if ( !Game.IsServer ) return;
 
 		if ( Time.Tick % 10 == 0 )
 		{
@@ -49,8 +49,7 @@ public partial class Grid
 				{
 					foreach ( var cell in cellStack.Value )
 					{
-						if ( cell.Position.DistanceSquared( Game.LocalPawn.Position ) < 50000f )
-							cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
 					}
 				}
 			}
