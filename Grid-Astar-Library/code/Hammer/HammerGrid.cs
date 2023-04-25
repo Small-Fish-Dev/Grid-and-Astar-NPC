@@ -22,6 +22,7 @@ public partial class HammerGrid : ModelEntity
 	public float WidthClearance { get; set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
 	[Net, Property, Description( "Ignore entities while creating the grid (Static props placed in hammer count as the world, otherwise they don't)" )]
 	public bool WorldOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 
 	public HammerGrid()
 	{
@@ -43,8 +44,8 @@ public partial class HammerGrid : ModelEntity
 		{
 			foreach ( var grid in allGrids )
 			{
-				if ( await GridAStar.Grid.Load( grid.Identifier ) == null ) // Try loading the Grid on the client, else it creates a new one
-					await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.Identifier, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
+				if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // Try loading the Grid on the client, else it creates a new one
+					await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.SaveIdentifier, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
 			}
 		} );
 	}

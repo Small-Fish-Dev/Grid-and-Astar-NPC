@@ -8,7 +8,7 @@ namespace GridAStar;
 
 public static partial class GridSettings
 {
-	public const string DEFAULT_SAVE_PATH = "./grid_%identifier%.dat";   // Where the grid is saved (%identifier% will be the grid's identifier)
+	public const string DEFAULT_SAVE_PATH = "./grid-%identifier%.dat";   // Where the grid is saved (%identifier% will be the grid's identifier)
 }
 
 public partial class Grid
