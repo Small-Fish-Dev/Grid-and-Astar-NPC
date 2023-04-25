@@ -195,6 +195,8 @@ public partial class Grid
 		var minHeight = rotatedBounds.Mins.z;
 		var maxHeight = rotatedBounds.Maxs.z;
 
+		var box = new BBox( position + rotatedBounds.Mins, position + rotatedBounds.Maxs );
+
 		await GameTask.RunInThreadAsync( () =>
 		{
 
@@ -204,8 +206,8 @@ public partial class Grid
 			{
 				for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
 				{
-					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight + heightClearance + cellSize );
-					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight - heightClearance - cellSize );
+					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight );
+					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight );
 					var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
@@ -216,9 +218,10 @@ public partial class Grid
 
 					var positionResult = positionTrace.Run();
 
+
 					while ( positionResult.Hit && startPosition.z >= endPosition.z )
 					{
-						if ( bounds.IsRotatedPointWithinBounds( positionResult.HitPosition, position, rotation ) )
+						if ( bounds.IsRotatedPointWithinBounds( position, positionResult.HitPosition, rotation ) )
 						{
 							if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
 							{

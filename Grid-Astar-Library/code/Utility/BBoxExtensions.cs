@@ -6,7 +6,7 @@ public static partial class BBoxExtensions
 {
 	public static BBox GetRotatedBounds( this BBox bbox, Rotation rotation )
 	{
-		if ( rotation == new Rotation() ) // Return the same if the rotation is zero
+		if ( rotation.Angles() == Angles.Zero )
 			return bbox;
 
 		List<float> posX = new();
@@ -36,6 +36,7 @@ public static partial class BBoxExtensions
 	public static bool IsRotatedPointWithinBounds( this BBox bbox, Vector3 position, Vector3 point, Rotation rotation )
 	{
 		var rotatedPoint = ( point - position ) * rotation.Inverse;
+
 		return bbox.Contains( rotatedPoint );
 	}
 
