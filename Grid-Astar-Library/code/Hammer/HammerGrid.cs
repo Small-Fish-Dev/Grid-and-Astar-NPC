@@ -23,7 +23,7 @@ public partial class HammerGrid : ModelEntity
 	[Net, Property, Description( "Ignore entities while creating the grid (Static props placed in hammer count as the world, otherwise they don't)" )]
 	public bool WorldOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
 
-	public HammerGrid() 
+	public HammerGrid()
 	{
 	}
 
@@ -32,19 +32,21 @@ public partial class HammerGrid : ModelEntity
 		base.Spawn();
 
 		EnableDrawing = false;
-
-		if ( GridAStar.Grid.Load( Identifier ).Result == null ) // Try loading the Grid on the client, else it creates a new one
-			GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, WorldOnly );
 	}
 
-	public override void ClientSpawn()
+	[Event.Entity.PostSpawn]
+	public static void LoadAllGrids()
 	{
-		base.ClientSpawn();
+		var allGrids = Entity.All.OfType<HammerGrid>();
 
-		EnableDrawing = false;
-
-		if ( GridAStar.Grid.Load( Identifier ).Result == null ) // Try loading the Grid on the client, else it creates a new one
-			GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, WorldOnly );
+		GameTask.RunInThreadAsync( async () =>
+		{
+			foreach ( var grid in allGrids )
+			{
+				if ( await GridAStar.Grid.Load( grid.Identifier ) == null ) // Try loading the Grid on the client, else it creates a new one
+					await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.Identifier, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
+			}
+		} );
 	}
 
 
