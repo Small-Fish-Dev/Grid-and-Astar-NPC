@@ -42,6 +42,7 @@ public partial class Grid
 			currentGrid.Position = reader.ReadVector3();
 			currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
 			currentGrid.Rotation = reader.ReadRotation();
+			currentGrid.AxisAligned = reader.ReadBoolean();
 			currentGrid.StandableAngle = reader.ReadSingle();
 			currentGrid.StepSize = reader.ReadSingle();
 			currentGrid.CellSize = reader.ReadSingle();
@@ -93,6 +94,7 @@ public partial class Grid
 			writer.Write( Bounds.Mins );
 			writer.Write( Bounds.Maxs );
 			writer.Write( Rotation );
+			writer.Write( AxisAligned );
 			writer.Write( StandableAngle );
 			writer.Write( StepSize );
 			writer.Write( CellSize );

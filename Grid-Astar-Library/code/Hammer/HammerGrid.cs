@@ -10,6 +10,8 @@ public partial class HammerGrid : ModelEntity
 
 	[Net, Property, Description( "Name of the grid" )]
 	public string Identifier { get; set; } = "main";
+	[Net, Property, Description( "True = Follow the world's axis, False = Follow's the grid's rotation for how cells are rotated and generated" )]
+	public bool AxisAligned { get; set; } = true;
 	[Net, Property, Description( "Maximum steepness of a surface to be considered walkable" )]
 	public float StandableAngle { get; set; } = GridSettings.DEFAULT_STANDABLE_ANGLE;
 	[Net, Property, Description( "Step size based off of your MoveHelper to climb 90° surfaces" )]
@@ -45,7 +47,7 @@ public partial class HammerGrid : ModelEntity
 			foreach ( var grid in allGrids )
 			{
 				if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // Try loading the Grid on the client, else it creates a new one
-					await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.SaveIdentifier, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
+					await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.SaveIdentifier, grid.AxisAligned, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
 			}
 		} );
 	}

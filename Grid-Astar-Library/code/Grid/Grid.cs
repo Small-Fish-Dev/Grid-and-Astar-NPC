@@ -48,6 +48,7 @@ public partial class Grid
 	public Vector3 Position { get; set; }
 	public BBox Bounds { get; set; }
 	public Rotation Rotation { get; set; }
+	public bool AxisAligned { get; set; }
 	public float StandableAngle { get; set; }
 	public float StepSize { get; set; }
 	public float CellSize { get; set; }
@@ -159,6 +160,7 @@ public partial class Grid
 	/// <param name="position"></param>
 	/// <param name="bounds"></param>
 	/// <param name="rotation"></param>
+	/// <param name="axisAligned"></param>
 	/// <param name="identifier"></param>
 	/// <param name="standableAngle"></param>
 	/// <param name="stepSize"></param>
@@ -167,7 +169,7 @@ public partial class Grid
 	/// <param name="widthClearance"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -178,6 +180,7 @@ public partial class Grid
 		currentGrid.Position = position;
 		currentGrid.Bounds = bounds;
 		currentGrid.Rotation = rotation;
+		currentGrid.AxisAligned = axisAligned;
 		currentGrid.StandableAngle = standableAngle;
 		currentGrid.StepSize = stepSize;
 		currentGrid.CellSize = cellSize;
