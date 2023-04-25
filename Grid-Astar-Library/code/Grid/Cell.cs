@@ -8,6 +8,7 @@ public partial class Cell : IEquatable<Cell>
 	/// The parent grid
 	/// </summary>
 	public Grid Grid { get; set; }
+	public Rotation Rotation => Grid.AxisAligned ? new Rotation() : Grid.Rotation;
 	public Vector3 Position { get; set; }
 	public IntVector2 GridPosition { get; set; }
 	/// <summary>
@@ -22,17 +23,17 @@ public partial class Cell : IEquatable<Cell>
 	/// <summary>
 	/// Get the point with both minimum coordinates
 	/// </summary>
-	public Vector3 BottomLeft => Position.WithZ( Vertices[0] ) + new Vector3( -Grid.CellSize / 2, -Grid.CellSize / 2, 0f );
+	public Vector3 BottomLeft => Position.WithZ( Vertices[0] ) + new Vector3( -Grid.CellSize / 2, -Grid.CellSize / 2, 0f ) * Rotation;
 	/// <summary>
 	/// Get the point with minimum x and maximum y
 	/// </summary>
-	public Vector3 BottomRight => Position.WithZ( Vertices[1] ) + new Vector3( -Grid.CellSize / 2, Grid.CellSize / 2, 0f );
+	public Vector3 BottomRight => Position.WithZ( Vertices[1] ) + new Vector3( -Grid.CellSize / 2, Grid.CellSize / 2, 0f ) * Rotation;
 	// Get the point with maxinum x and minimum y
-	public Vector3 TopLeft => Position.WithZ( Vertices[2] ) + new Vector3( Grid.CellSize / 2, -Grid.CellSize / 2, 0f );
+	public Vector3 TopLeft => Position.WithZ( Vertices[2] ) + new Vector3( Grid.CellSize / 2, -Grid.CellSize / 2, 0f ) * Rotation;
 	/// <summary>
 	/// Get the point with both maximum coordinates
 	/// </summary>
-	public Vector3 TopRight => Position.WithZ( Vertices[3] ) + new Vector3( Grid.CellSize / 2, Grid.CellSize / 2, 0f );
+	public Vector3 TopRight => Position.WithZ( Vertices[3] ) + new Vector3( Grid.CellSize / 2, Grid.CellSize / 2, 0f ) * Rotation;
 	public float Height => Vertices.Max() - Vertices.Min();
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public bool Occupied { get; set; } = false;
@@ -48,7 +49,7 @@ public partial class Cell : IEquatable<Cell>
 
 		float[] validCoordinates = new float[4];
 
-		var coordinatesAndStairs = TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly );
+		var coordinatesAndStairs = TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly, grid.AxisRotation );
 		if ( !coordinatesAndStairs.Item1 )
 			return null;
 
@@ -59,13 +60,14 @@ public partial class Cell : IEquatable<Cell>
 	}
 
 	//(IsWalkable, IsSteps)
-	private static (bool,bool) TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, float stepSize, bool worldOnly )
+	private static (bool,bool) TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, float stepSize, bool worldOnly, Rotation rotation )
 	{
 		Vector3[] testCoordinates = new Vector3[4] {
-			new Vector3( -cellSize / 2, -cellSize / 2 ),
-			new Vector3( -cellSize / 2, cellSize / 2 ),
-			new Vector3( cellSize / 2, -cellSize / 2 ),
-			new Vector3( cellSize / 2, cellSize / 2 ) };
+			new Vector3( -cellSize / 2, -cellSize / 2 ) * rotation,
+			new Vector3( -cellSize / 2, cellSize / 2 ) * rotation,
+			new Vector3( cellSize / 2, -cellSize / 2 ) * rotation,
+			new Vector3( cellSize / 2, cellSize / 2 ) * rotation
+		};
 
 		var maxHeight = Math.Max( cellSize * MathF.Tan( MathX.DegreeToRadian( standableAngle ) ), stepSize );
 

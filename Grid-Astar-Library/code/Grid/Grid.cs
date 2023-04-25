@@ -55,6 +55,7 @@ public partial class Grid
 	public float HeightClearance { get; set; }
 	public float WidthClearance { get; set; }
 	public bool WorldOnly { get; set; }
+	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
 
 	public Grid() { }
 
@@ -206,8 +207,8 @@ public partial class Grid
 			{
 				for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
 				{
-					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight );
-					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight );
+					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight ) * currentGrid.AxisRotation;
+					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight ) * currentGrid.AxisRotation;
 					var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
