@@ -44,6 +44,7 @@ public partial class Grid : IValid
 	public static Dictionary<string, Grid> Grids { get; set; } = new();
 
 	public string Identifier { get; set; }
+	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
 	public Vector3 Position { get; set; }
 	public BBox Bounds { get; set; }

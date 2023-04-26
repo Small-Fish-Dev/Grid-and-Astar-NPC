@@ -37,6 +37,40 @@ public partial class HammerGrid : ModelEntity
 		EnableDrawing = false;
 	}
 
+	public bool PropertiesEqual( GridLoadProperties properties )
+	{
+		if ( Identifier != properties.Identifier )
+			return false;
+		if ( AxisAligned != properties.AxisAligned )
+			return false;
+		if ( StandableAngle != properties.StandableAngle )
+			return false;
+		if ( StepSize != properties.StepSize )
+			return false;
+		if ( CellSize != properties.CellSize )
+			return false;
+		if ( HeightClearance != properties.HeightClearance )
+			return false;
+		if ( WidthClearance != properties.WidthClearance )
+			return false;
+		if ( WorldOnly != properties.WorldOnly )
+			return false;
+		if ( Position != properties.Position )
+			return false;
+		if ( Rotation != properties.Rotation )
+			return false;
+
+		return true;
+	}
+
+	public void CreateFromSettings()
+	{
+		GameTask.RunInThreadAsync( async () =>
+		{
+			await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, WorldOnly );
+		} );
+	}
+
 	[Event.Entity.PostSpawn]
 	public static void LoadAllGrids()
 	{
@@ -46,8 +80,24 @@ public partial class HammerGrid : ModelEntity
 
 			foreach ( var grid in allGrids )
 			{
-				if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // Try loading the Grid on the client, else it creates a new one
-					await GridAStar.Grid.Create( grid.Position, grid.CollisionBounds, grid.Rotation, grid.SaveIdentifier, grid.AxisAligned, grid.StandableAngle, grid.StepSize, grid.CellSize, grid.HeightClearance, grid.WidthClearance, grid.WorldOnly );
+				if ( GridAStar.Grid.Exists( grid.SaveIdentifier ) )
+				{
+					var properties = await GridAStar.Grid.LoadProperties( grid.SaveIdentifier );
+
+					if ( grid.PropertiesEqual( properties ) )
+					{
+						if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // If everything is valid, which it should be, it will load the map in
+							grid.CreateFromSettings(); // Else it will create a new one
+					}
+					else
+					{
+						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {grid.Identifier} properties don't match. Creating new one..." );
+						grid.CreateFromSettings();
+					}
+							
+				}
+				else
+					grid.CreateFromSettings();
 			}
 		} );
 	}
