@@ -50,18 +50,18 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		float[] validCoordinates = new float[4];
 
-		var coordinatesAndStairs = TraceCoordinates( position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly, grid.AxisRotation );
+		var coordinatesAndStairs = TraceCoordinates( grid, position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly, grid.AxisRotation );
 		if ( !coordinatesAndStairs.Item1 )
 			return null;
 
-		if ( !TestForClearance( position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.StepSize, position.z - validCoordinates.Min(), coordinatesAndStairs.Item2 ) )
+		if ( !TestForClearance( grid, position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.StepSize, position.z - validCoordinates.Min(), coordinatesAndStairs.Item2 ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
 	}
 
 	//(IsWalkable, IsSteps)
-	private static (bool,bool) TraceCoordinates( Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, float stepSize, bool worldOnly, Rotation rotation )
+	private static (bool,bool) TraceCoordinates( Grid grid, Vector3 position, ref float[] validCoordinates, float cellSize, float standableAngle, float stepSize, bool worldOnly, Rotation rotation )
 	{
 		Vector3[] testCoordinates = new Vector3[4] {
 			new Vector3( -cellSize / 2, -cellSize / 2 ) * rotation,
@@ -79,7 +79,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( worldOnly )
 				testTrace.WorldOnly();
 			else
-				testTrace.WorldAndEntities();
+			{
+				testTrace.WorldAndEntities()
+				.WithoutTags( $"{grid.Identifier}GridIgnore" );
+			}
 
 			var testResult = testTrace.Run();
 
@@ -90,7 +93,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			testCoordinates[i] = testResult.HitPosition;
 		}
 
-		return TestForSteps( position, testCoordinates, validCoordinates, worldOnly, standableAngle, stepSize );
+		return TestForSteps( grid, position, testCoordinates, validCoordinates, worldOnly, standableAngle, stepSize );
 
 		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
 		var occupyTrace = Sandbox.Trace.Box( bbox, position.WithZ( validCoordinates.Max() + 1f ) + Vector3.Up * 48f, position.WithZ( validCoordinates.Max() + 1f ) );
@@ -109,7 +112,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		*/
 	}
 
-	private static bool TestForClearance( Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize, float height, bool isStairs )
+	private static bool TestForClearance( Grid grid, Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize, float height, bool isStairs )
 	{
 		var clearanceBBox = new BBox( new Vector3( -widthClearance / 2f, -widthClearance / 2f, 0f ), new Vector3( widthClearance / 2f, widthClearance / 2f, 1f ) );
 		var startPos = position + Vector3.Up * heightClearance;
@@ -118,7 +121,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 		if ( worldOnly )
 			clearanceTrace.WorldOnly();
 		else
-			clearanceTrace.WorldAndEntities();
+		{
+			clearanceTrace.WorldAndEntities()
+			.WithoutTags( $"{grid.Identifier}GridIgnore" );
+		}
 
 		var clearanceResult = clearanceTrace.Run();
 		var heightDifference = clearanceResult.EndPosition.z - ( position.z - height );
@@ -128,7 +134,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 
 	//(IsWalkable, IsSteps)
-	private static (bool,bool) TestForSteps( Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
+	private static (bool,bool) TestForSteps( Grid grid, Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
 	{
 		if ( stepSize <= 0.1f ) // At this point why bother
 			return (false,false);
@@ -137,13 +143,13 @@ public partial class Cell : IEquatable<Cell>, IValid
 			.OrderBy( x => x.z )
 			.ToArray();
 
-		var stepTestMin = TestForStep( lowestToHighest[0], lowestToHighest[3], position, lowestToHighest[0], stepSize, standableAngle, worldOnly );
+		var stepTestMin = TestForStep( grid, lowestToHighest[0], lowestToHighest[3], position, lowestToHighest[0], stepSize, standableAngle, worldOnly );
 
 		if ( !stepTestMin.Item1 )
 			return (false, stepTestMin.Item2);
 
 
-		var stepTestMid = TestForStep( lowestToHighest[1], lowestToHighest[3], position, lowestToHighest[1], stepSize, standableAngle, worldOnly );
+		var stepTestMid = TestForStep( grid, lowestToHighest[1], lowestToHighest[3], position, lowestToHighest[1], stepSize, standableAngle, worldOnly );
 
 		if ( !stepTestMid.Item1 )
 			return (false, stepTestMid.Item2);
@@ -152,7 +158,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	}
 
 	//(IsWalkable, IsSteps)
-	private static (bool, bool) TestForStep( Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition, float stepSize, float standableAngle, bool worldOnly )
+	private static (bool, bool) TestForStep( Grid grid, Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition, float stepSize, float standableAngle, bool worldOnly )
 	{
 		var stepsTried = 0;
 		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / ( stepSize / 2f ) ) + 1, 3 );
@@ -172,7 +178,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( worldOnly )
 				stepTrace.WorldOnly();
 			else
-				stepTrace.WorldAndEntities();
+			{
+				stepTrace.WorldAndEntities()
+				.WithoutTags( $"{grid.Identifier}GridIgnore" );
+			}
 
 			var stepResult = stepTrace.Run();
 			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
