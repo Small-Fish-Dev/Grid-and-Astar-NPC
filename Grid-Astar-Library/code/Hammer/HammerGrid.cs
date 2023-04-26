@@ -8,7 +8,7 @@ namespace GridAStar;
 public partial class HammerGrid : ModelEntity
 {
 
-	[Net, Property, Description( "Name of the grid" )]
+	[Net, Property, Description( "Name of the grid. Use the name 'main' to access using Grid.Main via code" )]
 	public string Identifier { get; set; } = "main";
 	[Net, Property, Description( "True = Follow the world's axis, False = Follow's the grid's rotation for how cells are rotated and generated" )]
 	public bool AxisAligned { get; set; } = true;
