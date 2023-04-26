@@ -2,7 +2,7 @@
 
 namespace GridAStar;
 
-public partial class Cell : IEquatable<Cell>
+public partial class Cell : IEquatable<Cell>, IValid
 {
 	/// <summary>
 	/// The parent grid
@@ -37,6 +37,7 @@ public partial class Cell : IEquatable<Cell>
 	public float Height => Vertices.Max() - Vertices.Min();
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public bool Occupied { get; set; } = false;
+	bool IValid.IsValid { get; }
 
 	/// <summary>
 	/// Try to create a new cell with the given position and the max standing angle

@@ -21,7 +21,7 @@ public static partial class GridSettings
 	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also static entities
 }
 
-public partial class Grid
+public partial class Grid : IValid
 {
 	public static Grid Main
 	{
@@ -56,6 +56,7 @@ public partial class Grid
 	public float WidthClearance { get; set; }
 	public bool WorldOnly { get; set; }
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
+	bool IValid.IsValid { get; }
 
 	public Grid() { }
 
