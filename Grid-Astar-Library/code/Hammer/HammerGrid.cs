@@ -57,6 +57,8 @@ public partial class HammerGrid : ModelEntity
 			return false;
 		if ( Position != properties.Position )
 			return false;
+		if ( CollisionBounds != properties.Bounds )
+			return false;
 		if ( Rotation != properties.Rotation )
 			return false;
 
@@ -92,6 +94,7 @@ public partial class HammerGrid : ModelEntity
 					else
 					{
 						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {grid.Identifier} properties don't match. Creating new one..." );
+						Grid.DeleteSave( grid.Identifier );
 						grid.CreateFromSettings();
 					}
 							
