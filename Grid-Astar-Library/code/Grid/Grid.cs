@@ -245,7 +245,7 @@ public partial class Grid : IValid
 
 						startPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
 
-						while ( Sandbox.Trace.TestPoint( startPosition, radius: cellSize / 2f ) )
+						while ( Sandbox.Trace.TestPoint( startPosition, radius: cellSize / 2f - 0.001f ) )
 							startPosition += Vector3.Down * heightClearance;
 
 						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
