@@ -214,9 +214,9 @@ public partial class Grid : IValid
 			{
 				for ( int row = 0; row < totalRows; row++ )
 				{
-					var startPosition = box.Mins.WithZ( box.Maxs.z ) + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, 0 ) * currentGrid.AxisRotation;
-					var endPosition = box.Mins + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, 0 ) * currentGrid.AxisRotation;
-					var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
+					var startPosition = box.Mins.WithZ( box.Maxs.z ) + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, 0.002f ) * currentGrid.AxisRotation;
+					var endPosition = box.Mins + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, -0.001f ) * currentGrid.AxisRotation;
+					var checkBBox = new BBox( new Vector3( -cellSize / 2f + 0.001f, -cellSize / 2f + 0.001f, 0f ), new Vector3( cellSize / 2f - 0.001f, cellSize / 2f - 0.001f, 0.001f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
 					if ( worldOnly )
