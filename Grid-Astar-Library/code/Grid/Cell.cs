@@ -74,7 +74,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		for ( int i = 0; i < 4; i++ )
 		{
-			var testTrace = Sandbox.Trace.Ray( position + testCoordinates[i].WithZ(maxHeight * 2f), position + testCoordinates[i].WithZ(-maxHeight * 2f) );
+			var centerDir = testCoordinates[i].Normal; // Test a little closer to the center, for grid-perfect terrain
+			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) - centerDir * 0.001f;
+			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * 0.001f;
+			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos );
 
 			if ( worldOnly )
 				testTrace.WorldOnly();
