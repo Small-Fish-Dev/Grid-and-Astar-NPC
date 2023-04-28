@@ -45,7 +45,7 @@ public partial class Grid
 			foreach ( var grid in Grids )
 				foreach ( var cellStack in grid.Value.Cells )
 					foreach ( var cell in cellStack.Value )
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, false );
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1f, true );
 	}
 
 	[ConCmd.Server( "TestPath" )]

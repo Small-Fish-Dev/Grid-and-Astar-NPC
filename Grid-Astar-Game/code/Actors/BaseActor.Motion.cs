@@ -12,7 +12,7 @@ public abstract partial class BaseActor
 	public Vector3 WishVelocity => Direction.Normal * WishSpeed;
 	public Rotation WishRotation => Rotation.LookAt( Direction, Vector3.Up );
 	public float StepSize => 16f;
-	public float MaxWalkableAngle => 40f;
+	public float MaxWalkableAngle => 46f;
 
 
 	public TimeSince TimeSinceLostFooting = 0f;
