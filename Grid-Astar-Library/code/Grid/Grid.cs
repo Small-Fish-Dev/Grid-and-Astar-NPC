@@ -198,6 +198,8 @@ public partial class Grid : IValid
 
 		var minimumGrid = rotatedBounds.Mins.ToIntVector2( cellSize );
 		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( cellSize );
+		var totalColumns = maximumGrid.y - minimumGrid.y;
+		var totalRows = maximumGrid.x - minimumGrid.x;
 		var minHeight = rotatedBounds.Mins.z;
 		var maxHeight = rotatedBounds.Maxs.z;
 
@@ -208,12 +210,12 @@ public partial class Grid : IValid
 
 			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
 
-			for ( int column = minimumGrid.y; column <= maximumGrid.y; column++ )
+			for ( int column = 0; column < totalColumns; column++ )
 			{
-				for ( int row = minimumGrid.x; row <= maximumGrid.x; row++ )
+				for ( int row = 0; row < totalRows; row++ )
 				{
-					var startPosition = position + new Vector3( row * cellSize, column * cellSize, maxHeight ) * currentGrid.AxisRotation;
-					var endPosition = position + new Vector3( row * cellSize, column * cellSize, minHeight ) * currentGrid.AxisRotation;
+					var startPosition = box.Mins.WithZ( box.Maxs.z ) + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, 0 ) * currentGrid.AxisRotation;
+					var endPosition = box.Mins + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, 0 ) * currentGrid.AxisRotation;
 					var checkBBox = new BBox( new Vector3( -cellSize / 2f, -cellSize / 2f, 0f ), new Vector3( cellSize / 2f, cellSize / 2f, 1f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
