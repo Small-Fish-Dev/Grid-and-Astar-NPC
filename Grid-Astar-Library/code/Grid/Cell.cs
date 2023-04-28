@@ -137,7 +137,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	private static (bool,bool) TestForSteps( Grid grid, Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
 	{
 		if ( stepSize <= 0.1f ) // At this point why bother
-			return (false,false);
+			return (true,false);
 
 		var lowestToHighest = testCoordinates
 			.OrderBy( x => x.z )
