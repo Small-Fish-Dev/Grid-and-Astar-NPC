@@ -229,7 +229,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	{
 		Grid = grid;
 		Position = position;
-		GridPosition = Position.ToIntVector2( grid.CellSize );
+		GridPosition = ( Position - Grid.WorldBounds.Mins - grid.CellSize / 2).ToIntVector2( grid.CellSize );
 		Vertices = vertices;
 
 		/*var bbox = new BBox( new Vector3( -grid.CellSize / 2, -grid.CellSize / 2, 0f ), new Vector3( grid.CellSize / 2, grid.CellSize / 2, 48f ) );
@@ -302,7 +302,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <param name="depthTest"></param>
 	/// <param name="drawCenter">Draw a point on the cell's position</param>
 	/// <param name="drawCross">Draw diagonal lines</param>
-	public void Draw( Color color, float duration = 0f, bool depthTest = true, bool drawCenter = false, bool drawCross = false )
+	public void Draw( Color color, float duration = 0f, bool depthTest = true, bool drawCenter = false, bool drawCross = false, bool drawCoordinates = false )
 	{
 		DebugOverlay.Line( BottomLeft, BottomRight, color, duration, depthTest );
 		DebugOverlay.Line( BottomRight, TopRight, color, duration, depthTest );
@@ -317,6 +317,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 			DebugOverlay.Line( BottomLeft, TopRight, color, duration, depthTest );
 			DebugOverlay.Line( TopLeft, BottomRight, color, duration, depthTest );
 		}
+
+		if ( drawCoordinates )
+			DebugOverlay.Text( $"{GridPosition}", Position, duration, 200 );
 	}
 
 	/// <summary>
