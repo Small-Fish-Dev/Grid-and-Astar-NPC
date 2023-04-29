@@ -1,4 +1,5 @@
 ﻿using Editor;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace GridAStar;
@@ -76,8 +77,6 @@ public partial class HammerGrid : ModelEntity
 			await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, GridPerfect, WorldOnly );
 		} );
 	}
-
-	[Event.Entity.PostSpawn]
 	public static void LoadAllGrids()
 	{
 		GameTask.RunInThreadAsync( async () =>
@@ -101,11 +100,29 @@ public partial class HammerGrid : ModelEntity
 						Grid.DeleteSave( grid.Identifier );
 						grid.CreateFromSettings();
 					}
-							
+
 				}
 				else
 					grid.CreateFromSettings();
 			}
 		} );
+	}
+
+	[GameEvent.Entity.PostSpawn]
+	public static void LoadServerGrids()
+	{
+		LoadAllGrids();
+	}
+
+	[ClientRpc]
+	public static void LoadClientGrids()
+	{
+		LoadAllGrids();
+	}
+
+	[GameEvent.Server.ClientJoined]
+	public static void LoadClientGridsOnConnect( ClientJoinedEvent joinedEvent )
+	{
+		LoadClientGrids( To.Single( joinedEvent.Client ) );
 	}
 }
