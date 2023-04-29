@@ -75,9 +75,8 @@ public abstract partial class BaseActor
 		IsRunning = CurrentPathLength > 20;
 
 		Direction = (nextPathCell.Position - Position).Normal;
-		DebugOverlay.Line( Position, Position + Direction * 5f, Color.Red );
 
-		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 ) * (CurrentGrid.CellSize / 2 ) )
+		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) * (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) )
 			currentPathIndex++;
 
 		if ( currentPathIndex >= currentPath.Length || currentPathCell == targetPathCell )

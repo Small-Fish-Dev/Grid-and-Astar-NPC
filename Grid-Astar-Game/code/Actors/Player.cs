@@ -52,14 +52,6 @@ partial class Player : BaseActor
 			}
 		}
 
-		if ( CurrentGrid != null && NearestCell != null )
-		{
-			foreach ( var cell in NearestCell.GetNeighbours() )
-			{
-				cell.Draw( Time.Delta, false, true );
-			}
-		}
-
 	}
 
 	/// <summary>

@@ -36,7 +36,7 @@ public abstract partial class BaseActor : AnimatedEntity
 		EnableDrawing = true;
 	}
 
-	[Event.Tick.Server]
+	[GameEvent.Tick.Server]
 	public virtual void Think()
 	{
 		ComputeNavigation();
