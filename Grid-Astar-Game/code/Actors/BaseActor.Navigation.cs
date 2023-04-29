@@ -29,7 +29,7 @@ public abstract partial class BaseActor
 		if ( targetCell == null ) return false;
 		if ( targetCell == NearestCell ) return false;
 
-		var computedPath = await CurrentGrid.ComputePathAsync( NearestCell, targetCell );
+		var computedPath = await CurrentGrid.ComputePathParallel( NearestCell, targetCell );
 
 		if ( computedPath == null || computedPath.Length < 1 ) return false;
 

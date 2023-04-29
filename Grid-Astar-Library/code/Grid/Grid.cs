@@ -82,7 +82,8 @@ public partial class Grid : IValid
 	/// <returns></returns>
 	public Cell GetCell( Vector3 position, bool onlyBelow = true )
 	{
-		var coordinates2D = position.ToIntVector2( CellSize );
+		var localPosition = (position - WorldBounds.Mins - CellSize / 2);
+		var coordinates2D = localPosition.ToIntVector2( CellSize );
 		var cellsAtCoordinates = Cells.GetValueOrDefault( coordinates2D );
 
 		// If no cells were found at the coordinates
