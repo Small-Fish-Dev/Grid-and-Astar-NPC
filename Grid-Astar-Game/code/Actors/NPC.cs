@@ -64,4 +64,31 @@ public partial class NPC : BaseActor
 		var npc = new NPC();
 		npc.Position = caller.Position;
 	}
+
+	[GameEvent.Tick.Server]
+	public static void CreateFunny()
+	{
+		if ( Time.Tick % 40 == 0 )
+		{
+			var startPos = new Vector3( 802.80f, -448.82f, 890f- 64f );
+			var targetPos = new Vector3( 622.21f, -308.05f, 128f - 64f );
+			var currentGrid = Grid.Grids["tower"];
+			var startCell = currentGrid.GetCell( startPos );
+			var targetCell = currentGrid.GetCell( targetPos );
+
+			var npc = new NPC( currentGrid );
+			npc.Position = startPos;
+			npc.NavigateTo( targetCell );
+
+			var allNpcs = Entity.All.OfType<NPC>();
+
+			foreach ( var curNpc in allNpcs )
+			{
+				if ( curNpc.Position.DistanceSquared( targetPos ) <= 5000f )
+				{
+					curNpc.Delete();
+				}
+			}
+		}
+	}
 }
