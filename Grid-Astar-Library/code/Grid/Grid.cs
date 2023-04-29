@@ -48,6 +48,8 @@ public partial class Grid : IValid
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
 	public Vector3 Position { get; set; }
 	public BBox Bounds { get; set; }
+	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
+	public BBox WorldBounds => RotatedBounds.Translate( Position );
 	public Rotation Rotation { get; set; }
 	public bool AxisAligned { get; set; }
 	public float StandableAngle { get; set; }
@@ -157,6 +159,8 @@ public partial class Grid : IValid
 			Cells[coordinates].Add( cell );
 	}
 
+	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
+
 	/// <summary>
 	/// Creates a new grid and generates cells within the bounds given
 	/// </summary>
@@ -232,7 +236,7 @@ public partial class Grid : IValid
 
 					while ( positionResult.Hit && startPosition.z >= endPosition.z )
 					{
-						if ( bounds.IsRotatedPointWithinBounds( position, positionResult.HitPosition, rotation ) )
+						if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
 						{
 							if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
 							{
