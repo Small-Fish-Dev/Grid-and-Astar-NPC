@@ -22,6 +22,8 @@ public partial class HammerGrid : ModelEntity
 	public float HeightClearance { get; set; } = GridSettings.DEFAULT_HEIGHT_CLEARANCE;
 	[Net, Property, Description( "Minimum width clearance for a surface to be walkable" )]
 	public float WidthClearance { get; set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
+	[Net, Property, Description( "For grid-perfect terrain, this disables Steps so make sure to use ramps instead" )]
+	public bool GridPerfect { get; set; } = GridSettings.DEFAULT_GRID_PERFECT;
 	[Net, Property, Description( "Ignore entities while creating the grid (Static props placed in hammer count as the world, otherwise they don't)" )]
 	public bool WorldOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
@@ -53,6 +55,8 @@ public partial class HammerGrid : ModelEntity
 			return false;
 		if ( WidthClearance != properties.WidthClearance )
 			return false;
+		if ( GridPerfect != properties.GridPerfect )
+			return false;
 		if ( WorldOnly != properties.WorldOnly )
 			return false;
 		if ( Position != properties.Position )
@@ -69,7 +73,7 @@ public partial class HammerGrid : ModelEntity
 	{
 		GameTask.RunInThreadAsync( async () =>
 		{
-			await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, WorldOnly );
+			await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, GridPerfect, WorldOnly );
 		} );
 	}
 

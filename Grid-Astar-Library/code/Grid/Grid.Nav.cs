@@ -92,6 +92,9 @@ public partial class Grid
 		cellNodePair.Add( startingCell, startingNode );
 		cellNodePair.Add( targetCell, targetNode );
 
+		startingCell.Draw( 5, false, true );
+		targetCell.Draw( 5, false, true );
+
 		while ( openSet.Count > 0 && !token.IsCancellationRequested )
 		{
 			var currentNode = openSet.RemoveFirst();

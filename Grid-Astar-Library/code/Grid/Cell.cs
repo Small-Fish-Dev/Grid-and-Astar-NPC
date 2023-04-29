@@ -50,11 +50,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		float[] validCoordinates = new float[4];
 
-		var coordinatesAndStairs = TraceCoordinates( grid, position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.StepSize, grid.WorldOnly, grid.AxisRotation );
+		var coordinatesAndStairs = TraceCoordinates( grid, position, ref validCoordinates, grid.CellSize, grid.StandableAngle, grid.RealStepSize, grid.WorldOnly, grid.AxisRotation );
 		if ( !coordinatesAndStairs.Item1 )
 			return null;
 
-		if ( !TestForClearance( grid, position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.StepSize, position.z - validCoordinates.Min(), coordinatesAndStairs.Item2 ) )
+		if ( !TestForClearance( grid, position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.RealStepSize, position.z - validCoordinates.Min(), coordinatesAndStairs.Item2 ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
@@ -75,8 +75,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 		for ( int i = 0; i < 4; i++ )
 		{
 			var centerDir = testCoordinates[i].Normal; // Test a little closer to the center, for grid-perfect terrain
-			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) - centerDir * 0.001f;
-			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * 0.001f;
+			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) - centerDir * grid.Tolerance;
+			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * grid.Tolerance;
 			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos );
 
 			if ( worldOnly )
@@ -140,7 +140,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	private static (bool,bool) TestForSteps( Grid grid, Vector3 position, Vector3[] testCoordinates, float[] validCoordinates, bool worldOnly, float standableAngle, float stepSize )
 	{
 		if ( stepSize <= 0.1f ) // At this point why bother
-			return (true,false);
+			return (true,true);
 
 		var lowestToHighest = testCoordinates
 			.OrderBy( x => x.z )

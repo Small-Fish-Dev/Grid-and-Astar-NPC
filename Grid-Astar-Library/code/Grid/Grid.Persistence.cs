@@ -24,6 +24,7 @@ public struct GridLoadProperties
 	public float CellSize { get; set; }
 	public float HeightClearance { get; set; }
 	public float WidthClearance { get; set; }
+	public bool GridPerfect { get; set; }
 	public bool WorldOnly { get; set; }
 
 	public GridLoadProperties( string identifier )
@@ -65,6 +66,7 @@ public partial class Grid
 				loadedGrid.CellSize = reader.ReadSingle();
 				loadedGrid.HeightClearance = reader.ReadSingle();
 				loadedGrid.WidthClearance = reader.ReadSingle();
+				loadedGrid.GridPerfect = reader.ReadBoolean();
 				loadedGrid.WorldOnly = reader.ReadBoolean();
 
 			} );
@@ -106,6 +108,7 @@ public partial class Grid
 				currentGrid.CellSize = reader.ReadSingle();
 				currentGrid.HeightClearance = reader.ReadSingle();
 				currentGrid.WidthClearance = reader.ReadSingle();
+				currentGrid.GridPerfect = reader.ReadBoolean();
 				currentGrid.WorldOnly = reader.ReadBoolean();
 
 				var cellsToRead = reader.ReadInt32();	
@@ -158,6 +161,7 @@ public partial class Grid
 			writer.Write( CellSize );
 			writer.Write( HeightClearance );
 			writer.Write( WidthClearance );
+			writer.Write( GridPerfect );
 			writer.Write( WorldOnly );
 
 			await GameTask.RunInThreadAsync( () =>

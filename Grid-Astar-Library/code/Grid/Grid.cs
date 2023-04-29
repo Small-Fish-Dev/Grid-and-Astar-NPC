@@ -17,7 +17,8 @@ public static partial class GridSettings
 	public const float DEFAULT_STEP_SIZE = 12f;			// How big steps can be on a cell before it gets discarded
 	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
 	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;  // How much vertical space there should be
-	public const float DEFAULT_WIDTH_CLEARANCE = 24f;	// How much horizontal space there should be
+	public const float DEFAULT_WIDTH_CLEARANCE = 24f;   // How much horizontal space there should be
+	public const bool DEFAULT_GRID_PERFECT = false;		// For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
 	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also static entities
 }
 
@@ -57,7 +58,10 @@ public partial class Grid : IValid
 	public float CellSize { get; set; }
 	public float HeightClearance { get; set; }
 	public float WidthClearance { get; set; }
+	public bool GridPerfect { get; set; }
 	public bool WorldOnly { get; set; }
+	public float RealStepSize => GridPerfect ? 0.1f : Math.Max( 0.1f, StepSize );
+	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
 	bool IValid.IsValid { get; }
 
@@ -112,7 +116,7 @@ public partial class Grid : IValid
 		if ( onlyBelow )
 		{
 			// Get the nearest cell which is under the given coordinates
-			var nearestCell = cellsAtCoordinates.Where( x => x.Bottom.z - StepSize < position.z )
+			var nearestCell = cellsAtCoordinates.Where( x => x.Bottom.z - RealStepSize < position.z )
 				.OrderByDescending( x => x.Position.z )
 				.FirstOrDefault();
 
@@ -175,9 +179,10 @@ public partial class Grid : IValid
 	/// <param name="cellSize"></param>
 	/// <param name="heightClearance"></param>
 	/// <param name="widthClearance"></param>
+	/// <param name="gridPerfect"></param>
 	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool gridPerfect = GridSettings.DEFAULT_GRID_PERFECT, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -194,6 +199,7 @@ public partial class Grid : IValid
 		currentGrid.CellSize = cellSize;
 		currentGrid.HeightClearance = heightClearance;
 		currentGrid.WidthClearance = widthClearance;
+		currentGrid.GridPerfect = gridPerfect;
 		currentGrid.WorldOnly = worldOnly;
 
 		if ( worldOnly )
@@ -219,9 +225,9 @@ public partial class Grid : IValid
 			{
 				for ( int row = 0; row < totalRows; row++ )
 				{
-					var startPosition = box.Mins.WithZ( box.Maxs.z ) + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, 0.002f ) * currentGrid.AxisRotation;
-					var endPosition = box.Mins + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, -0.001f ) * currentGrid.AxisRotation;
-					var checkBBox = new BBox( new Vector3( -cellSize / 2f + 0.001f, -cellSize / 2f + 0.001f, 0f ), new Vector3( cellSize / 2f - 0.001f, cellSize / 2f - 0.001f, 0.001f ) );
+					var startPosition = box.Mins.WithZ( box.Maxs.z ) + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, currentGrid.Tolerance * 2f ) * currentGrid.AxisRotation;
+					var endPosition = box.Mins + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, -currentGrid.Tolerance ) * currentGrid.AxisRotation;
+					var checkBBox = new BBox( new Vector3( -cellSize / 2f + currentGrid.Tolerance, -cellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( cellSize / 2f - currentGrid.Tolerance, cellSize / 2f - currentGrid.Tolerance, 0.001f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
 
 					if ( worldOnly )
@@ -250,7 +256,7 @@ public partial class Grid : IValid
 
 						startPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
 
-						while ( Sandbox.Trace.TestPoint( startPosition, radius: cellSize / 2f - 0.001f ) )
+						while ( Sandbox.Trace.TestPoint( startPosition, radius: cellSize / 2f - currentGrid.Tolerance ) )
 							startPosition += Vector3.Down * heightClearance;
 
 						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );

@@ -1,4 +1,6 @@
-﻿namespace GridAStarNPC;
+﻿using GridAStar;
+
+namespace GridAStarNPC;
 
 partial class Player : BaseActor
 {
@@ -40,6 +42,24 @@ partial class Player : BaseActor
 		SimulateController();
 		ComputeAnimations();
 		ComputeNavigation();
+
+		foreach ( var grid in Grid.Grids )
+		{
+			if ( grid.Value.IsInsideBounds( Position ) )
+			{
+				CurrentGrid = grid.Value;
+				break;
+			}
+		}
+
+		if ( CurrentGrid != null && NearestCell != null )
+		{
+			foreach ( var cell in NearestCell.GetNeighbours() )
+			{
+				cell.Draw( Time.Delta, false, true );
+			}
+		}
+
 	}
 
 	/// <summary>
