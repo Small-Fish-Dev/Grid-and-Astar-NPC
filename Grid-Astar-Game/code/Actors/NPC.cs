@@ -29,6 +29,18 @@ public partial class NPC : BaseActor
 	public override void Think()
 	{
 		base.Think();
+
+		if ( CurrentGrid == null )
+		{
+			foreach ( var grid in Grid.Grids )
+			{
+				if ( grid.Value.IsInsideBounds( Position ) )
+				{
+					CurrentGrid = grid.Value;
+					break;
+				}
+			}
+		}
 		
 		if ( !IsFollowingSomeone )
 		{
