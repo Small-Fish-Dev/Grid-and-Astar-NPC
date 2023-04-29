@@ -20,12 +20,13 @@
     "GameNetworkType": "Multiplayer",
     "MapSelect": "Official",
     "MapList": [
-      "grid_test"
+      "grid_showcase"
     ],
     "RankType": "None",
     "PerMapRanking": false,
     "LeaderboardType": "None",
     "ProjectTemplate": null,
-    "CsProjName": ""
+    "CsProjName": "",
+    "HttpAllowList": null
   }
 }
