@@ -47,14 +47,37 @@ public partial class GridBlockerBox : ModelEntity
 
 	public void Apply()
 	{
-		if ( CurrentGrid != null )
-			foreach ( var cellStack in CurrentGrid.Cells )
-				foreach ( var cell in cellStack.Value )
-					if ( IsInsideBounds( cell.Position ) )
-					{
-						OverlappingCells.Add( cell );
-						cell.Occupied = true;
-					}
+		if ( CurrentGrid == null ) return;
+		
+		foreach ( var cellStack in CurrentGrid.Cells )
+		{
+			foreach ( var cell in cellStack.Value )
+			{
+				if ( IsInsideBounds( cell.Position ) )
+				{
+					OverlappingCells.Add( cell );
+					cell.Occupied = true;
+				}
+			}
+		}
+	}
+	public void Update()
+	{
+		if ( CurrentGrid == null ) return;
+
+		OverlappingCells.Clear();
+
+		foreach ( var cellStack in CurrentGrid.Cells )
+		{
+			foreach ( var cell in cellStack.Value )
+			{
+				if ( IsInsideBounds( cell.Position ) )
+				{
+					OverlappingCells.Add( cell );
+					cell.Occupied = true;
+				}
+			}
+		}
 	}
 
 	[Grid.LoadedAll]
