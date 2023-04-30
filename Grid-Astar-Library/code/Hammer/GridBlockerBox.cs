@@ -11,10 +11,12 @@ public partial class GridBlockerBox : ModelEntity
 {
 	[Net, Property, Description( "Expand the blocker before checking, this should be like your grid's width clearance" )]
 	public float WidthClearance { get; set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
+	public BBox BoundsWithClearance => new BBox( CollisionBounds.Mins - WidthClearance, CollisionBounds.Maxs + WidthClearance );
 	public BBox RotatedBounds => CollisionBounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
-	public List<Grid> OverlappingGrids { get; set;} = new List<Grid>();
-	public bool IsInsideBounds( Vector3 point ) => CollisionBounds.IsRotatedPointWithinBounds( Position, point, Rotation );
+	public List<Grid> OverlappingGrids { get; set;} = new();
+	public HashSet<Cell> OverlappingCells { get; set; } = new();
+	public bool IsInsideBounds( Vector3 point ) => BoundsWithClearance.IsRotatedPointWithinBounds( Position, point, Rotation );
 
 	public GridBlockerBox()
 	{
@@ -25,6 +27,8 @@ public partial class GridBlockerBox : ModelEntity
 		base.Spawn();
 
 		EnableDrawing = false;
+
+		FindAndApplyAll();
 	}
 
 	public void FindOverlappingGrids()
@@ -39,11 +43,14 @@ public partial class GridBlockerBox : ModelEntity
 		foreach ( var cellStack in grid.Cells )
 			foreach ( var cell in cellStack.Value )
 				if ( IsInsideBounds( cell.Position ) )
+				{
+					OverlappingCells.Add( cell );
 					cell.Occupied = true;
+				}
 	}
 
 	[Grid.LoadedAll]
-	public void CheckOverlap()
+	public void FindAndApplyAll()
 	{
 		FindOverlappingGrids();
 

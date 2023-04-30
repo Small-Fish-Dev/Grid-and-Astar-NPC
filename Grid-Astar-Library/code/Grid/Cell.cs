@@ -315,8 +315,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		if ( drawCross )
 		{
-			DebugOverlay.Line( BottomLeft, TopRight, color, duration, depthTest );
-			DebugOverlay.Line( TopLeft, BottomRight, color, duration, depthTest );
+			var bottomLeftDir = (BottomLeft - TopRight) / 4f;
+			var topLeftDir = (TopLeft - BottomRight) / 4f;
+			DebugOverlay.Line( BottomLeft - bottomLeftDir, TopRight + bottomLeftDir, color, duration, depthTest );
+			DebugOverlay.Line( TopLeft - topLeftDir, BottomRight + topLeftDir, color, duration, depthTest );
 		}
 
 		if ( drawCoordinates )

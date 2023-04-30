@@ -46,7 +46,7 @@ public partial class Grid
 				foreach ( var cellStack in grid.Value.Cells )
 					foreach ( var cell in cellStack.Value )
 					{
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.5f, true, false, false, true );
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.5f, true, false, cell.Occupied );
 					}
 	}
 
