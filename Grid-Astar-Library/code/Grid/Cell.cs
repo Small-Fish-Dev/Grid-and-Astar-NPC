@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Drawing;
+using System.Runtime.CompilerServices;
 
 namespace GridAStar;
 
@@ -331,18 +332,20 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <param name="drawCross">Draw diagonal lines</param>
 	public void Draw( float duration = 0f, bool depthTest = true, bool drawCenter = false, bool drawCross = false )
 	{
-		DebugOverlay.Line( BottomLeft, BottomRight, duration, depthTest );
-		DebugOverlay.Line( BottomRight, TopRight, duration, depthTest );
-		DebugOverlay.Line( TopRight, TopLeft, duration, depthTest );
-		DebugOverlay.Line( TopLeft, BottomLeft, duration, depthTest );
+		var color = Occupied ? Color.Red : Color.White;
+
+		DebugOverlay.Line( BottomLeft, BottomRight, color, duration, depthTest );
+		DebugOverlay.Line( BottomRight, TopRight, color, duration, depthTest );
+		DebugOverlay.Line( TopRight, TopLeft, color, duration, depthTest );
+		DebugOverlay.Line( TopLeft, BottomLeft, color, duration, depthTest );
 
 		if ( drawCenter )
-			DebugOverlay.Sphere( Position, 5f, Color.White, duration, depthTest );
+			DebugOverlay.Sphere( Position, 5f, color, duration, depthTest );
 
 		if ( drawCross )
 		{
-			DebugOverlay.Line( BottomLeft, TopRight, duration, depthTest );
-			DebugOverlay.Line( TopLeft, BottomRight, duration, depthTest );
+			DebugOverlay.Line( BottomLeft, TopRight, color, duration, depthTest );
+			DebugOverlay.Line( TopLeft, BottomRight, color, duration, depthTest );
 		}
 	}
 	public override bool Equals( object obj )

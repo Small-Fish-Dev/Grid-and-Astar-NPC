@@ -105,6 +105,8 @@ public partial class HammerGrid : ModelEntity
 				else
 					grid.CreateFromSettings();
 			}
+
+			Event.Run( Grid.LoadedAll );
 		} );
 	}
 
