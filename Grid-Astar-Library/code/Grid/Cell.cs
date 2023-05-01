@@ -83,10 +83,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( worldOnly )
 				testTrace.WorldOnly();
 			else
-			{
-				testTrace.WorldAndEntities()
-				.WithoutTags( $"{grid.Identifier}GridIgnore" );
-			}
+				testTrace.WorldAndEntities();
 
 			var testResult = testTrace.Run();
 
@@ -125,10 +122,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		if ( worldOnly )
 			clearanceTrace.WorldOnly();
 		else
-		{
-			clearanceTrace.WorldAndEntities()
-			.WithoutTags( $"{grid.Identifier}GridIgnore" );
-		}
+			clearanceTrace.WorldAndEntities();
 
 		var clearanceResult = clearanceTrace.Run();
 		var heightDifference = clearanceResult.EndPosition.z - ( position.z - height );
@@ -182,10 +176,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( worldOnly )
 				stepTrace.WorldOnly();
 			else
-			{
-				stepTrace.WorldAndEntities()
-				.WithoutTags( $"{grid.Identifier}GridIgnore" );
-			}
+				stepTrace.WorldAndEntities();
 
 			var stepResult = stepTrace.Run();
 			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );

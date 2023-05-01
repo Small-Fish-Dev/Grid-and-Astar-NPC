@@ -202,9 +202,6 @@ public partial class Grid : IValid
 		currentGrid.GridPerfect = gridPerfect;
 		currentGrid.WorldOnly = worldOnly;
 
-		if ( worldOnly )
-			currentGrid.SetGridIgnoreTags();
-
 		var rotatedBounds = bounds.GetRotatedBounds( rotation );
 
 		var minimumGrid = rotatedBounds.Mins.ToIntVector2( cellSize );
@@ -233,13 +230,9 @@ public partial class Grid : IValid
 					if ( worldOnly )
 						positionTrace.WorldOnly();
 					else
-					{
-						positionTrace.WorldAndEntities()
-							.WithoutTags( $"{currentGrid.Identifier}GridIgnore" );
-					}
+						positionTrace.WorldAndEntities();
 
 					var positionResult = positionTrace.Run();
-
 
 					while ( positionResult.Hit && startPosition.z >= endPosition.z )
 					{
@@ -264,19 +257,13 @@ public partial class Grid : IValid
 						if ( worldOnly )
 							positionTrace.WorldOnly();
 						else
-						{
-							positionTrace.WorldAndEntities()
-							.WithoutTags( $"{currentGrid.Identifier}GridIgnore" );
-						}
+							positionTrace.WorldAndEntities();
 
 						positionResult = positionTrace.Run();
 					}
 				}
 			}
 		} );
-
-		if ( worldOnly )
-			currentGrid.RemoveGridIgnoreTags();
 
 		totalWatch.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
@@ -309,28 +296,6 @@ public partial class Grid : IValid
 		if ( deleteSave )
 			DeleteSave();
 
-	}
-
-	public void SetGridIgnoreTags()
-	{
-		var allEntities = Entity.All
-			.OfType<ModelEntity>();
-
-		foreach( var entity in allEntities )
-			if ( entity.PhysicsEnabled && entity.PhysicsBody.IsValid() )
-				if ( entity.PhysicsBody.BodyType != PhysicsBodyType.Static )
-					entity.Tags.Add( $"{Identifier}GridIgnore" );
-	}
-
-	public void RemoveGridIgnoreTags()
-	{
-		var allEntities = Entity.All
-			.OfType<ModelEntity>();
-
-		foreach ( var entity in allEntities )
-			if ( entity.PhysicsEnabled && entity.PhysicsBody.IsValid() )
-				if ( entity.PhysicsBody.BodyType != PhysicsBodyType.Static )
-					entity.Tags.Remove( $"{Identifier}GridIgnore" );
 	}
 
 	/// <summary>
