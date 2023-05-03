@@ -313,6 +313,18 @@ public partial class Grid : IValid
 
 		return outerCells;
 	}
+
+	/// <summary>
+	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone
+	/// </summary>
+	/// <param name="tag"></param>
+	public void CheckOccupancy( string tag )
+	{
+		foreach ( var cellStack in Cells )
+			foreach ( var cell in cellStack.Value )
+				if ( !cell.Occupied )
+					cell.Occupied = cell.TestForOccupancy( tag );
+	}
 }
 
 

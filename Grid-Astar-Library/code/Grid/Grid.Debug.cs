@@ -36,6 +36,13 @@ public partial class Grid
 		DeleteSave( identifier );
 	}
 
+	[ConCmd.Server( "TestOccupancy" )]
+	public static void OccupancyTest()
+	{
+		foreach ( var grid in Grid.Grids )
+			grid.Value.CheckOccupancy( "BlockGrid" );
+	}
+
 	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
 	public static void GridOverlay()
 	{

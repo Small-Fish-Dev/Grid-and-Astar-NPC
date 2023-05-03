@@ -37,6 +37,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public Vector3 TopRight => Position.WithZ( Vertices[3] ) + new Vector3( Grid.CellSize / 2, Grid.CellSize / 2, 0f ) * Rotation;
 	public float Height => Vertices.Max() - Vertices.Min();
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
+	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
+	public BBox WorldBounds => new BBox( (Position - Grid.WidthClearance).WithZ( Vertices.Min() ), (Position + Grid.WidthClearance).WithZ( Vertices.Max() + Grid.HeightClearance ) );
 	public bool Occupied { get; set; } = false;
 	bool IValid.IsValid { get; }
 
@@ -95,22 +97,6 @@ public partial class Cell : IEquatable<Cell>, IValid
 		}
 
 		return TestForSteps( grid, position, testCoordinates, validCoordinates, worldOnly, standableAngle, stepSize );
-
-		/*var bbox = new BBox( new Vector3( -cellSize / 2, -cellSize / 2, 0f ), new Vector3( cellSize / 2, cellSize / 2, 48f ) );
-		var occupyTrace = Sandbox.Trace.Box( bbox, position.WithZ( validCoordinates.Max() + 1f ) + Vector3.Up * 48f, position.WithZ( validCoordinates.Max() + 1f ) );
-
-		
-		if ( worldOnly )
-			occupyTrace.WorldOnly();
-		else
-			occupyTrace.WorldAndEntities()
-			.WithoutTags( "NoGridOccupancy" );
-
-		var occupyResult = occupyTrace.Run();
-
-		if ( occupyResult.Hit )
-			return false;
-		*/
 	}
 
 	private static bool TestForClearance( Grid grid, Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize, float height, bool isStairs )
@@ -205,16 +191,15 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return (true,true);
 	}
 
-	private static bool TestForAngle( float[] validCoordinates, float maxHeight )
+	public bool TestForOccupancy( string tag )
 	{
-		var oppositeDifference1 = Math.Abs( validCoordinates[0] - validCoordinates[3] );
-		var oppositeDifference2 = Math.Abs( validCoordinates[1] - validCoordinates[2] );
-		var differenceAverage = (oppositeDifference1 + oppositeDifference2) / 2f; // In case the cell is skewed in a way which doesn't follow the axis
+		var occupyTrace = Sandbox.Trace.Box( Bounds, Position, Position )
+			.EntitiesOnly()
+			.WithTag( tag );
 
-		if ( differenceAverage > maxHeight )
-			return false;
+		var occupyResult = occupyTrace.Run();
 
-		return true;
+		return occupyResult.Hit;
 	}
 
 	public Cell( Grid grid, Vector3 position, float[] vertices )
@@ -223,15 +208,6 @@ public partial class Cell : IEquatable<Cell>, IValid
 		Position = position;
 		GridPosition = ( Position - Grid.WorldBounds.Mins - grid.CellSize / 2).ToIntVector2( grid.CellSize );
 		Vertices = vertices;
-
-		/*var bbox = new BBox( new Vector3( -grid.CellSize / 2, -grid.CellSize / 2, 0f ), new Vector3( grid.CellSize / 2, grid.CellSize / 2, 48f ) );
-		var occupyTrace = Sandbox.Trace.Box( bbox, Position + Vector3.Up * 48f, Position)
-			.WithoutTags( "NoGridOccupancy" )
-			.EntitiesOnly()
-			.Run();
-
-		if ( occupyTrace.Hit )
-			Occupied = true;*/
 	}
 
 	// Perhaps there's a way to check these automatically, but I tried! :-)

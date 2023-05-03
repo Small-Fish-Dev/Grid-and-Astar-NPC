@@ -15,6 +15,8 @@ partial class Player : BaseActor
 
 		EnableHideInFirstPerson = true;
 		EnableShadowInFirstPerson = true;
+
+		Tags.Add( "BlockGrid" );
 	}
 
 	public override void Think() { }
