@@ -322,8 +322,7 @@ public partial class Grid : IValid
 	{
 		foreach ( var cellStack in Cells )
 			foreach ( var cell in cellStack.Value )
-				if ( !cell.Occupied )
-					cell.Occupied = cell.TestForOccupancy( tag );
+				cell.Occupied = cell.TestForOccupancy( tag );
 	}
 }
 

@@ -57,6 +57,7 @@ public partial class GridBlockerBox : ModelEntity
 				{
 					OverlappingCells.Add( cell );
 					cell.Occupied = true;
+					cell.SetOccupant( this );
 				}
 			}
 		}
@@ -75,6 +76,7 @@ public partial class GridBlockerBox : ModelEntity
 				{
 					OverlappingCells.Add( cell );
 					cell.Occupied = true;
+					cell.SetOccupant( this );
 				}
 			}
 		}

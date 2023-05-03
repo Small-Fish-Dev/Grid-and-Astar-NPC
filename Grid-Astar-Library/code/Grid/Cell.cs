@@ -38,8 +38,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public float Height => Vertices.Max() - Vertices.Min();
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
-	public BBox WorldBounds => new BBox( (Position - Grid.WidthClearance).WithZ( Vertices.Min() ), (Position + Grid.WidthClearance).WithZ( Vertices.Max() + Grid.HeightClearance ) );
+	public BBox WorldBounds => new BBox( ( Position + Bounds.Mins ).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public bool Occupied { get; set; } = false;
+	internal Entity occupyingEntity { get; set; } = null;
+	internal Transform currentOccupyingTransform { get; set; } = Transform.Zero;
 	bool IValid.IsValid { get; }
 
 	/// <summary>
@@ -191,13 +193,26 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return (true,true);
 	}
 
+	public void SetOccupant( Entity entity )
+	{
+		occupyingEntity = entity;
+		currentOccupyingTransform = entity.Transform;
+	}
+
 	public bool TestForOccupancy( string tag )
 	{
+		if ( occupyingEntity != null && occupyingEntity.Transform == currentOccupyingTransform ) return Occupied;
+
 		var occupyTrace = Sandbox.Trace.Box( Bounds, Position, Position )
 			.EntitiesOnly()
 			.WithTag( tag );
 
 		var occupyResult = occupyTrace.Run();
+
+		if ( occupyResult.Entity != null )
+		{
+			SetOccupant( occupyResult.Entity );
+		}
 
 		return occupyResult.Hit;
 	}
