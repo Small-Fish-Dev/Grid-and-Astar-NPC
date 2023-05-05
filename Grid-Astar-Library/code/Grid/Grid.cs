@@ -28,17 +28,17 @@ public partial class Grid : IValid
 	{
 		get 
 		{
-			if ( Grids.ContainsKey( $"{Game.Server.MapIdent}-main" ) )
-				return Grids[$"{Game.Server.MapIdent}-main"];
+			if ( Grids.ContainsKey( "main" ) )
+				return Grids["main"];
 			else
 				return null;
 		}
 		set 
 		{
-			if ( Grids.ContainsKey( $"{Game.Server.MapIdent}-main" ) )
-				Grids[$"{Game.Server.MapIdent}-main"] = value;
+			if ( Grids.ContainsKey( "main" ) )
+				Grids["main"] = value;
 			else
-				Grids.Add( $"{Game.Server.MapIdent}-main", value );
+				Grids.Add( "main", value );
 		}
 	}
 
