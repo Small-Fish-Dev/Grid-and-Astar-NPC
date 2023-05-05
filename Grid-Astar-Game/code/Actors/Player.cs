@@ -15,8 +15,6 @@ partial class Player : BaseActor
 
 		EnableHideInFirstPerson = true;
 		EnableShadowInFirstPerson = true;
-
-		Tags.Add( "BlockGrid" );
 	}
 
 	public override void Think() { }
@@ -31,7 +29,7 @@ partial class Player : BaseActor
 	public void SimulateController()
 	{
 		Direction = InputDirection.WithZ( 0 ).Normal * Rotation.FromYaw( InputAngles.yaw );
-		IsRunning = Input.Down( InputButton.Run );
+		IsRunning = Input.Down( "run" );
 
 		ComputeMotion();
 	}
@@ -44,16 +42,6 @@ partial class Player : BaseActor
 		SimulateController();
 		ComputeAnimations();
 		ComputeNavigation();
-
-		foreach ( var grid in Grid.Grids )
-		{
-			if ( grid.Value.IsInsideBounds( Position ) )
-			{
-				CurrentGrid = grid.Value;
-				break;
-			}
-		}
-
 	}
 
 	/// <summary>
