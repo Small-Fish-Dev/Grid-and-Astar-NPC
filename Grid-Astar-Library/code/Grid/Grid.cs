@@ -212,10 +212,8 @@ public partial class Grid : IValid
 		var maxHeight = rotatedBounds.Maxs.z;
 
 		var box = new BBox( position + rotatedBounds.Mins, position + rotatedBounds.Maxs );
-
 		await GameTask.RunInThreadAsync( () =>
 		{
-
 			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
 
 			for ( int column = 0; column < totalColumns; column++ )

@@ -35,10 +35,13 @@ public static partial class BBoxExtensions
 
 	public static bool IsRotatedPointWithinBounds( this BBox bbox, Vector3 position, Vector3 point, Rotation rotation )
 	{
-		var rotatedPoint = ( point - position ) * rotation.Inverse;
+		Vector3 pointToCheck = point - position;
+		if ( rotation.Angles() == Angles.Zero )
+			pointToCheck = (point - position) * rotation.Inverse;
+
 		var biggerBbox = new BBox( bbox.Mins - 0.01f, bbox.Maxs + 0.01f ); // Add some clearance to allow grid-perfect terrain
 
-		return biggerBbox.Contains( rotatedPoint );
+		return biggerBbox.Contains( pointToCheck );
 	}
 
 }
