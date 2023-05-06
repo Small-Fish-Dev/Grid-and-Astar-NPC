@@ -4,6 +4,8 @@ namespace GridAStar;
 
 public partial class Grid
 {
+
+	/*
 	[ConCmd.Server( "RegenerateMainGrid" )]
 	public async static void RegenerateMainGrid()
 	{
@@ -117,7 +119,7 @@ public partial class Grid
 				DebugOverlay.Text( i.ToString(), path[i].Position, duration: 10 );
 			}
 		}
-	}
+	}*/
 }
 
 
