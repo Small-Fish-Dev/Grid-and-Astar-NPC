@@ -181,8 +181,9 @@ public partial class Grid : IValid
 	/// <param name="widthClearance"></param>
 	/// <param name="gridPerfect"></param>
 	/// <param name="worldOnly"></param>
+	/// <param name="save"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool gridPerfect = GridSettings.DEFAULT_GRID_PERFECT, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY )
+	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool gridPerfect = GridSettings.DEFAULT_GRID_PERFECT, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY, bool save = true )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -266,7 +267,7 @@ public partial class Grid : IValid
 		totalWatch.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
 
-		await currentGrid.Initialize();
+		await currentGrid.Initialize( save );
 
 		return currentGrid;
 	}
