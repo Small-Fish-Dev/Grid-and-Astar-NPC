@@ -45,20 +45,6 @@ public partial class Grid
 			grid.Value.CheckOccupancy( "BlockGrid" );
 	}
 
-	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
-	public static void GridOverlay()
-	{
-		if ( !Game.IsServer ) return;
-
-		if ( Time.Tick % 60 == 0 )
-			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.Cells )
-					foreach ( var cell in cellStack.Value )
-					{
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.5f, true, false, cell.Occupied );
-					}
-	}
-
 	[ConCmd.Server( "TestPath" )]
 	public async static void TestPath()
 	{
@@ -120,6 +106,20 @@ public partial class Grid
 			}
 		}
 	}*/
+
+	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
+	public static void GridOverlay()
+	{
+		if ( !Game.IsServer ) return;
+
+		if ( Time.Tick % 60 == 0 )
+			foreach ( var grid in Grids )
+				foreach ( var cellStack in grid.Value.Cells )
+					foreach ( var cell in cellStack.Value )
+					{
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.5f, true, false, cell.Occupied );
+					}
+	}
 }
 
 
