@@ -11,7 +11,7 @@
   "HasCode": true,
   "CodePath": "/code/",
   "PackageReferences": [
-    "local.grid_and_astar"
+    "fish.grid_and_astar"
   ],
   "EditorReferences": null,
   "Metadata": {
