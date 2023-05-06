@@ -165,6 +165,7 @@ public partial class Grid : IValid
 	}
 
 	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
+	public bool IsInsideCylinder( Vector3 point ) => Bounds.IsInsideSquishedRotatedCylinder( Position, point, Rotation );
 
 	/// <summary>
 	/// Creates a new grid and generates cells within the bounds given
@@ -181,9 +182,10 @@ public partial class Grid : IValid
 	/// <param name="widthClearance"></param>
 	/// <param name="gridPerfect"></param>
 	/// <param name="worldOnly"></param>
+	/// <param name="cylinder"></param>
 	/// <param name="save"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool gridPerfect = GridSettings.DEFAULT_GRID_PERFECT, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY, bool save = true )
+	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool gridPerfect = GridSettings.DEFAULT_GRID_PERFECT, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY, bool cylinder = false, bool save = true )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -237,12 +239,15 @@ public partial class Grid : IValid
 					{
 						if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
 						{
-							if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
+							if ( !cylinder || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
 							{
-								var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
+								if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
+								{
+									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
 
-								if ( newCell != null )
-									currentGrid.AddCell( newCell );
+									if ( newCell != null )
+										currentGrid.AddCell( newCell );
+								}
 							}
 						}
 

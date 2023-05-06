@@ -72,6 +72,7 @@ public partial class NPC : BaseActor
 		{
 			var startPos = new Vector3( 802.80f, -448.82f, 890f- 64f );
 			var targetPos = new Vector3( 622.21f, -308.05f, 128f - 64f );
+			if ( !Grid.Grids.ContainsKey( "tower" ) ) return;
 			var currentGrid = Grid.Grids["tower"];
 			var startCell = currentGrid.GetCell( startPos );
 			var targetCell = currentGrid.GetCell( targetPos );
