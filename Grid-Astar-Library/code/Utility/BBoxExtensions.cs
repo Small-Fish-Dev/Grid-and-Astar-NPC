@@ -32,10 +32,23 @@ public static partial class BBoxExtensions
 
 		return rotatedBounds;
 	}
+	public static bool IsInsideSquishedRotatedCylinder( this BBox bbox, Vector3 position, Vector3 point, Rotation rotation )
+	{
+		var pointToCheck = point - position;
+		if ( rotation.Angles() == Angles.Zero )
+			pointToCheck = (point - position) * rotation.Inverse;
+
+		var radiusX = ( bbox.Maxs.x - bbox.Mins.x ) / 2f;
+		var radiusY = ( bbox.Maxs.y - bbox.Mins.y ) / 2f;
+
+		var insideSphere = pointToCheck.x * pointToCheck.x / (radiusX * radiusX) + pointToCheck.y * pointToCheck.y / (radiusY * radiusY);
+		
+		return insideSphere <= 1f;
+	}
 
 	public static bool IsRotatedPointWithinBounds( this BBox bbox, Vector3 position, Vector3 point, Rotation rotation )
 	{
-		Vector3 pointToCheck = point - position;
+		var pointToCheck = point - position;
 		if ( rotation.Angles() == Angles.Zero )
 			pointToCheck = (point - position) * rotation.Inverse;
 
