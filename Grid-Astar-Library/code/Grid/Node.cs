@@ -1,11 +1,11 @@
 ﻿namespace GridAStar;
 
-public partial class Node : IHeapItem<Node>
+public partial class Node : IHeapItem<Node>, IEquatable<Node>
 {
 	public Cell Current;
 	public Node Parent;
-	public float gCost;
-	public float hCost;
+	public float gCost = 0f;
+	public float hCost = 0f;
 	public float fCost => gCost + hCost;
 	public int HeapIndex { get; set; }
 
@@ -14,8 +14,8 @@ public partial class Node : IHeapItem<Node>
 		Current = cell;
 	}
 
-	public float Distance( Cell other ) => Current.Position.DistanceSquared( other.Position );
-	public float Distance( Node other ) => Current.Position.DistanceSquared( other.Current.Position );
+	public float Distance( Cell other ) => Current.Position.Distance( other.Position );
+	public float Distance( Node other ) => Current.Position.Distance( other.Current.Position );
 
 	public int CompareTo( Node other )
 	{
@@ -24,19 +24,14 @@ public partial class Node : IHeapItem<Node>
 			compare = hCost.CompareTo( other.hCost );
 		return -compare;
 	}
-	public override bool Equals( object obj )
-	{
-		return Equals( obj as Node );
-	}
 
-	public bool Equals( Node obj )
-	{
-		return obj != null && obj.GetHashCode() == this.GetHashCode();
-	}
+	public override int GetHashCode() => Current.GetHashCode();
 
-	public override int GetHashCode()
-	{
-		return Current.GetHashCode();
-	}
+	// Alex Instagib from Facepunch Ltd. code VVV
+	public static bool operator ==( Node a, Node b ) => a.Equals( b );
+	public static bool operator !=( Node a, Node b ) => !a.Equals( b );
+
+	public override bool Equals( object obj ) => (obj as Node)?.Current == Current;
+	public bool Equals( Node other ) => other.Current == Current;
 
 }

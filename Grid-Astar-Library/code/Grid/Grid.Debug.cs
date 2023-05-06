@@ -62,11 +62,11 @@ public partial class Grid
 	{
 		foreach ( var client in Game.Clients )
 		{
-			var cells = await Grid.Main.ComputePathParallel( client.Pawn.Position, Vector3.Random * 3000f, true );
+			var cells = await Grid.Main.ComputePathParallel( client.Pawn.Position, new Vector3( -1577.57f, - 758.34f, 128.00f ), true );
 
 			for ( int i = 0; i < cells.Length; i++ )
 			{
-				cells[i].Draw( Color.Red, 3, false );
+				cells[i].Draw( Color.Red, 15f, false );
 				DebugOverlay.Text( i.ToString(), cells[i].Position, duration: 3 );
 			}
 		}
