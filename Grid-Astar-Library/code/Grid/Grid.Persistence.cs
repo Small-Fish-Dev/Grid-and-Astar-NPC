@@ -95,45 +95,53 @@ public partial class Grid
 
 		using ( var reader = new BinaryReader( FileSystem.Data.OpenRead( GetSavePath( identifier ) ) ) )
 		{
-			var currentGrid = new Grid( reader.ReadString() );
-
-			await GameTask.RunInThreadAsync( () =>
+			try
 			{
-				currentGrid.Position = reader.ReadVector3();
-				currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
-				currentGrid.Rotation = reader.ReadRotation();
-				currentGrid.AxisAligned = reader.ReadBoolean();
-				currentGrid.StandableAngle = reader.ReadSingle();
-				currentGrid.StepSize = reader.ReadSingle();
-				currentGrid.CellSize = reader.ReadSingle();
-				currentGrid.HeightClearance = reader.ReadSingle();
-				currentGrid.WidthClearance = reader.ReadSingle();
-				currentGrid.GridPerfect = reader.ReadBoolean();
-				currentGrid.WorldOnly = reader.ReadBoolean();
+				var currentGrid = new Grid( reader.ReadString() );
 
-				var cellsToRead = reader.ReadInt32();	
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
-
-				for ( int i = 0; i < cellsToRead; i++ )
+				await GameTask.RunInThreadAsync( () =>
 				{
-					var cellPosition = reader.ReadVector3();
-					var cellVertices = new float[4];
-					for ( int vertex = 0; vertex < 4; vertex++ )
-						cellVertices[vertex] = reader.ReadSingle();
+					currentGrid.Position = reader.ReadVector3();
+					currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
+					currentGrid.Rotation = reader.ReadRotation();
+					currentGrid.AxisAligned = reader.ReadBoolean();
+					currentGrid.StandableAngle = reader.ReadSingle();
+					currentGrid.StepSize = reader.ReadSingle();
+					currentGrid.CellSize = reader.ReadSingle();
+					currentGrid.HeightClearance = reader.ReadSingle();
+					currentGrid.WidthClearance = reader.ReadSingle();
+					currentGrid.GridPerfect = reader.ReadBoolean();
+					currentGrid.WorldOnly = reader.ReadBoolean();
 
-					var cell = new Cell( currentGrid, cellPosition, cellVertices );
-					currentGrid.AddCell( cell );
-				}
+					var cellsToRead = reader.ReadInt32();
+					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
 
-			} );
+					for ( int i = 0; i < cellsToRead; i++ )
+					{
+						var cellPosition = reader.ReadVector3();
+						var cellVertices = new float[4];
+						for ( int vertex = 0; vertex < 4; vertex++ )
+							cellVertices[vertex] = reader.ReadSingle();
 
-			await currentGrid.Initialize( false );
+						var cell = new Cell( currentGrid, cellPosition, cellVertices );
+						currentGrid.AddCell( cell );
+					}
 
-			loadWatch.Stop();
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} loaded in {loadWatch.ElapsedMilliseconds}ms" );
+				} );
 
-			return currentGrid;
+				await currentGrid.Initialize( false );
 
+				loadWatch.Stop();
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} loaded in {loadWatch.ElapsedMilliseconds}ms" );
+
+				return currentGrid;
+			}
+			catch ( Exception _ )
+			{
+				loadWatch.Stop();
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load" );
+				return null;
+			}
 		}
 	}
 
@@ -148,47 +156,56 @@ public partial class Grid
 		var saveWatch = new Stopwatch();
 		saveWatch.Start();
 
-		using ( var writer = new BinaryWriter( FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate ) ) )
+		try
 		{
-			writer.Write( Identifier );
-			writer.Write( Position );
-			writer.Write( Bounds.Mins );
-			writer.Write( Bounds.Maxs );
-			writer.Write( Rotation );
-			writer.Write( AxisAligned );
-			writer.Write( StandableAngle );
-			writer.Write( StepSize );
-			writer.Write( CellSize );
-			writer.Write( HeightClearance );
-			writer.Write( WidthClearance );
-			writer.Write( GridPerfect );
-			writer.Write( WorldOnly );
-
-			await GameTask.RunInThreadAsync( () =>
+			using ( var writer = new BinaryWriter( FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate ) ) )
 			{
-				var cellsCount = 0;
+				writer.Write( Identifier );
+				writer.Write( Position );
+				writer.Write( Bounds.Mins );
+				writer.Write( Bounds.Maxs );
+				writer.Write( Rotation );
+				writer.Write( AxisAligned );
+				writer.Write( StandableAngle );
+				writer.Write( StepSize );
+				writer.Write( CellSize );
+				writer.Write( HeightClearance );
+				writer.Write( WidthClearance );
+				writer.Write( GridPerfect );
+				writer.Write( WorldOnly );
 
-				foreach ( var cellStack in Cells )
-					foreach ( var cell in cellStack.Value )
-						cellsCount++;
-
-				writer.Write( cellsCount );
-
-				foreach ( var cellStack in Cells )
+				await GameTask.RunInThreadAsync( () =>
 				{
-					foreach ( var cell in cellStack.Value )
+					var cellsCount = 0;
+
+					foreach ( var cellStack in Cells )
+						foreach ( var cell in cellStack.Value )
+							cellsCount++;
+
+					writer.Write( cellsCount );
+
+					foreach ( var cellStack in Cells )
 					{
-						writer.Write( cell.Position );
-						foreach ( var vertex in cell.Vertices )
-							writer.Write( vertex );
+						foreach ( var cell in cellStack.Value )
+						{
+							writer.Write( cell.Position );
+							foreach ( var vertex in cell.Vertices )
+								writer.Write( vertex );
+						}
 					}
-				}
-			} );
+				} );
 
+				saveWatch.Stop();
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} saved in {saveWatch.ElapsedMilliseconds}ms" );
+
+				return true;
+			}
+		}
+		catch ( Exception _ )
+		{
 			saveWatch.Stop();
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} saved in {saveWatch.ElapsedMilliseconds}ms" );
-
-			return true;
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} failed to save" );
+			return false;
 		}
 	}
 
