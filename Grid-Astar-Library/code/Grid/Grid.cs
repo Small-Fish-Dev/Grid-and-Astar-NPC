@@ -7,6 +7,7 @@ global using System.Linq;
 global using System.Collections.Generic;
 global using System.Diagnostics;
 global using System.Threading.Tasks;
+using Sandbox.Internal;
 
 namespace GridAStar;
 
@@ -79,59 +80,39 @@ public partial class Grid : IValid
 	}
 
 	/// <summary>
-	/// Find the cell below the position given
+	/// Get the local coordinate in a grid from a 3D world position
+	/// </summary>
+	/// <param name="position"></param>
+	/// <returns></returns>
+	public IntVector2 PositionToCoordinates( Vector3 position ) => (position - WorldBounds.Mins - CellSize / 2).ToIntVector2( CellSize );
+
+	/// <summary>
+	/// Find the nearest cell from a position even if the position is outside of the grid (This is expensive! Don't use it much)
 	/// </summary>
 	/// <param name="position"></param>
 	/// <param name="onlyBelow"></param>
+	/// <param name="unoccupiedOnly"></param>
 	/// <returns></returns>
-	public Cell GetCell( Vector3 position, bool onlyBelow = true )
+	public Cell GetNearestCell( Vector3 position, bool onlyBelow = true, bool unoccupiedOnly = false )
 	{
-		var localPosition = (position - WorldBounds.Mins - CellSize / 2);
-		var coordinates2D = localPosition.ToIntVector2( CellSize );
-		var cellsAtCoordinates = Cells.GetValueOrDefault( coordinates2D );
+		var validCells = Cells.Values.SelectMany( x => x )
+			.Where( x => unoccupiedOnly ? !x.Occupied : true ) // Check for unoccupied cells
+			.Where( x => onlyBelow ? (x.Bottom.z - RealStepSize < position.z) : true ) // Check for cells below the position
+			.OrderBy( x => x.Position.DistanceSquared( position ) );
 
-		// If no cells were found at the coordinates
-		if ( cellsAtCoordinates == null )
-		{
-			var closestCoordinates = new IntVector2( int.MaxValue, int.MaxValue );
-			var closestDistance = float.MaxValue;
-
-			foreach ( var cellStacks in Cells )
-			{
-				var distance = cellStacks.Key.DistanceSquared( coordinates2D );
-
-				if ( distance < closestDistance )
-				{
-					closestCoordinates = cellStacks.Key;
-					closestDistance = distance;
-				}
-			}
-
-			cellsAtCoordinates = Cells.GetValueOrDefault( closestCoordinates );
-		}
-
-		if ( cellsAtCoordinates == null ) return null; // Guess there were no cells at all??
-		if ( cellsAtCoordinates.Count == 1 ) return cellsAtCoordinates.First(); // If it's only one cell return it instantly
-
-		if ( onlyBelow )
-		{
-			// Get the nearest cell which is under the given coordinates
-			var nearestCell = cellsAtCoordinates.Where( x => x.Bottom.z - RealStepSize < position.z )
-				.OrderByDescending( x => x.Position.z )
-				.FirstOrDefault();
-
-			return nearestCell;
-		}
+		if ( validCells.Count() > 0 )
+			return validCells.First();
 		else
-		{
-			// Get the nearest cell
-			var nearestCell = cellsAtCoordinates
-				.OrderBy( x => x.Position.DistanceSquared( position ) )
-				.FirstOrDefault();
-
-			return nearestCell;
-		}
+			return null;
 	}
+
+	/// <summary>
+	/// Find exact cell on the position provided
+	/// </summary>
+	/// <param name="position"></param>
+	/// <param name ="onlyBelow"></param>
+	/// <returns></returns>
+	public Cell GetCell( Vector3 position, bool onlyBelow = true ) => GetCell( PositionToCoordinates( position ), onlyBelow ? position.z : WorldBounds.Maxs.z );
 
 	/// <summary>
 	/// Find exact cell with the coordinates provided
@@ -145,10 +126,8 @@ public partial class Grid : IValid
 
 		if ( cellsAtCoordinates == null ) return null;
 
-		float maxHeight = CellSize * MathF.Tan( MathX.DegreeToRadian( StandableAngle ) );
-
 		foreach ( var cell in cellsAtCoordinates )
-			if ( cell.Position.z - maxHeight <= height )
+			if ( cell.Bottom.z - RealStepSize < height )
 				return cell;
 
 		return null;
