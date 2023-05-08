@@ -95,15 +95,15 @@ public partial class Grid : IValid
 	/// <returns></returns>
 	public Cell GetNearestCell( Vector3 position, bool onlyBelow = true, bool unoccupiedOnly = false )
 	{
-		var validCells = Cells.Values.SelectMany( x => x )
-			.Where( x => unoccupiedOnly ? !x.Occupied : true ) // Check for unoccupied cells
-			.Where( x => onlyBelow ? (x.Bottom.z - RealStepSize < position.z) : true ) // Check for cells below the position
-			.OrderBy( x => x.Position.DistanceSquared( position ) );
+		var validCells = Cells.Values.SelectMany( x => x );
 
-		if ( validCells.Count() > 0 )
-			return validCells.First();
-		else
-			return null;
+		if ( unoccupiedOnly )
+			validCells = validCells.Where( x => !x.Occupied );
+		if ( onlyBelow )
+			validCells = validCells.Where( x => x.Vertices.Min() - StepSize <= position.z );
+
+		return validCells.OrderBy( x => x.Position.DistanceSquared( position ) )
+			.FirstOrDefault();
 	}
 
 	/// <summary>
@@ -127,7 +127,7 @@ public partial class Grid : IValid
 		if ( cellsAtCoordinates == null ) return null;
 
 		foreach ( var cell in cellsAtCoordinates )
-			if ( cell.Bottom.z - RealStepSize < height )
+			if ( cell.Vertices.Min() - StepSize < height )
 				return cell;
 
 		return null;

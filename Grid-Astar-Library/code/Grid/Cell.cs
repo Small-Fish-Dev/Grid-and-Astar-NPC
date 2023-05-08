@@ -285,6 +285,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <param name="depthTest"></param>
 	/// <param name="drawCenter">Draw a point on the cell's position</param>
 	/// <param name="drawCross">Draw diagonal lines</param>
+	/// <param name="drawCoordinates">Draw coordinates</param>
 	public void Draw( Color color, float duration = 0f, bool depthTest = true, bool drawCenter = false, bool drawCross = false, bool drawCoordinates = false )
 	{
 		DebugOverlay.Line( BottomLeft, BottomRight, color, duration, depthTest );
