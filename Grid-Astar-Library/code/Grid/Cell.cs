@@ -244,7 +244,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var yDistance = cell.GridPosition.y - GridPosition.y;
 
 		if ( xDistance < -1 || xDistance > 1 || yDistance < -1 || yDistance > 1 ) return false;
-		if ( xDistance == 0 && yDistance == 0 ) return false;
+		if ( xDistance == 0 && yDistance == 0 ) return true;
 
 		var verticesToCompare = CompareVertices[new IntVector2( xDistance, yDistance )];
 
@@ -252,6 +252,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		foreach ( var comparePair in verticesToCompare )
 		{
 			var heightDifference = Math.Abs( Vertices[comparePair[0]] - cell.Vertices[comparePair[1]] );
+
 			if ( heightDifference >= 0.1f ) return false;
 		}
 

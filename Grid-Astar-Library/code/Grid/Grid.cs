@@ -177,6 +177,8 @@ public partial class Grid : IValid
 			var cellToCheck = GetCellInDirection( startingCell, direction, i );
 
 			if ( cellToCheck == null || cellToCheck.Occupied || !cellToCheck.IsNeighbour( lastCell ) ) return false; // Stop it as soon as any of these aren't valid
+
+			lastCell = cellToCheck;
 		}
 
 		return true;
