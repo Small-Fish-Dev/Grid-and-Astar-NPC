@@ -143,6 +143,45 @@ public partial class Grid : IValid
 			Cells[coordinates].Add( cell );
 	}
 
+	/// <summary>
+	/// Returns the nearest cell in any direction.
+	/// </summary>
+	/// <param name="startingCell"></param>
+	/// <param name="direction"></param>
+	/// <param name="numOfCellsInDirection"></param>
+	/// <returns></returns>
+	public Cell GetCellInDirection( Cell startingCell, Vector3 direction, int numOfCellsInDirection = 1 )
+	{
+		return GetCell( startingCell.Position + direction * CellSize * numOfCellsInDirection );
+	}
+
+	/// <summary>
+	/// Returns if there's a valid, unoccupied, and direct path from a cell to another
+	/// </summary>
+	/// <param name="startingCell"></param>
+	/// <param name="endingCell"></param>
+	/// <returns></returns>
+	public bool LineOfSight( Cell startingCell, Cell endingCell )
+	{
+		var startingPosition = startingCell.Position;
+		var endingPosition = endingCell.Position;
+		var direction = ( endingPosition - startingPosition ).Normal;
+		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize);
+
+		if ( startingCell.Occupied || endingCell.Occupied ) return false; // Why bother
+
+		Cell lastCell = startingCell;
+
+		for ( int i = 1; i < distanceInSteps; i++ )
+		{
+			var cellToCheck = GetCellInDirection( startingCell, direction, i );
+
+			if ( cellToCheck == null || cellToCheck.Occupied || !cellToCheck.IsNeighbour( lastCell ) ) return false; // Stop it as soon as any of these aren't valid
+		}
+
+		return true;
+	}
+
 	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
 	public bool IsInsideCylinder( Vector3 point ) => Bounds.IsInsideSquishedRotatedCylinder( Position, point, Rotation );
 
