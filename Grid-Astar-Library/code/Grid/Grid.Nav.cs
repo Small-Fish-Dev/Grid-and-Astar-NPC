@@ -183,6 +183,47 @@ public partial class Grid
 		return await ComputePathParallel( startingCell, targetCell );
 	}
 
+	/// <summary>
+	/// Simplify the path by iterating over line of sights between the given segment size, joining them if valid
+	/// </summary>
+	/// <param name="path"></param>
+	/// <param name="segmentAmounts"></param>
+	/// <param name="iterations"></param>
+	/// <returns></returns>
+	public ImmutableArray<Cell> SimplifyPath( ImmutableArray<Cell> path, int segmentAmounts = 2, int iterations = 8 )
+	{
+		var pathResult = path.ToList();
+
+		for ( int iteration = 0; iteration < iterations; iteration++ )
+		{
+			var segmentStart = 0;
+			var segmentEnd = Math.Min( segmentAmounts, pathResult.Count() - 1 );
+			
+			while ( pathResult.Count() > 2 && segmentEnd < pathResult.Count() - 1 )
+			{
+
+				var currentCell = pathResult[segmentStart];
+				var furtherCell = pathResult[segmentEnd];
+
+				if ( LineOfSight( currentCell, furtherCell ) )
+				{
+					for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
+					{
+						pathResult.RemoveAt( toDelete );
+					}
+				}
+
+				if ( segmentEnd == pathResult.Count() - 1 )
+					break;
+
+				segmentStart++;
+				segmentEnd = Math.Min( segmentStart + segmentAmounts, pathResult.Count() - 1 );
+			}
+		}
+
+		return pathResult.ToImmutableArray();
+	}
+
 	private static void RetracePath( ImmutableArray<Cell>.Builder pathList, Node startNode, Node targetNode )
 	{
 		var currentNode = targetNode;
