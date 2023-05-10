@@ -149,21 +149,20 @@ public partial class Grid
 	/// </summary>
 	/// <param name="startingCell">The starting point of the path.</param>
 	/// <param name="targetCell">The desired destination point of the path.</param>
+	/// <param name="token"></param>
 	/// <returns>A task that represents the asynchronous operation. The result of the task is an <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	public async Task<ImmutableArray<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell )
+	public async Task<ImmutableArray<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell, CancellationTokenSource token )
 	{
 		// Fast path.
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return ImmutableArray<Cell>.Empty;
 
-		var ctoken = new CancellationTokenSource();
-
-		var fromTo = ComputePathAsync( startingCell, targetCell, ctoken.Token );
-		var toFrom = ComputePathAsync( targetCell, startingCell, true, ctoken.Token );
+		var fromTo = ComputePathAsync( startingCell, targetCell, token.Token );
+		var toFrom = ComputePathAsync( targetCell, startingCell, true, token.Token );
 
 		var pathResult = await GameTask.WhenAny( fromTo, toFrom ).Result;
 
 		// Cancel the other task that hasn't finished yet.
-		ctoken.Cancel();
+		token.Cancel();
 
 		return pathResult;
 	}
@@ -173,14 +172,15 @@ public partial class Grid
 	/// </summary>
 	/// <param name="startingPosition">A starting world position.</param>
 	/// <param name="targetPosition">A target world position.</param>
+	/// <param name="token"></param>
 	/// <param name="findClosest">Whether or not to find a cell that is closest to the position.</param>
 	/// <returns>A task that represents the asynchronous operation. The result of the task is an <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	public async Task<ImmutableArray<Cell>> ComputePathParallel( Vector3 startingPosition, Vector3 targetPosition, bool findClosest = false )
+	public async Task<ImmutableArray<Cell>> ComputePathParallel( Vector3 startingPosition, Vector3 targetPosition, CancellationTokenSource token, bool findClosest = false )
 	{
 		var startingCell = GetCell( startingPosition, findClosest );
 		var targetCell = GetCell( targetPosition, findClosest );
 
-		return await ComputePathParallel( startingCell, targetCell );
+		return await ComputePathParallel( startingCell, targetCell, token );
 	}
 
 	/// <summary>
