@@ -160,15 +160,20 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="startingCell"></param>
 	/// <param name="endingCell"></param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns></returns>
-	public bool LineOfSight( Cell startingCell, Cell endingCell )
+	public bool LineOfSight( Cell startingCell, Cell endingCell, Entity pathCreator = null )
 	{
 		var startingPosition = startingCell.Position;
 		var endingPosition = endingCell.Position;
 		var direction = ( endingPosition - startingPosition ).Normal;
 		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize);
 
-		if ( startingCell.Occupied || endingCell.Occupied ) return false; // Why bother
+		if ( pathCreator == null && startingCell.Occupied ) return false;
+		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
+
+		if ( pathCreator == null && endingCell.Occupied ) return false;
+		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
 
 		Cell lastCell = startingCell;
 
@@ -176,7 +181,10 @@ public partial class Grid : IValid
 		{
 			var cellToCheck = GetCellInDirection( startingCell, direction, i );
 
-			if ( cellToCheck == null || cellToCheck.Occupied || !cellToCheck.IsNeighbour( lastCell ) ) return false; // Stop it as soon as any of these aren't valid
+			if ( cellToCheck == null ) return false;
+			if ( pathCreator == null && cellToCheck.Occupied ) return false;
+			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
+			if ( !cellToCheck.IsNeighbour( lastCell ) ) return false;
 
 			lastCell = cellToCheck;
 		}

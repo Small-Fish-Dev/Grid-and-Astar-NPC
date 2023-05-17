@@ -77,6 +77,7 @@ public partial class HammerGrid : ModelEntity
 			await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, GridPerfect, WorldOnly );
 		} );
 	}
+
 	public static void LoadAllGrids()
 	{
 		GameTask.RunInThreadAsync( async () =>
@@ -126,5 +127,21 @@ public partial class HammerGrid : ModelEntity
 	public static void LoadClientGridsOnConnect( ClientJoinedEvent joinedEvent )
 	{
 		LoadClientGrids( To.Single( joinedEvent.Client ) );
+	}
+
+	[ConCmd.Server( "gridastar_regenerate" )]
+	public static void RegenerateGrids()
+	{
+		GameTask.RunInThreadAsync( async () =>
+		{
+			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+
+			foreach ( var grid in allGrids )
+			{
+				grid.CreateFromSettings();
+			}
+
+			Event.Run( Grid.LoadedAll );
+		} );
 	}
 }

@@ -10,13 +10,14 @@ public partial class Grid
 	/// </summary>
 	/// <param name="startingCell">The starting point of the path.</param>
 	/// <param name="targetCell">The desired destination point of the path.</param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns>A task that represents the asynchronous operation. The result of the task is an <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	public async Task<ImmutableArray<Cell>> ComputePathAsync( Cell startingCell, Cell targetCell )
+	public async Task<ImmutableArray<Cell>> ComputePathAsync( Cell startingCell, Cell targetCell, Entity pathCreator = null )
 	{
 		// Fast path.
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return ImmutableArray<Cell>.Empty;
 
-		return await GameTask.RunInThreadAsync( () => ComputePathInternal( startingCell, targetCell, false, CancellationToken.None ) );
+		return await GameTask.RunInThreadAsync( () => ComputePathInternal( startingCell, targetCell, false, CancellationToken.None, pathCreator ) );
 	}
 
 	/// /// <summary>
@@ -25,13 +26,14 @@ public partial class Grid
 	/// <param name="startingCell">The starting point of the path.</param>
 	/// <param name="targetCell">The desired destination point of the path.</param>
 	/// <param name="token">A cancellation token used to cancel computing the path.</param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns>A task that represents the asynchronous operation. The result of the task is an <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	public async Task<ImmutableArray<Cell>> ComputePathAsync( Cell startingCell, Cell targetCell, CancellationToken token )
+	public async Task<ImmutableArray<Cell>> ComputePathAsync( Cell startingCell, Cell targetCell, CancellationToken token, Entity pathCreator = null )
 	{
 		// Fast path.
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return ImmutableArray<Cell>.Empty;
 
-		return await GameTask.RunInThreadAsync( () => ComputePathInternal( startingCell, targetCell, false, token ) );
+		return await GameTask.RunInThreadAsync( () => ComputePathInternal( startingCell, targetCell, false, token, pathCreator ) );
 	}
 
 	/// <summary>
@@ -41,13 +43,14 @@ public partial class Grid
 	/// <param name="targetCell">The desired destination point of the path.</param>
 	/// <param name="reversed">Whether or not to reverse the resulting path.</param>
 	/// <param name="token">A cancellation token used to cancel computing the path.</param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns>A task that represents the asynchronous operation. The result of the task is an <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	public async Task<ImmutableArray<Cell>> ComputePathAsync( Cell startingCell, Cell targetCell, bool reversed = false, CancellationToken token = default )
+	public async Task<ImmutableArray<Cell>> ComputePathAsync( Cell startingCell, Cell targetCell, bool reversed = false, CancellationToken token = default, Entity pathCreator = null )
 	{
 		// Fast path.
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return ImmutableArray<Cell>.Empty;
 
-		return await GameTask.RunInThreadAsync( () => ComputePathInternal( startingCell, targetCell, reversed, token ) );
+		return await GameTask.RunInThreadAsync( () => ComputePathInternal( startingCell, targetCell, reversed, token, pathCreator ) );
 	}
 
 	/// <summary>
@@ -56,13 +59,14 @@ public partial class Grid
 	/// <param name="startingCell">The starting point of the path.</param>
 	/// <param name="targetCell">The desired destination point of the path.</param>
 	/// <param name="reversed">Whether or not to reverse the resulting path.</param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns>An <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	public ImmutableArray<Cell> ComputePath( Cell startingCell, Cell targetCell, bool reversed = false )
+	public ImmutableArray<Cell> ComputePath( Cell startingCell, Cell targetCell, bool reversed = false, Entity pathCreator = null )
 	{
 		// Fast path.
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return ImmutableArray<Cell>.Empty;
 
-		return ComputePathInternal( startingCell, targetCell, reversed, CancellationToken.None );
+		return ComputePathInternal( startingCell, targetCell, reversed, CancellationToken.None, pathCreator );
 	}
 
 	/// <summary>
@@ -72,8 +76,9 @@ public partial class Grid
 	/// <param name="targetCell">The desired destination point of the path.</param>
 	/// <param name="reversed">Whether or not to reverse the resulting path.</param>
 	/// <param name="token">A cancellation token used to cancel computing the path.</param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns>An <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	private ImmutableArray<Cell> ComputePathInternal( Cell startingCell, Cell targetCell, bool reversed, CancellationToken token )
+	private ImmutableArray<Cell> ComputePathInternal( Cell startingCell, Cell targetCell, bool reversed, CancellationToken token, Entity pathCreator = null )
 	{
 		// Setup.
 		var path = ImmutableArray.CreateBuilder<Cell>();
@@ -107,7 +112,9 @@ public partial class Grid
 
 			foreach ( var neighbour in currentNode.Current.GetNeighbours() )
 			{
-				if ( neighbour.Occupied || closedCellSet.Contains( neighbour ) ) continue;
+				if ( pathCreator == null && neighbour.Occupied ) continue;
+				if ( pathCreator != null && neighbour.Occupied && neighbour.OccupyingEntity != pathCreator ) continue;
+				if ( closedCellSet.Contains( neighbour ) ) continue;
 
 				var isInOpenSet = openCellSet.Contains( neighbour );
 				Node neighbourNode;
@@ -150,14 +157,15 @@ public partial class Grid
 	/// <param name="startingCell">The starting point of the path.</param>
 	/// <param name="targetCell">The desired destination point of the path.</param>
 	/// <param name="token"></param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns>A task that represents the asynchronous operation. The result of the task is an <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	public async Task<ImmutableArray<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell, CancellationTokenSource token )
+	public async Task<ImmutableArray<Cell>> ComputePathParallel( Cell startingCell, Cell targetCell, CancellationTokenSource token, Entity pathCreator = null )
 	{
 		// Fast path.
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return ImmutableArray<Cell>.Empty;
 
-		var fromTo = ComputePathAsync( startingCell, targetCell, token.Token );
-		var toFrom = ComputePathAsync( targetCell, startingCell, true, token.Token );
+		var fromTo = ComputePathAsync( startingCell, targetCell, token.Token, pathCreator );
+		var toFrom = ComputePathAsync( targetCell, startingCell, true, token.Token, pathCreator );
 
 		var pathResult = await GameTask.WhenAny( fromTo, toFrom ).Result;
 
@@ -189,8 +197,9 @@ public partial class Grid
 	/// <param name="path"></param>
 	/// <param name="segmentAmounts"></param>
 	/// <param name="iterations"></param>
+	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <returns></returns>
-	public ImmutableArray<Cell> SimplifyPath( ImmutableArray<Cell> path, int segmentAmounts = 2, int iterations = 8 )
+	public ImmutableArray<Cell> SimplifyPath( ImmutableArray<Cell> path, int segmentAmounts = 2, int iterations = 8, Entity pathCreator = null )
 	{
 		var pathResult = path.ToList();
 
@@ -205,7 +214,7 @@ public partial class Grid
 				var currentCell = pathResult[segmentStart];
 				var furtherCell = pathResult[segmentEnd];
 
-				if ( LineOfSight( currentCell, furtherCell ) )
+				if ( LineOfSight( currentCell, furtherCell, pathCreator ) )
 				{
 					for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
 					{

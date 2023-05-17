@@ -40,7 +40,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( ( Position + Bounds.Mins ).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public bool Occupied { get; set; } = false;
-	internal Entity occupyingEntity { get; set; } = null;
+	public Entity OccupyingEntity { get; set; } = null;
 	internal Transform currentOccupyingTransform { get; set; } = Transform.Zero;
 	bool IValid.IsValid { get; }
 
@@ -59,7 +59,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		if ( !coordinatesAndStairs.Item1 )
 			return null;
 
-		if ( !TestForClearance( grid, position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.RealStepSize, position.z - validCoordinates.Min(), coordinatesAndStairs.Item2 ) )
+		if ( !TestForClearance( grid, position, grid.WorldOnly, grid.WidthClearance, grid.HeightClearance, grid.RealStepSize, position.z - validCoordinates.Min() ) )
 			return null;
 		
 		return new Cell( grid, position, validCoordinates );
@@ -101,11 +101,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return TestForSteps( grid, position, testCoordinates, validCoordinates, worldOnly, standableAngle, stepSize );
 	}
 
-	private static bool TestForClearance( Grid grid, Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize, float height, bool isStairs )
+	private static bool TestForClearance( Grid grid, Vector3 position, bool worldOnly, float widthClearance, float heightClearance, float stepSize, float height )
 	{
 		var clearanceBBox = new BBox( new Vector3( -widthClearance / 2f, -widthClearance / 2f, 0f ), new Vector3( widthClearance / 2f, widthClearance / 2f, 1f ) );
 		var startPos = position + Vector3.Up * heightClearance;
-		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position );
+		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * stepSize );
 
 		if ( worldOnly )
 			clearanceTrace.WorldOnly();
@@ -115,7 +115,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var clearanceResult = clearanceTrace.Run();
 		var heightDifference = clearanceResult.EndPosition.z - ( position.z - height );
 
-		return (heightDifference <= stepSize + ( isStairs ? height : 0f ) );
+		return heightDifference <= stepSize + height;
 	}
 
 
@@ -155,11 +155,12 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		while ( stepsTried < maxSteps )
 		{
-			var stepPositionStart = startPosition + Vector3.Up * (stepSize / 2f * stepsTried + 0.1f);
+			var tolerance = 0.1f;
+			var stepPositionStart = startPosition + Vector3.Up * ( stepSize / 2f * stepsTried + tolerance);
 			var stepPositionEnd = endPosition.WithZ( stepPositionStart.z );
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
-			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + 0.2f ) );
+			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + tolerance * 2f ) );
 
 			if ( worldOnly )
 				stepTrace.WorldOnly();
@@ -170,7 +171,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
 
 			if ( stepsTried == 0 )
-				if ( stepResult.EndPosition.Distance( endPosition ) <= 0.3f ) // Pack it up, no stairs here
+				if ( stepResult.EndPosition.Distance( endPosition ) <= tolerance * 3f ) // Pack it up, no stairs here
 					return (true,false);
 
 			if ( stepResult.Hit && stepAngle > standableAngle && stepAngle < 89.9f ) // MoveHelper straight up doesn't count it as a step if it's not 90°
@@ -182,8 +183,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 			{
 				var distanceDifference = Math.Abs( distanceFromStart - stepDistances[stepsTried - 2] );
 
-				if ( distanceDifference < 0.1f )
-					return (false,true);
+				if ( distanceDifference < tolerance )
+					return (false, true);
 			}
 
 			stepDistances[stepsTried] = distanceFromStart;
@@ -195,13 +196,13 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 	public void SetOccupant( Entity entity )
 	{
-		occupyingEntity = entity;
+		OccupyingEntity = entity;
 		currentOccupyingTransform = entity.Transform;
 	}
 
 	public bool TestForOccupancy( string tag )
 	{
-		if ( occupyingEntity != null && occupyingEntity.Transform == currentOccupyingTransform ) return Occupied;
+		if ( OccupyingEntity != null && OccupyingEntity.Transform == currentOccupyingTransform ) return Occupied;
 
 		var occupyTrace = Sandbox.Trace.Box( Bounds, Position, Position )
 			.EntitiesOnly()
