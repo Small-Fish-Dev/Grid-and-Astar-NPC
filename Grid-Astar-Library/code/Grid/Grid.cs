@@ -308,7 +308,12 @@ public partial class Grid : IValid
 	public async Task<bool> Initialize( bool save = true )
 	{
 		if ( Grids.ContainsKey( Identifier ) )
+		{
+			if ( Grids[Identifier] != null )
+				Grids[Identifier].Delete( true );
+
 			Grids[Identifier] = this;
+		}
 		else
 			Grids.Add( Identifier, this );
 
@@ -327,7 +332,6 @@ public partial class Grid : IValid
 
 		if ( deleteSave )
 			DeleteSave();
-
 	}
 
 	public override int GetHashCode()

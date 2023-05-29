@@ -108,6 +108,24 @@ public partial class Grid
 	[ConCmd.Server( "gridastar_regenerate" )]
 	public static void RegenerateGrids()
 	{
+		RegenerateOnClient( To.Everyone );
+
+		GameTask.RunInThreadAsync( async () =>
+		{
+			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+
+			foreach ( var grid in allGrids )
+			{
+				await grid.CreateFromSettings();
+			}
+
+			Event.Run( Grid.LoadedAll );
+		} );
+	}
+
+	[ClientRpc]
+	public static void RegenerateOnClient()
+	{
 		GameTask.RunInThreadAsync( async () =>
 		{
 			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
