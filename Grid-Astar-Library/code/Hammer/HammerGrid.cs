@@ -70,12 +70,9 @@ public partial class HammerGrid : ModelEntity
 		return true;
 	}
 
-	public void CreateFromSettings()
+	public async Task<Grid> CreateFromSettings()
 	{
-		GameTask.RunInThreadAsync( async () =>
-		{
-			await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, GridPerfect, WorldOnly );
-		} );
+		return await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, GridPerfect, WorldOnly );
 	}
 
 	public static void LoadAllGrids()
@@ -93,18 +90,18 @@ public partial class HammerGrid : ModelEntity
 					if ( grid.PropertiesEqual( properties ) )
 					{
 						if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // If everything is valid, which it should be, it will load the map in
-							grid.CreateFromSettings(); // Else it will create a new one
+							await grid.CreateFromSettings(); // Else it will create a new one
 					}
 					else
 					{
 						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {grid.Identifier} properties don't match. Creating new one..." );
 						Grid.DeleteSave( grid.Identifier );
-						grid.CreateFromSettings();
+						await grid.CreateFromSettings();
 					}
 
 				}
 				else
-					grid.CreateFromSettings();
+					await grid.CreateFromSettings();
 			}
 
 			Event.Run( Grid.LoadedAll );
@@ -127,21 +124,5 @@ public partial class HammerGrid : ModelEntity
 	public static void LoadClientGridsOnConnect( ClientJoinedEvent joinedEvent )
 	{
 		LoadClientGrids( To.Single( joinedEvent.Client ) );
-	}
-
-	[ConCmd.Server( "gridastar_regenerate" )]
-	public static void RegenerateGrids()
-	{
-		GameTask.RunInThreadAsync( async () =>
-		{
-			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
-
-			foreach ( var grid in allGrids )
-			{
-				grid.CreateFromSettings();
-			}
-
-			Event.Run( Grid.LoadedAll );
-		} );
 	}
 }

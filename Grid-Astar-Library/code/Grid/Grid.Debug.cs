@@ -105,6 +105,22 @@ public partial class Grid
 		}
 	}*/
 
+	[ConCmd.Server( "gridastar_regenerate" )]
+	public static void RegenerateGrids()
+	{
+		GameTask.RunInThreadAsync( async () =>
+		{
+			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+
+			foreach ( var grid in allGrids )
+			{
+				await grid.CreateFromSettings();
+			}
+
+			Event.Run( Grid.LoadedAll );
+		} );
+	}
+
 	static TimeUntil nextDraw = 0f;
 
 	[Event.Debug.Overlay( "displaygridclient", "[Client] Display Grid", "grid_on" )]
