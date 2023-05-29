@@ -31,6 +31,27 @@ public struct GridLoadProperties
 	{
 		Identifier = identifier;
 	}
+
+	public override int GetHashCode()
+	{
+		var identifierHashCode = Identifier.GetHashCode();
+		var positionHashCode = Position.GetHashCode();
+		var boundsHashCode = Bounds.GetHashCode();
+		var rotationHashCode = Rotation.GetHashCode();
+		var axisAlignedHashCode = AxisAligned.GetHashCode();
+		var standableAngleHashCode = StandableAngle.GetHashCode();
+		var stepSizeHashCode = StepSize.GetHashCode();
+		var cellSizeHashCode = CellSize.GetHashCode();
+		var heightClearanceHashCode = HeightClearance.GetHashCode();
+		var widthClearanceHashCode = WidthClearance.GetHashCode();
+		var gridPerfectHashCode = GridPerfect.GetHashCode();
+		var worldOnlyHashCode = WorldOnly.GetHashCode();
+
+		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
+		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
+
+		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
+	}
 }
 
 public partial class Grid
@@ -136,10 +157,10 @@ public partial class Grid
 
 				return currentGrid;
 			}
-			catch ( Exception _ )
+			catch ( Exception error )
 			{
 				loadWatch.Stop();
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load" );
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load ({error})" );
 				return null;
 			}
 		}
@@ -201,10 +222,10 @@ public partial class Grid
 				return true;
 			}
 		}
-		catch ( Exception _ )
+		catch ( Exception error )
 		{
 			saveWatch.Stop();
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} failed to save" );
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} failed to save ({error})" );
 			return false;
 		}
 	}

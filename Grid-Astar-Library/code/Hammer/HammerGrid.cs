@@ -1,4 +1,5 @@
 ﻿using Editor;
+using Sandbox;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -40,35 +41,7 @@ public partial class HammerGrid : ModelEntity
 		EnableDrawing = false;
 	}
 
-	public bool PropertiesEqual( GridLoadProperties properties )
-	{
-		if ( Identifier != properties.Identifier )
-			return false;
-		if ( AxisAligned != properties.AxisAligned )
-			return false;
-		if ( StandableAngle != properties.StandableAngle )
-			return false;
-		if ( StepSize != properties.StepSize )
-			return false;
-		if ( CellSize != properties.CellSize )
-			return false;
-		if ( HeightClearance != properties.HeightClearance )
-			return false;
-		if ( WidthClearance != properties.WidthClearance )
-			return false;
-		if ( GridPerfect != properties.GridPerfect )
-			return false;
-		if ( WorldOnly != properties.WorldOnly )
-			return false;
-		if ( Position != properties.Position )
-			return false;
-		if ( CollisionBounds != properties.Bounds )
-			return false;
-		if ( Rotation != properties.Rotation )
-			return false;
-
-		return true;
-	}
+	public bool PropertiesEqual( GridLoadProperties properties ) => properties.GetHashCode() == GridHashCode();
 
 	public async Task<Grid> CreateFromSettings()
 	{
@@ -124,5 +97,26 @@ public partial class HammerGrid : ModelEntity
 	public static void LoadClientGridsOnConnect( ClientJoinedEvent joinedEvent )
 	{
 		LoadClientGrids( To.Single( joinedEvent.Client ) );
+	}
+
+	public int GridHashCode() // Overriding GetHashCode returns an error because of Position.GetHashCode()
+	{
+		var identifierHashCode = Identifier.GetHashCode();
+		var positionHashCode = Position.GetHashCode();
+		var boundsHashCode = CollisionBounds.GetHashCode();
+		var rotationHashCode = Rotation.GetHashCode();
+		var axisAlignedHashCode = AxisAligned.GetHashCode();
+		var standableAngleHashCode = StandableAngle.GetHashCode();
+		var stepSizeHashCode = StepSize.GetHashCode();
+		var cellSizeHashCode = CellSize.GetHashCode();
+		var heightClearanceHashCode = HeightClearance.GetHashCode();
+		var widthClearanceHashCode = WidthClearance.GetHashCode();
+		var gridPerfectHashCode = GridPerfect.GetHashCode();
+		var worldOnlyHashCode = WorldOnly.GetHashCode();
+
+		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
+		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
+
+		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
 	}
 }
