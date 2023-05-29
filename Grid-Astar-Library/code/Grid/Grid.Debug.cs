@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public partial class Grid
 {
@@ -107,18 +105,84 @@ public partial class Grid
 		}
 	}*/
 
-	[Event.Debug.Overlay( "displaygrid", "Display Grid", "grid_on" )]
-	public static void GridOverlay()
-	{
-		if ( !Game.IsServer ) return;
+	static TimeUntil nextDraw = 0f;
 
-		if ( Time.Tick % 60 == 0 )
+	[Event.Debug.Overlay( "displaygridclient", "[Client] Display Grid", "grid_on" )]
+	public static void GridOverlayClient()
+	{
+		if ( !Game.IsClient ) return;
+
+		if ( nextDraw )
+		{
 			foreach ( var grid in Grids )
 				foreach ( var cellStack in grid.Value.Cells )
 					foreach ( var cell in cellStack.Value )
 					{
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.5f, true, false, cell.Occupied );
+						var position = cell.Position.ToScreen();
+						if ( position.z < 0f ) continue;
+						if ( position.x < 0f || position.x > 1f) continue;
+						if ( position.y < 0f || position.y > 1f ) continue;
+
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
 					}
+
+			nextDraw = 1f;
+		}
+	}
+
+	[Event.Debug.Overlay( "displaygridclientnodepth", "[Client] Display Grid (No depth)", "grid_on" )]
+	public static void GridOverlayClientNoDepth()
+	{
+		if ( !Game.IsClient ) return;
+
+		if ( nextDraw )
+		{
+			foreach ( var grid in Grids )
+				foreach ( var cellStack in grid.Value.Cells )
+					foreach ( var cell in cellStack.Value )
+					{
+						var position = cell.Position.ToScreen();
+						if ( position.z < 0f ) continue;
+						if ( position.x < 0f || position.x > 1f ) continue;
+						if ( position.y < 0f || position.y > 1f ) continue;
+
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
+					}
+
+			nextDraw = 1f;
+		}
+	}
+
+	[Event.Debug.Overlay( "displaygridserver", "[Server] Display Grid", "grid_on" )]
+	public static void GridOverlayServer()
+	{
+		if ( !Game.IsServer ) return;
+
+		if ( nextDraw )
+		{
+			foreach ( var grid in Grids )
+				foreach ( var cellStack in grid.Value.Cells )
+					foreach ( var cell in cellStack.Value )
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
+
+			nextDraw = 1f;
+		}
+	}
+
+	[Event.Debug.Overlay( "displaygridservernodepth", "[Server] Display Grid (No depth)", "grid_on" )]
+	public static void GridOverlayServerNoDepth()
+	{
+		if ( !Game.IsServer ) return;
+
+		if ( nextDraw )
+		{
+			foreach ( var grid in Grids )
+				foreach ( var cellStack in grid.Value.Cells )
+					foreach ( var cell in cellStack.Value )
+						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
+
+			nextDraw = 1f;
+		}
 	}
 }
 

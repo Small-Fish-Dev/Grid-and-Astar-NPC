@@ -20,7 +20,7 @@
     "GameNetworkType": "Multiplayer",
     "MapSelect": "Official",
     "MapList": [
-      "grid_showcase"
+      "grid_test"
     ],
     "RankType": "None",
     "PerMapRanking": false,
