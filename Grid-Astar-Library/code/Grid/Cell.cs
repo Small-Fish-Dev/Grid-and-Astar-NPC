@@ -155,12 +155,13 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		while ( stepsTried < maxSteps )
 		{
-			var tolerance = 0.1f;
-			var stepPositionStart = startPosition + Vector3.Up * ( stepSize / 2f * stepsTried + tolerance);
+			var tolerance = 0.01f;
+			var stepPositionStart = startPosition + Vector3.Up * ( stepSize / 4f + stepSize / 2f * stepsTried + tolerance);
 			var stepPositionEnd = endPosition.WithZ( stepPositionStart.z );
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
-			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + tolerance * 2f ) );
+			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + tolerance * 2f ) )
+				.Size( stepSize / 2f);
 
 			if ( worldOnly )
 				stepTrace.WorldOnly();
