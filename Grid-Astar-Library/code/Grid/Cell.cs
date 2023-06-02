@@ -2,39 +2,34 @@
 
 public struct CellTags
 {
-	private List<string> tags { get; }
+	public List<string> All { get; }
 
 	public CellTags()
 	{
-		tags = new List<string>();
+		All = new List<string>();
 	}
-	public CellTags( string json )
+	public CellTags( List<string> tags )
 	{
-		tags = Json.Deserialize<List<string>>( json );
+		All = new List<string>( tags );
 	}
 
-	public bool Has( string tag ) => tags.Contains( tag );
+	public bool Has( string tag ) => All.Contains( tag );
 
 	public void Add( string tag )
 	{
 		if ( !Has( tag ) )
-			tags.Add( tag );
+			All.Add( tag );
 	}
 
 	public void Remove( string tag )
 	{
 		if ( Has( tag ) )
-			tags.Remove( tag );
+			All.Remove( tag );
 	}
 
 	public void Clear()
 	{
-		tags.Clear();
-	}
-
-	public string Serialize()
-	{
-		return Json.Serialize( tags );
+		All.Clear();
 	}
 }
 
@@ -74,7 +69,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( ( Position + Bounds.Mins ).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
-	public CellTags Tags { get; } = new CellTags();
+	public CellTags Tags { get; set; }
 	public bool Occupied
 	{
 		get => Tags.Has( "occupied" );
@@ -265,12 +260,17 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return occupyResult.Hit;
 	}
 
-	public Cell( Grid grid, Vector3 position, float[] vertices )
+	public Cell( Grid grid, Vector3 position, float[] vertices, List<string> tags = null )
 	{
 		Grid = grid;
 		Position = position;
 		GridPosition = ( Position - Grid.WorldBounds.Mins - grid.CellSize / 2).ToIntVector2( grid.CellSize );
 		Vertices = vertices;
+
+		if ( tags != null && tags.Count() > 0 )
+			Tags = new CellTags( tags );
+		else
+			Tags = new CellTags();
 	}
 
 	// Perhaps there's a way to check these automatically, but I tried! :-)
@@ -355,6 +355,13 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		if ( drawCoordinates )
 			DebugOverlay.Text( $"{GridPosition}", Position, duration, 200 );
+
+		int index = 0;
+		foreach( var tag in Tags.All )
+		{
+			DebugOverlay.Text( $"{tag}", Position, index, color, duration, 200 );
+			index++;
+		}
 	}
 
 	/// <summary>

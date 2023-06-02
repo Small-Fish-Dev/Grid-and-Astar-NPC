@@ -1,10 +1,4 @@
-﻿using Sandbox;
-using System.Data.Common;
-using System.Data.SqlTypes;
-using System.IO;
-using System.Runtime.CompilerServices;
-using static Sandbox.Event;
-
+﻿using System.IO;
 namespace GridAStar;
 
 public static partial class GridSettings
@@ -143,8 +137,12 @@ public partial class Grid
 						var cellVertices = new float[4];
 						for ( int vertex = 0; vertex < 4; vertex++ )
 							cellVertices[vertex] = reader.ReadSingle();
+						var tagsAmount = reader.ReadInt32();
+						var tags = new List<string>();
+						for ( int tag = 0; tag < tagsAmount; tag++ )
+							tags.Add( reader.ReadString() );
 
-						var cell = new Cell( currentGrid, cellPosition, cellVertices );
+						var cell = new Cell( currentGrid, cellPosition, cellVertices, tags );
 						currentGrid.AddCell( cell );
 					}
 
@@ -212,6 +210,9 @@ public partial class Grid
 							writer.Write( cell.Position );
 							foreach ( var vertex in cell.Vertices )
 								writer.Write( vertex );
+							writer.Write( cell.Tags.All.Count() );
+							foreach( var tag in cell.Tags.All )
+								writer.Write( tag );
 						}
 					}
 				} );
