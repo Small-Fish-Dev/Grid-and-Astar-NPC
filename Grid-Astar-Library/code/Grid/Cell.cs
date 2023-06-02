@@ -3,6 +3,35 @@ using System.Runtime.CompilerServices;
 
 namespace GridAStar;
 
+public struct CellTags
+{
+	private List<string> tags { get; }
+
+	public CellTags()
+	{
+		tags = new List<string>();
+	}
+
+	public bool Has( string tag ) => tags.Contains( tag );
+
+	public void Add( string tag )
+	{
+		if ( !Has( tag ) )
+			tags.Add( tag );
+	}
+
+	public void Remove( string tag )
+	{
+		if ( Has( tag ) )
+			tags.Remove( tag );
+	}
+
+	public void Clear()
+	{
+		tags.Clear();
+	}
+}
+
 public partial class Cell : IEquatable<Cell>, IValid
 {
 	/// <summary>
@@ -39,7 +68,18 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( ( Position + Bounds.Mins ).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
-	public bool Occupied { get; set; } = false;
+	public CellTags Tags { get; } = new CellTags();
+	public bool Occupied
+	{
+		get => Tags.Has( "occupied" );
+		set
+		{
+			if ( value )
+				Tags.Add( "occupied" );
+			else
+				Tags.Remove( "occupied" );
+		}
+	}
 	public Entity OccupyingEntity { get; set; } = null;
 	internal Transform currentOccupyingTransform { get; set; } = Transform.Zero;
 	bool IValid.IsValid { get; }

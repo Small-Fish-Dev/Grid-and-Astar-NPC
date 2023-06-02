@@ -8,6 +8,7 @@ global using System.Collections.Generic;
 global using System.Diagnostics;
 global using System.Threading.Tasks;
 using Sandbox.Internal;
+using System.Runtime.InteropServices;
 
 namespace GridAStar;
 
