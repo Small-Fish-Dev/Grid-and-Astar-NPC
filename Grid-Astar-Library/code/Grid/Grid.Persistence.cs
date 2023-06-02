@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.IO.Compression;
 namespace GridAStar;
 
 public static partial class GridSettings
@@ -62,11 +63,12 @@ public partial class Grid
 	/// <returns></returns>
 	public async static Task<GridLoadProperties> LoadProperties( string identifier = "main" )
 	{
-
 		if ( !Grid.Exists( identifier ) )
 			return new GridLoadProperties();
 
-		using ( var reader = new BinaryReader( FileSystem.Data.OpenRead( GetSavePath( identifier ) ) ) )
+		using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
+		using ( var gzipStream = new GZipStream( fileStream, CompressionMode.Decompress ) )
+		using ( var reader = new BinaryReader( gzipStream ) )
 		{
 			var loadedGrid = new GridLoadProperties( reader.ReadString() );
 
@@ -83,7 +85,6 @@ public partial class Grid
 				loadedGrid.WidthClearance = reader.ReadSingle();
 				loadedGrid.GridPerfect = reader.ReadBoolean();
 				loadedGrid.WorldOnly = reader.ReadBoolean();
-
 			} );
 
 			return loadedGrid;
@@ -108,7 +109,9 @@ public partial class Grid
 		var loadWatch = new Stopwatch();
 		loadWatch.Start();
 
-		using ( var reader = new BinaryReader( FileSystem.Data.OpenRead( GetSavePath( identifier ) ) ) )
+		using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
+		using ( var gzipStream = new GZipStream( fileStream, CompressionMode.Decompress ) )
+		using ( var reader = new BinaryReader( gzipStream ) )
 		{
 			try
 			{
@@ -145,7 +148,6 @@ public partial class Grid
 						var cell = new Cell( currentGrid, cellPosition, cellVertices, tags );
 						currentGrid.AddCell( cell );
 					}
-
 				} );
 
 				await currentGrid.Initialize( false );
@@ -177,7 +179,10 @@ public partial class Grid
 
 		try
 		{
-			using ( var writer = new BinaryWriter( FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate ) ) )
+			byte[] compressedData;
+
+			using ( var memoryStream = new MemoryStream() )
+			using ( var writer = new BinaryWriter( memoryStream ) )
 			{
 				writer.Write( Identifier );
 				writer.Write( Position );
@@ -211,23 +216,43 @@ public partial class Grid
 							foreach ( var vertex in cell.Vertices )
 								writer.Write( vertex );
 							writer.Write( cell.Tags.All.Count() );
-							foreach( var tag in cell.Tags.All )
+							foreach ( var tag in cell.Tags.All )
 								writer.Write( tag );
 						}
 					}
 				} );
 
-				saveWatch.Stop();
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} saved in {saveWatch.ElapsedMilliseconds}ms" );
-
-				return true;
+				compressedData = CompressData( memoryStream.ToArray() );
 			}
+
+			using ( var fileStream = FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate ) )
+			{
+				await fileStream.WriteAsync( compressedData, 0, compressedData.Length );
+			}
+
+			saveWatch.Stop();
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} saved in {saveWatch.ElapsedMilliseconds}ms" );
+
+			return true;
 		}
 		catch ( Exception error )
 		{
 			saveWatch.Stop();
 			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} failed to save ({error})" );
 			return false;
+		}
+	}
+
+	private byte[] CompressData( byte[] data )
+	{
+		using ( var compressedStream = new MemoryStream() )
+		{
+			using ( var gzipStream = new GZipStream( compressedStream, CompressionMode.Compress ) )
+			{
+				gzipStream.Write( data, 0, data.Length );
+			}
+
+			return compressedStream.ToArray();
 		}
 	}
 
