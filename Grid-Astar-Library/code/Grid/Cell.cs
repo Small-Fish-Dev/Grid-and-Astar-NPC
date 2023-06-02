@@ -1,7 +1,4 @@
-﻿using System.Drawing;
-using System.Runtime.CompilerServices;
-
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public struct CellTags
 {
@@ -10,6 +7,10 @@ public struct CellTags
 	public CellTags()
 	{
 		tags = new List<string>();
+	}
+	public CellTags( string json )
+	{
+		tags = Json.Deserialize<List<string>>( json );
 	}
 
 	public bool Has( string tag ) => tags.Contains( tag );
@@ -29,6 +30,11 @@ public struct CellTags
 	public void Clear()
 	{
 		tags.Clear();
+	}
+
+	public string Serialize()
+	{
+		return Json.Serialize( tags );
 	}
 }
 
