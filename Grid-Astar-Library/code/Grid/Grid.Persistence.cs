@@ -67,27 +67,37 @@ public partial class Grid
 			return new GridLoadProperties();
 
 		using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
-		using ( var gzipStream = new GZipStream( fileStream, CompressionMode.Decompress ) )
-		using ( var reader = new BinaryReader( gzipStream ) )
 		{
-			var loadedGrid = new GridLoadProperties( reader.ReadString() );
+			Stream dataStream = fileStream;
 
-			await GameTask.RunInThreadAsync( () =>
+			// Check if the data is compressed
+			if ( IsCompressed( dataStream ) )
 			{
-				loadedGrid.Position = reader.ReadVector3();
-				loadedGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
-				loadedGrid.Rotation = reader.ReadRotation();
-				loadedGrid.AxisAligned = reader.ReadBoolean();
-				loadedGrid.StandableAngle = reader.ReadSingle();
-				loadedGrid.StepSize = reader.ReadSingle();
-				loadedGrid.CellSize = reader.ReadSingle();
-				loadedGrid.HeightClearance = reader.ReadSingle();
-				loadedGrid.WidthClearance = reader.ReadSingle();
-				loadedGrid.GridPerfect = reader.ReadBoolean();
-				loadedGrid.WorldOnly = reader.ReadBoolean();
-			} );
+				dataStream = new GZipStream( fileStream, CompressionMode.Decompress );
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} is compressed, decompressing..." );
+			}
 
-			return loadedGrid;
+			using ( var reader = new BinaryReader( dataStream ) )
+			{
+				var loadedGrid = new GridLoadProperties( reader.ReadString() );
+
+				await GameTask.RunInThreadAsync( () =>
+				{
+					loadedGrid.Position = reader.ReadVector3();
+					loadedGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
+					loadedGrid.Rotation = reader.ReadRotation();
+					loadedGrid.AxisAligned = reader.ReadBoolean();
+					loadedGrid.StandableAngle = reader.ReadSingle();
+					loadedGrid.StepSize = reader.ReadSingle();
+					loadedGrid.CellSize = reader.ReadSingle();
+					loadedGrid.HeightClearance = reader.ReadSingle();
+					loadedGrid.WidthClearance = reader.ReadSingle();
+					loadedGrid.GridPerfect = reader.ReadBoolean();
+					loadedGrid.WorldOnly = reader.ReadBoolean();
+				} );
+
+				return loadedGrid;
+			}
 		}
 	}
 
@@ -110,67 +120,87 @@ public partial class Grid
 		loadWatch.Start();
 
 		using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
-		using ( var gzipStream = new GZipStream( fileStream, CompressionMode.Decompress ) )
-		using ( var reader = new BinaryReader( gzipStream ) )
 		{
-			try
+			Stream dataStream = fileStream;
+
+			// Check if the data is compressed
+			if ( IsCompressed( dataStream ) )
 			{
-				var currentGrid = new Grid( reader.ReadString() );
-
-				await GameTask.RunInThreadAsync( () =>
-				{
-					currentGrid.Position = reader.ReadVector3();
-					currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
-					currentGrid.Rotation = reader.ReadRotation();
-					currentGrid.AxisAligned = reader.ReadBoolean();
-					currentGrid.StandableAngle = reader.ReadSingle();
-					currentGrid.StepSize = reader.ReadSingle();
-					currentGrid.CellSize = reader.ReadSingle();
-					currentGrid.HeightClearance = reader.ReadSingle();
-					currentGrid.WidthClearance = reader.ReadSingle();
-					currentGrid.GridPerfect = reader.ReadBoolean();
-					currentGrid.WorldOnly = reader.ReadBoolean();
-
-					var cellsToRead = reader.ReadInt32();
-					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
-
-					for ( int i = 0; i < cellsToRead; i++ )
-					{
-						var cellPosition = reader.ReadVector3();
-						var cellVertices = new float[4];
-						for ( int vertex = 0; vertex < 4; vertex++ )
-							cellVertices[vertex] = reader.ReadSingle();
-						var tagsAmount = reader.ReadInt32();
-						var tags = new List<string>();
-						for ( int tag = 0; tag < tagsAmount; tag++ )
-							tags.Add( reader.ReadString() );
-
-						var cell = new Cell( currentGrid, cellPosition, cellVertices, tags );
-						currentGrid.AddCell( cell );
-					}
-				} );
-
-				await currentGrid.Initialize( false );
-
-				loadWatch.Stop();
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} loaded in {loadWatch.ElapsedMilliseconds}ms" );
-
-				return currentGrid;
+				dataStream = new GZipStream( fileStream, CompressionMode.Decompress );
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} is compressed, decompressing..." );
 			}
-			catch ( Exception error )
+
+			using ( var reader = new BinaryReader( dataStream ) )
 			{
-				loadWatch.Stop();
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load ({error})" );
-				return null;
+				try
+				{
+					var currentGrid = new Grid( reader.ReadString() );
+
+					await GameTask.RunInThreadAsync( () =>
+					{
+						currentGrid.Position = reader.ReadVector3();
+						currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
+						currentGrid.Rotation = reader.ReadRotation();
+						currentGrid.AxisAligned = reader.ReadBoolean();
+						currentGrid.StandableAngle = reader.ReadSingle();
+						currentGrid.StepSize = reader.ReadSingle();
+						currentGrid.CellSize = reader.ReadSingle();
+						currentGrid.HeightClearance = reader.ReadSingle();
+						currentGrid.WidthClearance = reader.ReadSingle();
+						currentGrid.GridPerfect = reader.ReadBoolean();
+						currentGrid.WorldOnly = reader.ReadBoolean();
+
+						var cellsToRead = reader.ReadInt32();
+						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
+
+						for ( int i = 0; i < cellsToRead; i++ )
+						{
+							var cellPosition = reader.ReadVector3();
+							var cellVertices = new float[4];
+							for ( int vertex = 0; vertex < 4; vertex++ )
+								cellVertices[vertex] = reader.ReadSingle();
+							var tagsAmount = reader.ReadInt32();
+							var tags = new List<string>();
+							for ( int tag = 0; tag < tagsAmount; tag++ )
+								tags.Add( reader.ReadString() );
+
+							var cell = new Cell( currentGrid, cellPosition, cellVertices, tags );
+							currentGrid.AddCell( cell );
+						}
+					} );
+
+					await currentGrid.Initialize( false );
+
+					loadWatch.Stop();
+					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} loaded in {loadWatch.ElapsedMilliseconds}ms" );
+
+					return currentGrid;
+				}
+				catch ( Exception error )
+				{
+					loadWatch.Stop();
+					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load ({error})" );
+					return null;
+				}
 			}
 		}
+	}
+
+	private static bool IsCompressed( Stream stream )
+	{
+		// Read the first two bytes to check if they match the gzip file signature
+		byte[] signature = new byte[2];
+		stream.Read( signature, 0, 2 );
+		stream.Position = 0;
+
+		return signature[0] == 0x1F && signature[1] == 0x8B;
 	}
 
 	/// <summary>
 	/// Save the grid on a file
 	/// </summary>
 	/// <returns></returns>
-	public async Task<bool> Save()
+	public async Task<bool> Save( bool compress = false )
 	{
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Saving grid {Identifier}" );
 
@@ -179,7 +209,7 @@ public partial class Grid
 
 		try
 		{
-			byte[] compressedData;
+			byte[] data;
 
 			using ( var memoryStream = new MemoryStream() )
 			using ( var writer = new BinaryWriter( memoryStream ) )
@@ -222,13 +252,14 @@ public partial class Grid
 					}
 				} );
 
-				compressedData = CompressData( memoryStream.ToArray() );
+				data = memoryStream.ToArray();
 			}
 
+			if ( compress )
+				data = CompressData( data );
+
 			using ( var fileStream = FileSystem.Data.OpenWrite( SavePath, System.IO.FileMode.OpenOrCreate ) )
-			{
-				await fileStream.WriteAsync( compressedData, 0, compressedData.Length );
-			}
+				await fileStream.WriteAsync( data, 0, data.Length );
 
 			saveWatch.Stop();
 			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} saved in {saveWatch.ElapsedMilliseconds}ms" );
@@ -248,9 +279,7 @@ public partial class Grid
 		using ( var compressedStream = new MemoryStream() )
 		{
 			using ( var gzipStream = new GZipStream( compressedStream, CompressionMode.Compress ) )
-			{
 				gzipStream.Write( data, 0, data.Length );
-			}
 
 			return compressedStream.ToArray();
 		}
