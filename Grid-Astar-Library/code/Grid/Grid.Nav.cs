@@ -3,6 +3,27 @@ using System.Threading;
 
 namespace GridAStar;
 
+public struct AStarPathBuilder
+{
+	private List<string> tagsToAvoid = new();
+	private List<string> tagsToPursue = new();
+
+	public AStarPathBuilder() { }
+
+	/// <summary>
+	/// Which tags the cells need to have to be a part of the path
+	/// </summary>
+	/// <param name="tags"></param>
+	public void WithTags( params string[] tags ) => tagsToPursue.AddRange( tags );
+	/// <summary>
+	/// Which tags the cells cannot have to be a part of the path ("occupied" for example goes here)
+	/// </summary>
+	/// <param name="tags"></param>
+	public void WithoutTags( params string[] tags ) => tagsToAvoid.AddRange( tags );
+
+
+}
+
 public partial class Grid
 {
 	/// <summary>
