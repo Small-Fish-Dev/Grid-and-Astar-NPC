@@ -270,7 +270,8 @@ public partial class Grid : IValid
 						{
 							if ( !cylinder || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
 							{
-								if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
+								var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
+								if ( angle <= standableAngle )
 								{
 									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
 
