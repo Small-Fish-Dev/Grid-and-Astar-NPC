@@ -3,25 +3,124 @@ using System.Threading;
 
 namespace GridAStar;
 
+public struct AStarPath
+{
+	public AStarPathBuilder Settings { get; internal set; }
+	public List<Cell> Cells { get; set; }
+	public int Count => Cells.Count();
+
+	/// <summary>
+	/// Simplify the path by iterating over line of sights between the given segment size, joining them if valid
+	/// </summary>
+	/// <param name="segmentAmounts"></param>
+	/// <param name="iterations"></param>
+	/// <returns></returns>
+	public void Simplify( int segmentAmounts = 2, int iterations = 8 )
+	{
+		for ( int iteration = 0; iteration < iterations; iteration++ )
+		{
+			var segmentStart = 0;
+			var segmentEnd = Math.Min( segmentAmounts, Count - 1 );
+
+			while ( Count > 2 && segmentEnd < Count - 1 )
+			{
+				var currentCell = Cells[segmentStart];
+				var furtherCell = Cells[segmentEnd];
+
+				if ( Settings.Grid.LineOfSight( currentCell, furtherCell, Settings.PathCreator ) )
+					for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
+						Cells.RemoveAt( toDelete );
+
+				if ( segmentEnd == Count - 1 )
+					break;
+
+				segmentStart++;
+				segmentEnd = Math.Min( segmentStart + segmentAmounts, Count - 1 );
+			}
+		}
+	}
+}
+
 public struct AStarPathBuilder
 {
-	private List<string> tagsToAvoid = new();
-	private List<string> tagsToPursue = new();
+	public Grid Grid { get; private set; } = null;
+	public List<string> TagsToExclude { get; private set; } = new();
+	public bool HasTagsToExlude => TagsToExclude.Count() > 0;
+	public bool HasOccupiedTagToExclude => HasTagsToExlude ? TagsToExclude.Contains( "occupied" ) : false;
+	public List<string> TagsToInclude { get; private set; } = new();
+	public bool HasTagsToInclude => TagsToInclude.Count() > 0;
+	public bool AcceptsPartial { get; private set; } = false;
+	public float MaxCheckDistance { get; private set; } = float.PositiveInfinity;
+	public Entity PathCreator { get; private set; } = null;
+	public bool HasPathCreator => PathCreator != null;
 
 	public AStarPathBuilder() { }
+	public AStarPathBuilder( Grid grid ) : this()
+	{
+		Grid = grid;
+	}
 
 	/// <summary>
 	/// Which tags the cells need to have to be a part of the path
 	/// </summary>
 	/// <param name="tags"></param>
-	public void WithTags( params string[] tags ) => tagsToPursue.AddRange( tags );
+	public AStarPathBuilder WithTags( params string[] tags )
+	{
+		TagsToInclude.AddRange( tags );
+		return this;
+	}
 	/// <summary>
 	/// Which tags the cells cannot have to be a part of the path ("occupied" for example goes here)
 	/// </summary>
 	/// <param name="tags"></param>
-	public void WithoutTags( params string[] tags ) => tagsToAvoid.AddRange( tags );
+	public AStarPathBuilder WithoutTags( params string[] tags )
+	{
+		TagsToExclude.AddRange( tags );
+		return this;
+	}
+	/// <summary>
+	/// How far from the destination are we willing to check, this is added on top of the distance between start and end, else it would never run
+	/// </summary>
+	/// <param name="maxDistance">Default is infinity</param>
+	public AStarPathBuilder WithMaxDistance( float maxDistance )
+	{
+		MaxCheckDistance = Math.Max( 0f, maxDistance );
+		return this;
+	}
+	/// <summary>
+	/// Accept paths that don't reach the destination, pairs well with WithMaxDistance
+	/// </summary>
+	public AStarPathBuilder WithPartialEnabled()
+	{
+		AcceptsPartial = true;
+		return this;
+	}
 
+	/// <summary>
+	/// If the cell is being occupied by the path creator then it counts it anyways
+	/// </summary>
+	/// <param name="pathCreator"></param>
+	/// <returns></returns>
+	public AStarPathBuilder WithPathCreator( Entity pathCreator )
+	{
+		PathCreator = pathCreator;
+		return this;
+	}
 
+	public AStarPath Run( Cell startingCell, Cell targetCell, bool reversed = false )
+	{
+
+	}
+
+	public async Task<AStarPath> RunAsync( Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false )
+	{
+
+	}
+
+	public async Task<AStarPath> RunInParallel( Cell startingCell, Cell targetCell, CancellationToken token )
+	{
+
+	}
 }
 
 public partial class Grid
@@ -93,16 +192,16 @@ public partial class Grid
 	/// <summary>
 	/// Computes a path from the starting point to a target point. Reversing the path if needed.
 	/// </summary>
+	/// <param name="pathBuilder">The path building settings.</param>
 	/// <param name="startingCell">The starting point of the path.</param>
 	/// <param name="targetCell">The desired destination point of the path.</param>
 	/// <param name="reversed">Whether or not to reverse the resulting path.</param>
 	/// <param name="token">A cancellation token used to cancel computing the path.</param>
-	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
-	/// <returns>An <see cref="ImmutableArray{Cell}"/> that contains the computed path.</returns>
-	private ImmutableArray<Cell> ComputePathInternal( Cell startingCell, Cell targetCell, bool reversed, CancellationToken token, Entity pathCreator = null )
+	/// <returns>An <see cref="List{Cell}"/> that contains the computed path.</returns>
+	private List<Cell> ComputePathInternal( AStarPathBuilder pathBuilder, Cell startingCell, Cell targetCell, bool reversed, CancellationToken token )
 	{
 		// Setup.
-		var path = ImmutableArray.CreateBuilder<Cell>();
+		var path = new List<Cell>();
 
 		var startingNode = new Node( startingCell );
 		var targetNode = new Node( targetCell );
@@ -112,6 +211,8 @@ public partial class Grid
 		var closedCellSet = new HashSet<Cell>();
 		var openCellSet = new HashSet<Cell>();
 		var cellNodePair = new Dictionary<Cell, Node>();
+		var initialDistance = startingCell.Position.Distance( targetCell.Position );
+		var maxDistance = Math.Max( float.PositiveInfinity, initialDistance + pathBuilder.MaxCheckDistance ); 
 
 		openSet.Add( startingNode );
 		openCellSet.Add( startingCell );
@@ -131,10 +232,18 @@ public partial class Grid
 				break;
 			}
 
+			if ( openSet.Count == 1 && pathBuilder.AcceptsPartial )
+			{
+				RetracePath( path, startingNode, closedSet.OrderBy( x => x.hCost ).First() );
+				break;
+			}
+
 			foreach ( var neighbour in currentNode.Current.GetNeighbours() )
 			{
-				if ( pathCreator == null && neighbour.Occupied ) continue;
-				if ( pathCreator != null && neighbour.Occupied && neighbour.OccupyingEntity != pathCreator ) continue;
+				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Occupied ) continue;
+				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Occupied && neighbour.OccupyingEntity != pathBuilder.PathCreator ) continue;
+				if ( pathBuilder.HasTagsToExlude && neighbour.Tags.Has( pathBuilder.TagsToExclude ) ) continue;
+				if ( pathBuilder.HasTagsToInclude && !neighbour.Tags.Has( pathBuilder.TagsToInclude ) ) continue;
 				if ( closedCellSet.Contains( neighbour ) ) continue;
 
 				var isInOpenSet = openCellSet.Contains( neighbour );
@@ -146,11 +255,14 @@ public partial class Grid
 					neighbourNode = new Node( neighbour );
 
 				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour );
+				var distanceToTarget = neighbourNode.Distance( targetCell );
+
+				if ( distanceToTarget > maxDistance ) continue;
 
 				if ( newMovementCostToNeighbour < neighbourNode.gCost || !isInOpenSet )
 				{
 					neighbourNode.gCost = newMovementCostToNeighbour;
-					neighbourNode.hCost = neighbourNode.Distance( targetCell );
+					neighbourNode.hCost = distanceToTarget;
 					neighbourNode.Parent = currentNode;
 
 					if ( !isInOpenSet )
@@ -169,7 +281,7 @@ public partial class Grid
 		if ( reversed )
 			path.Reverse();
 
-		return path.ToImmutable();
+		return path;
 	}
 
 	/// <summary>
@@ -212,49 +324,8 @@ public partial class Grid
 		return await ComputePathParallel( startingCell, targetCell, token );
 	}
 
-	/// <summary>
-	/// Simplify the path by iterating over line of sights between the given segment size, joining them if valid
-	/// </summary>
-	/// <param name="path"></param>
-	/// <param name="segmentAmounts"></param>
-	/// <param name="iterations"></param>
-	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
-	/// <returns></returns>
-	public ImmutableArray<Cell> SimplifyPath( ImmutableArray<Cell> path, int segmentAmounts = 2, int iterations = 8, Entity pathCreator = null )
-	{
-		var pathResult = path.ToList();
 
-		for ( int iteration = 0; iteration < iterations; iteration++ )
-		{
-			var segmentStart = 0;
-			var segmentEnd = Math.Min( segmentAmounts, pathResult.Count() - 1 );
-			
-			while ( pathResult.Count() > 2 && segmentEnd < pathResult.Count() - 1 )
-			{
-
-				var currentCell = pathResult[segmentStart];
-				var furtherCell = pathResult[segmentEnd];
-
-				if ( LineOfSight( currentCell, furtherCell, pathCreator ) )
-				{
-					for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
-					{
-						pathResult.RemoveAt( toDelete );
-					}
-				}
-
-				if ( segmentEnd == pathResult.Count() - 1 )
-					break;
-
-				segmentStart++;
-				segmentEnd = Math.Min( segmentStart + segmentAmounts, pathResult.Count() - 1 );
-			}
-		}
-
-		return pathResult.ToImmutableArray();
-	}
-
-	private static void RetracePath( ImmutableArray<Cell>.Builder pathList, Node startNode, Node targetNode )
+	private static void RetracePath( List<Cell> pathList, Node startNode, Node targetNode )
 	{
 		var currentNode = targetNode;
 
