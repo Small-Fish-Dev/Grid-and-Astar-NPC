@@ -15,7 +15,7 @@ public partial class NPC : BaseActor
 		CurrentGrid = initialGrid;
 	}
 
-	public Vector2 TimeBetweenIdleMove => new Vector2( 7f, 12f );
+	public Vector2 TimeBetweenIdleMove => new Vector2( 2f, 4f );
 	internal TimeUntil nextIdleMode { get; set; } = 0f;
 
 	public override void Spawn()
@@ -50,7 +50,7 @@ public partial class NPC : BaseActor
 				var targetPosition = random * 3000;
 				var targetCell = CurrentGrid.GetCell( targetPosition, false );
 
-				NavigateTo( targetCell );
+				NavigateTo( CurrentGrid.GetCell( Entity.All.OfType<Player>().First().Position ) );
 				nextIdleMode = Game.Random.Float( TimeBetweenIdleMove.x, TimeBetweenIdleMove.y );
 			}
 		}

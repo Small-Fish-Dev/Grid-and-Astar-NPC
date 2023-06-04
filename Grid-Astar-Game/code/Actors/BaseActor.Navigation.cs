@@ -32,10 +32,11 @@ public abstract partial class BaseActor
 
 		var builder = AStarPathBuilder.From( CurrentGrid )
 			.WithPathCreator( this )
-			.WithMaxDistance( 500f )
-			.WithPartialEnabled();
+			.WithPartialEnabled()
+			.WithoutTags( "step" )
+			.WithMaxDistance( 500f );
 
-		var computedPath = builder.Run( NearestCell, targetCell );
+		var computedPath = await builder.RunAsync( NearestCell, targetCell, CancellationToken.None );
 
 		if ( computedPath.IsEmpty ) return false;
 

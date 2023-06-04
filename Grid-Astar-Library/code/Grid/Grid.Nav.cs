@@ -229,7 +229,10 @@ public partial class Grid
 
 			if ( openSet.Count == 1 && pathBuilder.AcceptsPartial )
 			{
-				RetracePath( path, startingNode, closedSet.OrderBy( x => x.hCost ).First() );
+				var closestNode = closedSet.OrderBy( x => x.hCost )
+					.Where( x => x.gCost != 0f )
+					.First();
+				RetracePath( path, startingNode, closestNode );
 				break;
 			}
 
