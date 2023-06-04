@@ -27,7 +27,7 @@ public partial class Grid
 		var openCellSet = new HashSet<Cell>();
 		var cellNodePair = new Dictionary<Cell, Node>();
 		var initialDistance = startingCell.Position.Distance( targetCell.Position );
-		var maxDistance = Math.Max( float.PositiveInfinity, initialDistance + pathBuilder.MaxCheckDistance ); 
+		var maxDistance = Math.Max( initialDistance, initialDistance + pathBuilder.MaxCheckDistance ) + CellSize; 
 
 		openSet.Add( startingNode );
 		openCellSet.Add( startingCell );
