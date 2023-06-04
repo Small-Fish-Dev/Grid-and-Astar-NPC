@@ -33,13 +33,13 @@ public abstract partial class BaseActor
 		var builder = AStarPathBuilder.From( CurrentGrid )
 			.WithPathCreator( this )
 			.WithPartialEnabled()
-			.WithoutTags( "step" )
 			.WithMaxDistance( 500f );
 
 		var computedPath = await builder.RunAsync( NearestCell, targetCell, CancellationToken.None );
 
 		if ( computedPath.IsEmpty ) return false;
 
+		computedPath.Simplify();
 		currentPath = computedPath;
 		currentPathIndex = 0;
 		HasArrivedDestination = false;

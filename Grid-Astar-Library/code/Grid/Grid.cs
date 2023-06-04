@@ -299,6 +299,12 @@ public partial class Grid : IValid
 			}
 		} );
 
+		Stopwatch edgeCells = new Stopwatch();
+		edgeCells.Start();
+		currentGrid.AssignEdgeCells();
+		edgeCells.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
+
 		totalWatch.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
 
@@ -358,19 +364,15 @@ public partial class Grid : IValid
 	}
 
 	/// <summary>
-	/// Return a list of all cells in this grid that do not have 8 neighbours
+	/// Gives the edge tag to all cells with less than 8 neighbours
 	/// </summary>
 	/// <returns></returns>
-	public List<Cell> FindOuterCells()
+	public void AssignEdgeCells()
 	{
-		var outerCells = new List<Cell>();
-
 		foreach ( var cellStack in Cells )
 			foreach ( var cell in cellStack.Value )
 				if ( cell.GetNeighbours().Count() < 8 )
-					outerCells.Add( cell );
-
-		return outerCells;
+					cell.Tags.Add( "edge" );
 	}
 
 	/// <summary>
