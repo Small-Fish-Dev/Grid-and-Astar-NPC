@@ -6,14 +6,14 @@ namespace GridAStarNPC;
 
 public abstract partial class BaseActor
 {
-	internal ImmutableArray<GridAStar.Cell> currentPath { get; set; } = ImmutableArray<Cell>.Empty;
-	public int CurrentPathLength => currentPath.Length;
+	internal AStarPath currentPath { get; set; }
+	public int CurrentPathLength => currentPath.Count;
 	internal int currentPathIndex { get; set; } = -1; // -1 = Not set / Hasn't started
-	internal GridAStar.Cell currentPathCell => IsFollowingPath ? currentPath[currentPathIndex] : null;
-	internal GridAStar.Cell lastPathCell => currentPath.Length > 0 ? currentPath[^1] : null;
+	internal GridAStar.Cell currentPathCell => IsFollowingPath ? currentPath.Cells[currentPathIndex] : null;
+	internal GridAStar.Cell lastPathCell => currentPath.Count > 0 ? currentPath.Cells[^1] : null;
 	internal GridAStar.Cell targetPathCell { get; set; } = null;
-	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath[Math.Min( currentPathIndex + 1, currentPath.Length - 1 )] : null;
-	public bool IsFollowingPath => currentPathIndex >= 0 && currentPath.Length > 0;
+	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath.Cells[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )] : null;
+	public bool IsFollowingPath => currentPathIndex >= 0 && currentPath.Count > 0;
 	[Net] public BaseActor Following { get; set; } = null;
 	public bool IsFollowingSomeone => Following != null;
 	public bool HasArrivedDestination { get; internal set; } = false;
@@ -30,9 +30,14 @@ public abstract partial class BaseActor
 		if ( targetCell == null ) return false;
 		if ( targetCell == NearestCell ) return false;
 
-		var computedPath = await CurrentGrid.ComputePathParallel( NearestCell, targetCell, new CancellationTokenSource() );
+		var builder = AStarPathBuilder.From( CurrentGrid )
+			.WithPathCreator( this )
+			.WithMaxDistance( 500f )
+			.WithPartialEnabled();
 
-		if ( computedPath == null || computedPath.Length < 1 ) return false;
+		var computedPath = builder.Run( NearestCell, targetCell );
+
+		if ( computedPath.IsEmpty ) return false;
 
 		currentPath = computedPath;
 		currentPathIndex = 0;
@@ -52,12 +57,14 @@ public abstract partial class BaseActor
 				targetPathCell = Following.GetCellInDirection( closestDirection, 1 );
 			}
 
-			if ( targetPathCell != lastPathCell ) // If the target cell is not the current navpath's last cell, retrace path
-				await NavigateTo( targetPathCell );
+			if ( IsFollowingPath )
+			{
+				if ( targetPathCell != lastPathCell ) // If the target cell is not the current navpath's last cell, retrace path
+					await NavigateTo( targetPathCell );
 
-			if ( IsFollowingPath && Position.DistanceSquared( currentPathCell.Position ) > (CurrentGrid.CellSize * 1.42f) * (CurrentGrid.CellSize * 1.42f) ) // Or if you strayed away from the path too far
-				await NavigateTo( targetPathCell );
-
+				if ( Position.DistanceSquared( currentPathCell.Position ) > (CurrentGrid.CellSize * 1.42f) * (CurrentGrid.CellSize * 1.42f) ) // Or if you strayed away from the path too far
+					await NavigateTo( targetPathCell );
+			}
 			lastRetraceCheck = PathRetraceFrequency;
 		}
 
@@ -67,7 +74,7 @@ public abstract partial class BaseActor
 			return;
 		}
 
-		for ( int i = 0; i < currentPath.Length; i++ )
+		for ( int i = 0; i < currentPath.Count; i++ )
 		{
 			//currentPath[i].Draw( Color.White, Time.Delta );
 			//DebugOverlay.Text( i.ToString(), currentPath[i].Position, duration: Time.Delta );
@@ -80,7 +87,7 @@ public abstract partial class BaseActor
 		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) * (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) )
 			currentPathIndex++;
 
-		if ( currentPathIndex >= currentPath.Length || currentPathCell == targetPathCell )
+		if ( currentPathIndex >= currentPath.Count || currentPathCell == targetPathCell )
 		{
 			HasArrivedDestination = true;
 			currentPathIndex = -1;
