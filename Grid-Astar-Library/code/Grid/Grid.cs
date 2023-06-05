@@ -24,6 +24,140 @@ public static partial class GridSettings
 	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also static entities
 }
 
+public struct GridBuilder
+{
+	public string Identifier { get; private set; } = "main";
+	public float StandableAngle { get; private set; } = GridSettings.DEFAULT_STANDABLE_ANGLE;
+	public float StepSize { get; private set; } = GridSettings.DEFAULT_STEP_SIZE;
+	public float CellSize { get; private set; } = GridSettings.DEFAULT_CELL_SIZE;
+	public float HeightClearance { get; private set; } = GridSettings.DEFAULT_HEIGHT_CLEARANCE;
+	public float WidthClearance { get; private set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
+	public bool GridPerfect { get; private set; } = GridSettings.DEFAULT_GRID_PERFECT;
+	public bool WorldOnly { get; private set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	public List<string> TagsToInclude { get; private set; } = new() { "solid" };
+	public List<string> TagsToExclude { get; private set; } = new() { "player" };
+
+	public GridBuilder() { }
+	/// <summary>
+	///  By default the identifier is "main", which makes it useable with Grid.Main
+	/// </summary>
+	/// <param name="identifier"></param>
+	public GridBuilder( string identifier ) 
+	{
+		Identifier = identifier;
+	}
+
+	/// <summary>
+	/// How steep the terrain can be before a cell doesn't get generated on it
+	/// </summary>
+	/// <param name="standableAngle"></param>
+	/// <returns></returns>
+	public GridBuilder WithStandableAngle( float standableAngle )
+	{
+		StandableAngle = standableAngle;
+		return this;
+	}
+
+	/// <summary>
+	/// How tall steps can be to be considered walkable (Doesn't work if GridPerfect)
+	/// </summary>
+	/// <param name="stepSize"></param>
+	/// <returns></returns>
+	public GridBuilder WithStepSize( float stepSize )
+	{
+		if ( !GridPerfect )
+			StepSize = stepSize;
+		return this;
+	}
+
+	/// <summary>
+	/// How big the cells are generated
+	/// </summary>
+	/// <param name="cellSize"></param>
+	/// <returns></returns>
+	public GridBuilder WithCellSize( float cellSize )
+	{
+		CellSize = cellSize;
+		return this;
+	}
+
+	/// <summary>
+	/// Minimum vertical space for a cell to be generated
+	/// </summary>
+	/// <param name="heightClearance"></param>
+	/// <returns></returns>
+	public GridBuilder WithHeightClearance( float heightClearance )
+	{
+		HeightClearance = heightClearance;
+		return this;
+	}
+
+	/// <summary>
+	/// Minimum horizontal space for a cell to be generate
+	/// </summary>
+	/// <param name="widthClearance"></param>
+	/// <returns></returns>
+	public GridBuilder WithWidthClearance( float widthClearance )
+	{
+		WidthClearance = widthClearance;
+		return this;
+	}
+
+	/// <summary>
+	/// Cells will be generated with some clearance for grid-perfect terrain (Think of voxels), this isn't compatible with stairs so use sloped geometry instead.
+	/// </summary>
+	/// <returns></returns>
+	public GridBuilder WithGridPerfect()
+	{
+		GridPerfect = true;
+		StepSize = 0f;
+		return this;
+	}
+
+	/// <summary>
+	/// Ignore entities, only hit create cells on the world
+	/// </summary>
+	/// <returns></returns>
+	public GridBuilder WithWorldOnly()
+	{
+		WorldOnly = true;
+		return this;
+	}
+
+	/// <summary>
+	/// Only hit entities with the following tags ("solid" is included by default, you can exclude it with WithoutTags)
+	/// </summary>
+	/// <returns></returns>
+	public GridBuilder WithTags( params string[] tags )
+	{
+		foreach ( var tag in tags )
+		{
+			if ( !TagsToInclude.Contains( tag ) )
+				TagsToInclude.Add( tag );
+			if ( TagsToExclude.Contains( tag ) )
+				TagsToExclude.Remove( tag );
+		}
+		return this;
+	}
+
+	/// <summary>
+	/// Only hit entities without the following tags ("player" is included by default, you can include it with WithTags)
+	/// </summary>
+	/// <returns></returns>
+	public GridBuilder WithoutTags( params string[] tags )
+	{
+		foreach ( var tag in tags )
+		{
+			if ( !TagsToExclude.Contains( tag ) )
+				TagsToExclude.Add( tag );
+			if ( TagsToInclude.Contains( tag ) )
+				TagsToInclude.Remove( tag );
+		}
+		return this;
+	}
+
+}
+
 public partial class Grid : IValid
 {
 	public static Grid Main
@@ -46,7 +180,8 @@ public partial class Grid : IValid
 
 	public static Dictionary<string, Grid> Grids { get; set; } = new();
 
-	public string Identifier { get; set; }
+	public GridBuilder Settings { get; internal set; }
+	public string Identifier => Settings.Identifier;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
 	public Vector3 Position { get; set; }
