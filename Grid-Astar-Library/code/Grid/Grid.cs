@@ -44,7 +44,8 @@ public struct GridBuilder
 
 	public GridBuilder()
 	{
-		var mapBounds = Game.WorldEntity.WorldSpaceBounds;
+		var map = Game.WorldEntity.IsValid() ? Game.WorldEntity : null;
+		var mapBounds = map == null ? new BBox( 0 ) : Game.WorldEntity.WorldSpaceBounds;
 		Position = mapBounds.Center;
 		Bounds = mapBounds;
 	}
@@ -57,7 +58,8 @@ public struct GridBuilder
 	{
 		Identifier = identifier;
 
-		var mapBounds = Game.WorldEntity.WorldSpaceBounds;
+		var map = Game.WorldEntity.IsValid() ? Game.WorldEntity : null;
+		var mapBounds = map == null ? new BBox(0) : Game.WorldEntity.WorldSpaceBounds;
 		Position = mapBounds.Center;
 		Bounds = mapBounds;
 	}
