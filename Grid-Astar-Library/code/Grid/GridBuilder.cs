@@ -318,9 +318,12 @@ public struct GridBuilder
 		var widthClearanceHashCode = WidthClearance.GetHashCode();
 		var gridPerfectHashCode = GridPerfect.GetHashCode();
 		var worldOnlyHashCode = WorldOnly.GetHashCode();
+		var cylinderShapedHashCode = CylinderShaped.GetHashCode();
+		var tagsToIncludeHashCode = TagsToInclude.GetHashCode();
+		var tagsToExcludeHashCode = TagsToExclude.GetHashCode();
 
 		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
+		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode, cylinderShapedHashCode, tagsToIncludeHashCode, tagsToExcludeHashCode );
 
 		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
 	}
