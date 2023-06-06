@@ -34,17 +34,32 @@ public struct GridBuilder
 	public float WidthClearance { get; private set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
 	public bool GridPerfect { get; private set; } = GridSettings.DEFAULT_GRID_PERFECT;
 	public bool WorldOnly { get; private set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	public bool AxisAligned { get; private set; } = false;
+	public bool CylinderShaped { get; private set; } = false;
 	public List<string> TagsToInclude { get; private set; } = new() { "solid" };
 	public List<string> TagsToExclude { get; private set; } = new() { "player" };
+	public Vector3 Position { get; private set; } = new();
+	public BBox Bounds { get; private set; } = new();
+	public Rotation Rotation { get; set; } = new();
 
-	public GridBuilder() { }
+	public GridBuilder()
+	{
+		var mapBounds = Game.WorldEntity.WorldSpaceBounds;
+		Position = mapBounds.Center;
+		Bounds = mapBounds;
+	}
+
 	/// <summary>
 	///  By default the identifier is "main", which makes it useable with Grid.Main
 	/// </summary>
 	/// <param name="identifier"></param>
-	public GridBuilder( string identifier ) 
+	public GridBuilder( string identifier ) : this()
 	{
 		Identifier = identifier;
+
+		var mapBounds = Game.WorldEntity.WorldSpaceBounds;
+		Position = mapBounds.Center;
+		Bounds = mapBounds;
 	}
 
 	/// <summary>
@@ -156,6 +171,161 @@ public struct GridBuilder
 		return this;
 	}
 
+	/// <summary>
+	/// Set the position and bounds of the grid, by default it covers the entire map
+	/// </summary>
+	/// <param name="position"></param>
+	/// <param name="bounds"></param>
+	/// <returns></returns>
+	public GridBuilder WithBounds( Vector3 position, BBox bounds )
+	{
+		Position = position;
+		Bounds = bounds;
+		return this;
+	}
+
+	/// <summary>
+	/// Set the position, bounds, and rotation of the grid, by default it covers the entire map and is unrotated
+	/// </summary>
+	/// <param name="position"></param>
+	/// <param name="bounds"></param>
+	/// <param name="rotation"></param>
+	/// <returns></returns>
+	public GridBuilder WithBounds( Vector3 position, BBox bounds, Rotation rotation )
+	{
+		Position = position;
+		Bounds = bounds;
+		Rotation = rotation;
+		return this;
+	}
+
+	/// <summary>
+	/// Rotated the grid's bounds
+	/// </summary>
+	/// <param name="rotation"></param>
+	/// <returns></returns>
+	public GridBuilder WithRotation( Rotation rotation )
+	{
+		Rotation = rotation;
+		return this;
+	}
+
+	/// <summary>
+	/// The cells will be generated following this grid's rotation instead of the world's
+	/// </summary>
+	/// <returns></returns>
+	public GridBuilder WithAxisAligned()
+	{
+		AxisAligned = true;
+		return this;
+	}
+
+	/// <summary>
+	/// Generate the cells inside of a cylinder that fits the bounds instead of a cube (Squished if the bounds are)
+	/// </summary>
+	/// <returns></returns>
+	public GridBuilder WithCylinderShaped()
+	{
+		CylinderShaped = true;
+		return this;
+	}
+
+
+	/// <summary>
+	/// Creates a new grid with the settings given
+	/// <returns></returns>
+	public async Task<Grid> Create()
+	{
+		Stopwatch totalWatch = new Stopwatch();
+		totalWatch.Start();
+
+		var currentGrid = new Grid( this );
+
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Creating grid {currentGrid.Identifier}" );
+
+		var rotatedBounds = currentGrid.RotatedBounds;
+		var worldBounds = currentGrid.WorldBounds;
+
+		var minimumGrid = rotatedBounds.Mins.ToIntVector2( currentGrid.CellSize );
+		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( currentGrid.CellSize );
+		var totalColumns = maximumGrid.y - minimumGrid.y;
+		var totalRows = maximumGrid.x - minimumGrid.x;
+		var minHeight = rotatedBounds.Mins.z;
+		var maxHeight = rotatedBounds.Maxs.z;
+
+		await GameTask.RunInThreadAsync( () =>
+		{
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
+
+			for ( int column = 0; column < totalColumns; column++ )
+			{
+				for ( int row = 0; row < totalRows; row++ )
+				{
+					var startPosition = worldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, currentGrid.Tolerance * 2f ) * currentGrid.AxisRotation;
+					var endPosition = worldBounds.Mins + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) * currentGrid.AxisRotation;
+					var checkBBox = new BBox( new Vector3( -currentGrid.CellSize / 2f + currentGrid.Tolerance, -currentGrid.CellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( currentGrid.CellSize / 2f - currentGrid.Tolerance, currentGrid.CellSize / 2f - currentGrid.Tolerance, 0.001f ) );
+					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
+					.WithAllTags( currentGrid.Settings.TagsToInclude.ToArray() )
+					.WithoutTags( currentGrid.Settings.TagsToExclude.ToArray() );
+
+					if ( currentGrid.WorldOnly )
+						positionTrace.WorldOnly();
+					else
+						positionTrace.WorldAndEntities();
+
+					var positionResult = positionTrace.Run();
+
+					while ( positionResult.Hit && startPosition.z >= endPosition.z )
+					{
+						if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
+						{
+							if ( !currentGrid.CylinderShaped || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
+							{
+								var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
+								if ( angle <= currentGrid.StandableAngle )
+								{
+									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
+
+									if ( newCell != null )
+										currentGrid.AddCell( newCell );
+								}
+							}
+						}
+
+						startPosition = positionResult.HitPosition + Vector3.Down * currentGrid.HeightClearance;
+
+						while ( Sandbox.Trace.TestPoint( startPosition, radius: currentGrid.CellSize / 2f - currentGrid.Tolerance ) )
+							startPosition += Vector3.Down * currentGrid.HeightClearance;
+
+						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
+						.WithAllTags( currentGrid.Settings.TagsToInclude.ToArray() )
+						.WithoutTags( currentGrid.Settings.TagsToExclude.ToArray() );
+
+						if ( currentGrid.WorldOnly )
+							positionTrace.WorldOnly();
+						else
+							positionTrace.WorldAndEntities();
+
+						positionResult = positionTrace.Run();
+					}
+				}
+			}
+		} );
+
+		Stopwatch edgeCells = new Stopwatch();
+		edgeCells.Start();
+		currentGrid.AssignEdgeCells();
+		edgeCells.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
+
+		totalWatch.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
+
+		currentGrid.Initialize();
+
+		return currentGrid;
+	}
+
 }
 
 public partial class Grid : IValid
@@ -184,29 +354,34 @@ public partial class Grid : IValid
 	public string Identifier => Settings.Identifier;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
-	public Vector3 Position { get; set; }
+	public Vector3 Position => Settings.Position;
 	public BBox Bounds { get; set; }
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
-	public Rotation Rotation { get; set; }
-	public bool AxisAligned { get; set; }
-	public float StandableAngle { get; set; }
-	public float StepSize { get; set; }
-	public float CellSize { get; set; }
-	public float HeightClearance { get; set; }
-	public float WidthClearance { get; set; }
-	public bool GridPerfect { get; set; }
-	public bool WorldOnly { get; set; }
+	public Rotation Rotation => Settings.Rotation;
+	public bool AxisAligned => Settings.AxisAligned;
+	public float StandableAngle => Settings.StandableAngle;
+	public float StepSize => Settings.StepSize;
+	public float CellSize => Settings.CellSize;
+	public float HeightClearance => Settings.HeightClearance;
+	public float WidthClearance => Settings.WidthClearance;
+	public bool GridPerfect => Settings.GridPerfect;
+	public bool WorldOnly => Settings.WorldOnly;
+	public bool CylinderShaped => Settings.CylinderShaped;
 	public float RealStepSize => GridPerfect ? 0.1f : Math.Max( 0.1f, StepSize );
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
 	bool IValid.IsValid { get; }
 
-	public Grid() { }
-
-	public Grid( string identifier ) : this()
+	public Grid()
 	{
-		Identifier = identifier;
+		Settings = new GridBuilder();
+		Event.Register( this );
+	}
+
+	public Grid( GridBuilder settings ) : this()
+	{
+		Settings = settings;
 		Event.Register( this );
 	}
 
@@ -331,124 +506,7 @@ public partial class Grid : IValid
 	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
 	public bool IsInsideCylinder( Vector3 point ) => Bounds.IsInsideSquishedRotatedCylinder( Position, point, Rotation );
 
-	/// <summary>
-	/// Creates a new grid and generates cells within the bounds given
-	/// </summary>
-	/// <param name="position"></param>
-	/// <param name="bounds"></param>
-	/// <param name="rotation"></param>
-	/// <param name="axisAligned"></param>
-	/// <param name="identifier"></param>
-	/// <param name="standableAngle"></param>
-	/// <param name="stepSize"></param>
-	/// <param name="cellSize"></param>
-	/// <param name="heightClearance"></param>
-	/// <param name="widthClearance"></param>
-	/// <param name="gridPerfect"></param>
-	/// <param name="worldOnly"></param>
-	/// <param name="cylinder"></param>
-	/// <param name="save"></param>
-	/// <returns></returns>
-	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool gridPerfect = GridSettings.DEFAULT_GRID_PERFECT, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY, bool cylinder = false, bool save = true )
-	{
-		Stopwatch totalWatch = new Stopwatch();
-		totalWatch.Start();
-
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Creating grid {identifier}" );
-
-		var currentGrid = new Grid( identifier );
-		currentGrid.Position = position;
-		currentGrid.Bounds = bounds;
-		currentGrid.Rotation = rotation;
-		currentGrid.AxisAligned = axisAligned;
-		currentGrid.StandableAngle = standableAngle;
-		currentGrid.StepSize = stepSize;
-		currentGrid.CellSize = cellSize;
-		currentGrid.HeightClearance = heightClearance;
-		currentGrid.WidthClearance = widthClearance;
-		currentGrid.GridPerfect = gridPerfect;
-		currentGrid.WorldOnly = worldOnly;
-
-		var rotatedBounds = bounds.GetRotatedBounds( rotation );
-
-		var minimumGrid = rotatedBounds.Mins.ToIntVector2( cellSize );
-		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( cellSize );
-		var totalColumns = maximumGrid.y - minimumGrid.y;
-		var totalRows = maximumGrid.x - minimumGrid.x;
-		var minHeight = rotatedBounds.Mins.z;
-		var maxHeight = rotatedBounds.Maxs.z;
-
-		var box = new BBox( position + rotatedBounds.Mins, position + rotatedBounds.Maxs );
-		await GameTask.RunInThreadAsync( () =>
-		{
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
-
-			for ( int column = 0; column < totalColumns; column++ )
-			{
-				for ( int row = 0; row < totalRows; row++ )
-				{
-					var startPosition = box.Mins.WithZ( box.Maxs.z ) + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, currentGrid.Tolerance * 2f ) * currentGrid.AxisRotation;
-					var endPosition = box.Mins + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, -currentGrid.Tolerance ) * currentGrid.AxisRotation;
-					var checkBBox = new BBox( new Vector3( -cellSize / 2f + currentGrid.Tolerance, -cellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( cellSize / 2f - currentGrid.Tolerance, cellSize / 2f - currentGrid.Tolerance, 0.001f ) );
-					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
-
-					if ( worldOnly )
-						positionTrace.WorldOnly();
-					else
-						positionTrace.WorldAndEntities();
-
-					var positionResult = positionTrace.Run();
-
-					while ( positionResult.Hit && startPosition.z >= endPosition.z )
-					{
-						if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
-						{
-							if ( !cylinder || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
-							{
-								var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
-								if ( angle <= standableAngle )
-								{
-									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
-
-									if ( newCell != null )
-										currentGrid.AddCell( newCell );
-								}
-							}
-						}
-
-						startPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
-
-						while ( Sandbox.Trace.TestPoint( startPosition, radius: cellSize / 2f - currentGrid.Tolerance ) )
-							startPosition += Vector3.Down * heightClearance;
-
-						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
-
-						if ( worldOnly )
-							positionTrace.WorldOnly();
-						else
-							positionTrace.WorldAndEntities();
-
-						positionResult = positionTrace.Run();
-					}
-				}
-			}
-		} );
-
-		Stopwatch edgeCells = new Stopwatch();
-		edgeCells.Start();
-		currentGrid.AssignEdgeCells();
-		edgeCells.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
-
-		totalWatch.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
-
-		await currentGrid.Initialize( save );
-
-		return currentGrid;
-	}
-
-	public async Task<bool> Initialize( bool save = true )
+	public void Initialize()
 	{
 		if ( Grids.ContainsKey( Identifier ) )
 		{
@@ -459,11 +517,6 @@ public partial class Grid : IValid
 		}
 		else
 			Grids.Add( Identifier, this );
-
-		if ( save )
-			await this.Save();
-
-		return true;
 	}
 
 	public void Delete( bool deleteSave = false )
@@ -492,8 +545,8 @@ public partial class Grid : IValid
 		var gridPerfectHashCode = GridPerfect.GetHashCode();
 		var worldOnlyHashCode = WorldOnly.GetHashCode();
 
-		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
+		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, currentGrid.CellSizeHashCode );
+		var hashCodeSecond = HashCode.Combine( currentGrid.CellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
 
 		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
 	}
