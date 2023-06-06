@@ -63,7 +63,7 @@ public partial class HammerGrid : ModelEntity
 			.WithGridPerfect( GridPerfect )
 			.WithWorldOnly( WorldOnly )
 			.WithCylinderShaped( CylinderShaped )
-			.WithTags( TagsToInclude.Replace( " ", string.Empty ).Split( "," ) )
+			.WithTags( TagsToInclude.Replace( " ", string.Empty ).Split( "," ))
 			.WithoutTags( TagsToExclude.Replace( " ", string.Empty ).Split( "," ) );
 
 		return settings;

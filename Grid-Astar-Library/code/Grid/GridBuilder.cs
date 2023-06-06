@@ -20,8 +20,8 @@ public struct GridBuilder
 
 	public GridBuilder()
 	{
-		var map = Game.WorldEntity.IsValid() ? Game.WorldEntity : null;
-		var mapBounds = map == null ? new BBox( 0 ) : Game.WorldEntity.WorldSpaceBounds;
+		var map = Game.PhysicsWorld.IsValid() ? Game.PhysicsWorld : null;
+		var mapBounds = map == null ? new BBox( 0 ) : Game.PhysicsWorld.Body.GetBounds();
 		Position = mapBounds.Center;
 		Bounds = mapBounds;
 	}
@@ -33,11 +33,6 @@ public struct GridBuilder
 	public GridBuilder( string identifier ) : this()
 	{
 		Identifier = identifier;
-
-		var map = Game.WorldEntity.IsValid() ? Game.WorldEntity : null;
-		var mapBounds = map == null ? new BBox(0) : Game.WorldEntity.WorldSpaceBounds;
-		Position = mapBounds.Center;
-		Bounds = mapBounds;
 	}
 
 	/// <summary>
@@ -324,8 +319,8 @@ public struct GridBuilder
 		var gridPerfectHashCode = GridPerfect.GetHashCode();
 		var worldOnlyHashCode = WorldOnly.GetHashCode();
 		var cylinderShapedHashCode = CylinderShaped.GetHashCode();
-		var tagsToIncludeHashCode = TagsToInclude.GetHashCode();
-		var tagsToExcludeHashCode = TagsToExclude.GetHashCode();
+		var tagsToIncludeHashCode = string.Join( string.Empty, TagsToInclude ).GetHashCode();
+		var tagsToExcludeHashCode = string.Join( string.Empty, TagsToExclude ).GetHashCode();
 
 		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
 		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode, cylinderShapedHashCode, tagsToIncludeHashCode, tagsToExcludeHashCode );

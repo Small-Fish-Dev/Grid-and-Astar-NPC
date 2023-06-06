@@ -51,7 +51,7 @@ public partial class Grid : IValid
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
 	public Vector3 Position => Settings.Position;
-	public BBox Bounds { get; set; }
+	public BBox Bounds => Settings.Bounds;
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
 	public Rotation Rotation => Settings.Rotation;
@@ -226,26 +226,7 @@ public partial class Grid : IValid
 			DeleteSave();
 	}
 
-	public override int GetHashCode()
-	{
-		var identifierHashCode = Identifier.GetHashCode();
-		var positionHashCode = Position.GetHashCode();
-		var boundsHashCode = Bounds.GetHashCode();
-		var rotationHashCode = Rotation.GetHashCode();
-		var axisAlignedHashCode = AxisAligned.GetHashCode();
-		var standableAngleHashCode = StandableAngle.GetHashCode();
-		var stepSizeHashCode = StepSize.GetHashCode();
-		var cellSizeHashCode = CellSize.GetHashCode();
-		var heightClearanceHashCode = HeightClearance.GetHashCode();
-		var widthClearanceHashCode = WidthClearance.GetHashCode();
-		var gridPerfectHashCode = GridPerfect.GetHashCode();
-		var worldOnlyHashCode = WorldOnly.GetHashCode();
-
-		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
-
-		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
-	}
+	public override int GetHashCode() => Settings.GetHashCode();
 
 	/// <summary>
 	/// Gives the edge tag to all cells with less than 8 neighbours
