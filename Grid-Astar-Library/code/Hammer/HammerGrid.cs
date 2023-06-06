@@ -41,7 +41,7 @@ public partial class HammerGrid : ModelEntity
 		EnableDrawing = false;
 	}
 
-	public bool PropertiesEqual( GridLoadProperties properties ) => properties.GetHashCode() == GridHashCode();
+	public bool PropertiesEqual( GridBuilder properties ) => properties.GetHashCode() == GridHashCode();
 
 	public async Task<Grid> CreateFromSettings() => await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, GridPerfect, WorldOnly );
 

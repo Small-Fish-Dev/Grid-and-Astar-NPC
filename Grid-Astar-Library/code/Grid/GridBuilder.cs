@@ -99,21 +99,24 @@ public struct GridBuilder
 	/// <summary>
 	/// Cells will be generated with some clearance for grid-perfect terrain (Think of voxels), this isn't compatible with stairs so use sloped geometry instead.
 	/// </summary>
+	/// <param name="gridPerfect"></param>
 	/// <returns></returns>
-	public GridBuilder WithGridPerfect()
+	public GridBuilder WithGridPerfect( bool gridPerfect )
 	{
-		GridPerfect = true;
-		StepSize = 0f;
+		GridPerfect = gridPerfect;
+		if ( GridPerfect )
+			StepSize = 0f;
 		return this;
 	}
 
 	/// <summary>
 	/// Ignore entities, only hit create cells on the world
 	/// </summary>
+	/// <param name="worldOnly"></param>
 	/// <returns></returns>
-	public GridBuilder WithWorldOnly()
+	public GridBuilder WithWorldOnly( bool worldOnly )
 	{
-		WorldOnly = true;
+		WorldOnly = worldOnly;
 		return this;
 	}
 
@@ -191,20 +194,22 @@ public struct GridBuilder
 	/// <summary>
 	/// The cells will be generated following this grid's rotation instead of the world's
 	/// </summary>
+	/// <param name="axisAligned"></param>
 	/// <returns></returns>
-	public GridBuilder WithAxisAligned()
+	public GridBuilder WithAxisAligned( bool axisAligned )
 	{
-		AxisAligned = true;
+		AxisAligned = axisAligned;
 		return this;
 	}
 
 	/// <summary>
 	/// Generate the cells inside of a cylinder that fits the bounds instead of a cube (Squished if the bounds are)
 	/// </summary>
+	/// <param name="cylinderShaped"></param>
 	/// <returns></returns>
-	public GridBuilder WithCylinderShaped()
+	public GridBuilder WithCylinderShaped( bool cylinderShaped )
 	{
-		CylinderShaped = true;
+		CylinderShaped = cylinderShaped;
 		return this;
 	}
 

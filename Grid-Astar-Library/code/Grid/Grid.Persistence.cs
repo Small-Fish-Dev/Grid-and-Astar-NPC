@@ -4,49 +4,7 @@ namespace GridAStar;
 
 public static partial class GridSettings
 {
-	public const string DEFAULT_SAVE_PATH = "./grid-%identifier%.dat";   // Where the grid is saved (%identifier% will be the grid's identifier)
-}
-
-public struct GridLoadProperties
-{
-	public string Identifier { get; set; } = "";
-	public Vector3 Position { get; set; }
-	public BBox Bounds { get; set; }
-	public Rotation Rotation { get; set; }
-	public bool AxisAligned { get; set; }
-	public float StandableAngle { get; set; }
-	public float StepSize { get; set; }
-	public float CellSize { get; set; }
-	public float HeightClearance { get; set; }
-	public float WidthClearance { get; set; }
-	public bool GridPerfect { get; set; }
-	public bool WorldOnly { get; set; }
-
-	public GridLoadProperties( string identifier )
-	{
-		Identifier = identifier;
-	}
-
-	public override int GetHashCode()
-	{
-		var identifierHashCode = Identifier.GetHashCode();
-		var positionHashCode = Position.GetHashCode();
-		var boundsHashCode = Bounds.GetHashCode();
-		var rotationHashCode = Rotation.GetHashCode();
-		var axisAlignedHashCode = AxisAligned.GetHashCode();
-		var standableAngleHashCode = StandableAngle.GetHashCode();
-		var stepSizeHashCode = StepSize.GetHashCode();
-		var cellSizeHashCode = CellSize.GetHashCode();
-		var heightClearanceHashCode = HeightClearance.GetHashCode();
-		var widthClearanceHashCode = WidthClearance.GetHashCode();
-		var gridPerfectHashCode = GridPerfect.GetHashCode();
-		var worldOnlyHashCode = WorldOnly.GetHashCode();
-
-		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
-
-		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
-	}
+	public const string DEFAULT_SAVE_PATH = "./grid-%identifier%.dat";   // Where the grid is saved (%identifier% will be the grid's saveidentifier)
 }
 
 public partial class Grid
@@ -61,10 +19,10 @@ public partial class Grid
 	/// </summary>
 	/// <param name="identifier"></param>
 	/// <returns></returns>
-	public async static Task<GridLoadProperties> LoadProperties( string identifier = "main" )
+	public async static Task<GridBuilder> LoadProperties( string identifier = "main" )
 	{
 		if ( !Grid.Exists( identifier ) )
-			return new GridLoadProperties();
+			return new GridBuilder();
 
 		using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
 		{
@@ -79,21 +37,30 @@ public partial class Grid
 
 			using ( var reader = new BinaryReader( dataStream ) )
 			{
-				var loadedGrid = new GridLoadProperties( reader.ReadString() );
+				var loadedGrid = new GridBuilder( reader.ReadString() );
 
 				await GameTask.RunInThreadAsync( () =>
 				{
-					loadedGrid.Position = reader.ReadVector3();
-					loadedGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
-					loadedGrid.Rotation = reader.ReadRotation();
-					loadedGrid.AxisAligned = reader.ReadBoolean();
-					loadedGrid.StandableAngle = reader.ReadSingle();
-					loadedGrid.StepSize = reader.ReadSingle();
-					loadedGrid.CellSize = reader.ReadSingle();
-					loadedGrid.HeightClearance = reader.ReadSingle();
-					loadedGrid.WidthClearance = reader.ReadSingle();
-					loadedGrid.GridPerfect = reader.ReadBoolean();
-					loadedGrid.WorldOnly = reader.ReadBoolean();
+					loadedGrid.WithBounds( reader.ReadVector3(), new BBox( reader.ReadVector3(), reader.ReadVector3() ), reader.ReadRotation() )
+					.WithAxisAligned( reader.ReadBoolean() )
+					.WithStandableAngle( reader.ReadSingle() )
+					.WithStepSize( reader.ReadSingle() )
+					.WithCellSize( reader.ReadSingle() )
+					.WithHeightClearance( reader.ReadSingle() )
+					.WithWidthClearance( reader.ReadSingle() )
+					.WithGridPerfect( reader.ReadBoolean() )
+					.WithWorldOnly( reader.ReadBoolean() )
+					.WithCylinderShaped( reader.ReadBoolean() );
+
+					var tagsToIncludeCount = reader.ReadInt32();
+
+					for ( int i = 0; i < tagsToIncludeCount; i++ )
+						loadedGrid.WithTags( reader.ReadString() );
+
+					var tagsToExcludeCount = reader.ReadInt32();
+
+					for ( int i = 0; i < tagsToExcludeCount; i++ )
+						loadedGrid.WithoutTags( reader.ReadString() );
 				} );
 
 				return loadedGrid;
@@ -134,21 +101,37 @@ public partial class Grid
 			{
 				try
 				{
-					var currentGrid = new Grid( reader.ReadString() );
+					Grid currentGrid = null;
 
-					await GameTask.RunInThreadAsync( () =>
+					await GameTask.RunInThreadAsync( async () =>
 					{
-						currentGrid.Position = reader.ReadVector3();
-						currentGrid.Bounds = new BBox( reader.ReadVector3(), reader.ReadVector3() );
-						currentGrid.Rotation = reader.ReadRotation();
-						currentGrid.AxisAligned = reader.ReadBoolean();
-						currentGrid.StandableAngle = reader.ReadSingle();
-						currentGrid.StepSize = reader.ReadSingle();
-						currentGrid.CellSize = reader.ReadSingle();
-						currentGrid.HeightClearance = reader.ReadSingle();
-						currentGrid.WidthClearance = reader.ReadSingle();
-						currentGrid.GridPerfect = reader.ReadBoolean();
-						currentGrid.WorldOnly = reader.ReadBoolean();
+						var loadedGrid = new GridBuilder( reader.ReadString() );
+
+						await GameTask.RunInThreadAsync( () =>
+						{
+							loadedGrid.WithBounds( reader.ReadVector3(), new BBox( reader.ReadVector3(), reader.ReadVector3() ), reader.ReadRotation() )
+							.WithAxisAligned( reader.ReadBoolean() )
+							.WithStandableAngle( reader.ReadSingle() )
+							.WithStepSize( reader.ReadSingle() )
+							.WithCellSize( reader.ReadSingle() )
+							.WithHeightClearance( reader.ReadSingle() )
+							.WithWidthClearance( reader.ReadSingle() )
+							.WithGridPerfect( reader.ReadBoolean() )
+							.WithWorldOnly( reader.ReadBoolean() )
+							.WithCylinderShaped( reader.ReadBoolean() );
+
+							var tagsToIncludeCount = reader.ReadInt32();
+
+							for ( int i = 0; i < tagsToIncludeCount; i++ )
+								loadedGrid.WithTags( reader.ReadString() );
+
+							var tagsToExcludeCount = reader.ReadInt32();
+
+							for ( int i = 0; i < tagsToExcludeCount; i++ )
+								loadedGrid.WithoutTags( reader.ReadString() );
+						} );
+
+						currentGrid = new Grid( loadedGrid );
 
 						var cellsToRead = reader.ReadInt32();
 						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
@@ -167,9 +150,9 @@ public partial class Grid
 							var cell = new Cell( currentGrid, cellPosition, cellVertices, tags );
 							currentGrid.AddCell( cell );
 						}
-					} );
 
-					await currentGrid.Initialize( false );
+						currentGrid.Initialize();
+					} );
 
 					loadWatch.Stop();
 					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} loaded in {loadWatch.ElapsedMilliseconds}ms" );
@@ -227,6 +210,27 @@ public partial class Grid
 				writer.Write( WidthClearance );
 				writer.Write( GridPerfect );
 				writer.Write( WorldOnly );
+				writer.Write( CylinderShaped );
+
+				var tagsToIncludeCount = 0;
+
+				foreach ( var tag in Settings.TagsToInclude )
+					tagsToIncludeCount++;
+
+				writer.Write( tagsToIncludeCount );
+
+				foreach ( var tag in Settings.TagsToInclude )
+					writer.Write( tag );
+
+				var tagsToExcludeCount = 0;
+
+				foreach ( var tag in Settings.TagsToExclude )
+					tagsToExcludeCount++;
+
+				writer.Write( tagsToExcludeCount );
+
+				foreach ( var tag in Settings.TagsToExclude )
+					writer.Write( tag );
 
 				await GameTask.RunInThreadAsync( () =>
 				{
