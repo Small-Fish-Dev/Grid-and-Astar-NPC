@@ -241,8 +241,8 @@ public partial class Grid : IValid
 		var gridPerfectHashCode = GridPerfect.GetHashCode();
 		var worldOnlyHashCode = WorldOnly.GetHashCode();
 
-		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, currentGrid.CellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( currentGrid.CellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
+		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
+		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
 
 		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
 	}

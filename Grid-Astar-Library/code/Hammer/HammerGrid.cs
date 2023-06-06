@@ -28,6 +28,12 @@ public partial class HammerGrid : ModelEntity
 	public bool GridPerfect { get; set; } = GridSettings.DEFAULT_GRID_PERFECT;
 	[Net, Property, Description( "Ignore entities while creating the grid (Static props placed in hammer count as the world, otherwise they don't)" )]
 	public bool WorldOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	[Net, Property, Description( "Cells will be generated in the shape of a squished circle instead of rectangle" )]
+	public bool CylinderShaped { get; set; } = false;
+	[Net, Property, Description( "Tags needed to be generated on, separated by commas, spaces are removed" )]
+	public string TagsToInclude { get; set; } = "solid";
+	[Net, Property, Description( "Tags to exclude when generating, separated by commas, spaces are removed" )]
+	public string TagsToExclude { get; set; } = "player";
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 
 	public HammerGrid()
@@ -43,7 +49,27 @@ public partial class HammerGrid : ModelEntity
 
 	public bool PropertiesEqual( GridBuilder properties ) => properties.GetHashCode() == GridHashCode();
 
-	public async Task<Grid> CreateFromSettings() => await GridAStar.Grid.Create( Position, CollisionBounds, Rotation, Identifier, AxisAligned, StandableAngle, StepSize, CellSize, HeightClearance, WidthClearance, GridPerfect, WorldOnly );
+	public GridBuilder GetProperties()
+	{
+		var settings = new GridBuilder( Identifier );
+
+		settings.WithBounds( Position, CollisionBounds, Rotation )
+			.WithAxisAligned( AxisAligned )
+			.WithStandableAngle( StandableAngle )
+			.WithStepSize( StepSize )
+			.WithCellSize( CellSize )
+			.WithHeightClearance( HeightClearance )
+			.WithWidthClearance( WidthClearance )
+			.WithGridPerfect( GridPerfect )
+			.WithWorldOnly( WorldOnly )
+			.WithCylinderShaped( CylinderShaped )
+			.WithTags( TagsToInclude.Replace( " ", string.Empty ).Split( "," ) )
+			.WithoutTags( TagsToExclude.Replace( " ", string.Empty ).Split( "," ) );
+
+		return settings;
+	}
+
+	public async Task<Grid> CreateFromSettings() => await GetProperties().Create();
 
 	public static void LoadAllGrids()
 	{
@@ -60,18 +86,25 @@ public partial class HammerGrid : ModelEntity
 					if ( grid.PropertiesEqual( properties ) )
 					{
 						if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // If everything is valid, which it should be, it will load the map in
-							await grid.CreateFromSettings(); // Else it will create a new one
+						{
+							var newGrid = await grid.CreateFromSettings(); // Else it will create a new one
+							await newGrid.Save();
+						}
 					}
 					else
 					{
 						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {grid.Identifier} properties don't match. Creating new one..." );
 						Grid.DeleteSave( grid.Identifier );
-						await grid.CreateFromSettings();
+						var newGrid = await grid.CreateFromSettings();
+						await newGrid.Save();
 					}
 
 				}
 				else
-					await grid.CreateFromSettings();
+				{
+					var newGrid = await grid.CreateFromSettings();
+					await newGrid.Save();
+				}
 			}
 
 			Event.Run( Grid.LoadedAll );
@@ -96,24 +129,6 @@ public partial class HammerGrid : ModelEntity
 		LoadClientGrids( To.Single( joinedEvent.Client ) );
 	}
 
-	public int GridHashCode() // Overriding GetHashCode returns an error because of Position.GetHashCode()
-	{
-		var identifierHashCode = Identifier.GetHashCode();
-		var positionHashCode = Position.GetHashCode();
-		var boundsHashCode = CollisionBounds.GetHashCode();
-		var rotationHashCode = Rotation.GetHashCode();
-		var axisAlignedHashCode = AxisAligned.GetHashCode();
-		var standableAngleHashCode = StandableAngle.GetHashCode();
-		var stepSizeHashCode = StepSize.GetHashCode();
-		var cellSizeHashCode = CellSize.GetHashCode();
-		var heightClearanceHashCode = HeightClearance.GetHashCode();
-		var widthClearanceHashCode = WidthClearance.GetHashCode();
-		var gridPerfectHashCode = GridPerfect.GetHashCode();
-		var worldOnlyHashCode = WorldOnly.GetHashCode();
-
-		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
-
-		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
-	}
+	// Overriding GetHashCode returns an error because of Position.GetHashCode()
+	public int GridHashCode() => GetProperties().GetHashCode();
 }
