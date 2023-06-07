@@ -158,6 +158,16 @@ public partial class Grid
 						if ( position.y < 0f || position.y > 1f ) continue;
 
 						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
+
+						if ( cell.Tags.Has( "edge" ) )
+						{
+							var nonneighbour = cell.GetNonNeighbour();
+							if ( nonneighbour != null )
+							{
+								DebugOverlay.Line( cell.Position, nonneighbour.Position.WithZ( cell.Position.z), 1.1f );
+								DebugOverlay.Line( nonneighbour.Position.WithZ( cell.Position.z ), nonneighbour.Position, 1.1f );
+							}
+						}
 					}
 
 			nextDraw = 1f;

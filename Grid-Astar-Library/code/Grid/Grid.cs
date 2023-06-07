@@ -20,6 +20,7 @@ public static partial class GridSettings
 	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
 	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;  // How much vertical space there should be
 	public const float DEFAULT_WIDTH_CLEARANCE = 24f;   // How much horizontal space there should be
+	public const float DEFAULT_DROP_HEIGHT = 999f;		// How high you can drop down from
 	public const bool DEFAULT_GRID_PERFECT = false;     // For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
 	public const bool DEFAULT_WORLD_ONLY = true;        // Will it only hit the world or also static entities
 }
@@ -245,30 +246,27 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="tag"></param>
 	/// <returns></returns>
-	public List<Cell> CellsWithTag( string tag ) => Cells.Values
+	public IEnumerable<Cell> CellsWithTag( string tag ) => Cells.Values
 			.SelectMany( stack => stack )
-			.Where( cell => cell.Tags.Has( tag ) )
-			.ToList();
+			.Where( cell => cell.Tags.Has( tag ) );
 
 	/// <summary>
-	/// Returns all cells with that tags
+	/// Returns all cells with those tags
 	/// </summary>
 	/// <param name="tags"></param>
 	/// <returns></returns>
-	public List<Cell> CellsWithTags( params string[] tags ) => Cells.Values
+	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => Cells.Values
 			.SelectMany( stack => stack )
-			.Where( cell => cell.Tags.Has( tags ) )
-			.ToList();
+			.Where( cell => cell.Tags.Has( tags ) );
 
 	/// <summary>
-	/// Returns all cells with that tags
+	/// Returns all cells with those tags
 	/// </summary>
 	/// <param name="tags"></param>
 	/// <returns></returns>
-	public List<Cell> CellsWithTags( List<string> tags ) => Cells.Values
+	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => Cells.Values
 			.SelectMany( stack => stack )
-			.Where( cell => cell.Tags.Has( tags ) )
-			.ToList();
+			.Where( cell => cell.Tags.Has( tags ) );
 
 	/// <summary>
 	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone

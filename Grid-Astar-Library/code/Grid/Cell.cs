@@ -330,6 +330,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return true;
 	}
 
+	/// <summary>
+	/// Return all neighboring cells that are directly connected
+	/// </summary>
+	/// <param name="ignoreHeight"></param>
+	/// <returns></returns>
 	public IEnumerable<Cell> GetNeighbours( bool ignoreHeight = false )
 	{
 		var height = ignoreHeight ? float.MaxValue : Position.z;
@@ -347,6 +352,34 @@ public partial class Cell : IEquatable<Cell>, IValid
 					yield return cellFound;
 			}
 		}
+	}
+
+	/// <summary>
+	/// Return the first cell below spaces where a neighbour is missing
+	/// </summary>
+	/// <param name="maxHeightDistance"></param>
+	/// <returns></returns>
+	public Cell GetNonNeighbour( int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	{
+		for ( int y = 0; y <= maxCellsDistance * 2; y++ )
+		{
+			int curY = (int)Math.Ceiling( y / 2d );
+			int spiralY = curY * (y % 2 == 0 ? -1 : 1);
+			for ( int x = 0; x <= maxCellsDistance * 2; x++ )
+			{
+				int curX = (int)Math.Ceiling( y / 2d );
+				int spiralX = curY * (y % 2 == 0 ? -1 : 1);
+				if ( spiralX == 0 && spiralY == 0 ) continue;
+				if ( spiralX == 1 || spiralX == -1 || spiralY == 1 || spiralY == -1 ) continue; // TODO: uuughh
+
+				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + spiralX, GridPosition.y + spiralY ), Position.z );
+				if ( cellFound == null ) continue;
+				if ( IsNeighbour( cellFound ) ) continue;
+
+				return cellFound;
+			}
+		}
+		return null;
 	}
 
 	/// <summary>
