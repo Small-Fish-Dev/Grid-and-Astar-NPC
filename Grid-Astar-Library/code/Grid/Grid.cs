@@ -241,6 +241,36 @@ public partial class Grid : IValid
 	}
 
 	/// <summary>
+	/// Returns all cells with that tag
+	/// </summary>
+	/// <param name="tag"></param>
+	/// <returns></returns>
+	public List<Cell> CellsWithTag( string tag ) => Cells.Values
+			.SelectMany( stack => stack )
+			.Where( cell => cell.Tags.Has( tag ) )
+			.ToList();
+
+	/// <summary>
+	/// Returns all cells with that tags
+	/// </summary>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public List<Cell> CellsWithTags( params string[] tags ) => Cells.Values
+			.SelectMany( stack => stack )
+			.Where( cell => cell.Tags.Has( tags ) )
+			.ToList();
+
+	/// <summary>
+	/// Returns all cells with that tags
+	/// </summary>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public List<Cell> CellsWithTags( List<string> tags ) => Cells.Values
+			.SelectMany( stack => stack )
+			.Where( cell => cell.Tags.Has( tags ) )
+			.ToList();
+
+	/// <summary>
 	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone
 	/// </summary>
 	/// <param name="tag"></param>

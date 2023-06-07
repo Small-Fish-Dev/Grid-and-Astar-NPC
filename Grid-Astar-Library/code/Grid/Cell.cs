@@ -14,6 +14,15 @@ public struct CellTags
 	}
 
 	public bool Has( string tag ) => All.Contains( tag );
+
+	public bool Has( params string[] tags )
+	{
+		foreach ( string tag in tags )
+			if ( !Has( tag ) )
+				return false;
+		return true;
+	}
+
 	public bool Has( List<string> tags )
 	{
 		foreach( string tag in tags )
