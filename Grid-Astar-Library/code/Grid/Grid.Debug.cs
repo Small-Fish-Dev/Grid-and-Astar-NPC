@@ -161,7 +161,7 @@ public partial class Grid
 
 						if ( cell.Tags.Has( "edge" ) )
 						{
-							var nonneighbour = cell.GetFirstNonNeighbour();
+							var nonneighbour = cell.GetFirstValidDroppable();
 							if ( nonneighbour != null )
 							{
 								DebugOverlay.Line( cell.Position, nonneighbour.Position.WithZ( cell.Position.z), 1.1f );

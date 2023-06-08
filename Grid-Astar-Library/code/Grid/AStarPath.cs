@@ -1,5 +1,28 @@
 ﻿namespace GridAStar;
 
+public struct AStarNode
+{
+	public Cell Parent { get; private set; }
+	public Cell Destination { get; private set; }
+	public string MovementTag { get; private set; } = string.Empty;
+	public Vector3 StartPosition => Parent.Position;
+	public Vector3 EndPosition => Destination.Position;
+	public Vector3 Direction => (EndPosition - StartPosition).Normal;
+
+	public AStarNode( Cell parent, Cell destination )
+	{
+		Parent = parent;
+		Destination = destination;
+	}
+
+	public AStarNode( Cell parent, Cell destination, string tag ) 
+	{
+		Parent = parent;
+		Destination = destination;
+		MovementTag = tag;
+	}
+}
+
 public struct AStarPath
 {
 	public AStarPathBuilder Settings { get; internal set; }

@@ -290,6 +290,12 @@ public struct GridBuilder
 		edgeCells.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
 
+		Stopwatch droppableCells = new Stopwatch();
+		droppableCells.Start();
+		currentGrid.AssignDroppableCells();
+		droppableCells.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
+
 		totalWatch.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
 

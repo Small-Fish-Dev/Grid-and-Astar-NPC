@@ -242,6 +242,20 @@ public partial class Grid : IValid
 	}
 
 	/// <summary>
+	/// Adds the droppable connection to cells you can drop from
+	/// </summary>
+	/// <returns></returns>
+	public void AssignDroppableCells()
+	{
+		foreach( var cell in CellsWithTag( "edge" ) )
+		{
+			var droppableCell = cell.GetFirstValidDroppable();
+			if ( droppableCell != null )
+				cell.AddConnection( droppableCell, "drop" );
+		}
+	}
+
+	/// <summary>
 	/// Returns all cells with that tag
 	/// </summary>
 	/// <param name="tag"></param>

@@ -49,6 +49,23 @@ public struct CellTags
 	}
 }
 
+public struct CellConnection
+{
+	public Cell Cell { get; private set; }
+	public string ConnectionTag { get; private set; } = string.Empty;
+
+	public CellConnection( Cell cell )
+	{
+		Cell = cell;
+	}
+
+	public CellConnection( Cell cell, string tag )
+	{
+		Cell = cell;
+		ConnectionTag = tag;
+	}
+}
+
 public partial class Cell : IEquatable<Cell>, IValid
 {
 	/// <summary>
@@ -86,6 +103,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( ( Position + Bounds.Mins ).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public CellTags Tags { get; set; }
+	public List<CellConnection> CellConnections { get; set; } = new();
+
 	public bool Occupied
 	{
 		get => Tags.Has( "occupied" );
@@ -109,7 +128,6 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <returns></returns>
 	public static Cell TryCreate( Grid grid, Vector3 position )
 	{
-
 		float[] validCoordinates = new float[4];
 		var height = position.z - validCoordinates.Min();
 
@@ -247,6 +265,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return (true,true);
 	}
 
+	public void AddConnection( Cell other, string tag = "" ) => CellConnections.Add( new CellConnection( other, tag == "" ? string.Empty : tag ) );
+
 	public void SetOccupant( Entity entity )
 	{
 		OccupyingEntity = entity;
@@ -346,7 +366,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <param name="maxCellsDistance"></param>
 	/// <param name="maxHeightDistance"></param>
 	/// <returns></returns>
-	public Cell GetFirstNonNeighbour( int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	public Cell GetFirstValidDroppable( int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
 	{
 		for ( int y = 0; y <= maxCellsDistance * 2; y++ )
 		{
@@ -385,6 +405,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 				return cellFound;
 			}
 		}
+
 		return null;
 	}
 
