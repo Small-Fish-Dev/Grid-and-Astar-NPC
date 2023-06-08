@@ -346,7 +346,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <param name="maxCellsDistance"></param>
 	/// <param name="maxHeightDistance"></param>
 	/// <returns></returns>
-	public Cell GetNonNeighbour( int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	public Cell GetFirstNonNeighbour( int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
 	{
 		for ( int y = 0; y <= maxCellsDistance * 2; y++ )
 		{
@@ -357,15 +357,30 @@ public partial class Cell : IEquatable<Cell>, IValid
 				if ( spiralX == 0 && spiralY == 0 ) continue;
 
 				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + spiralX, GridPosition.y + spiralY ), Position.z );
-				if ( cellFound == null ) continue;
-				if ( IsNeighbour( cellFound ) ) continue;
-				if ( Math.Abs( cellFound.Position.z - Position.z ) <= Grid.RealStepSize * 2 ) continue;
-				if ( Grid.LineOfSight( this, cellFound ) ) continue;
 
+				if ( cellFound == null ) continue; // Ignore if there's no cell
+				if ( IsNeighbour( cellFound ) ) continue; // Ignore if the cell is touching
+
+				var verticalDistance = Bottom.z - cellFound.Position.z;
+				if ( verticalDistance > maxHeightDistance ) continue; // Ignore if it's too high
+
+				var horizontalDistance = new Vector2( spiralX, spiralY ).Length;
+				if ( verticalDistance <= Grid.RealStepSize * horizontalDistance ) continue; // Prevents steps from counting each other
+
+				if ( Grid.LineOfSight( this, cellFound ) ) continue; // Ignore if the cell cal be walked to
+
+				// Check if you can walk off the edge
 				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
-				var horizontalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, Position, cellFound.Position.WithZ( Position.z ) )
-					.WithGridSettings( Grid.Settings );
+				var horizontalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.RealStepSize, cellFound.Position.WithZ( Position.z + Grid.RealStepSize ) )
+					.WithGridSettings( Grid.Settings )
+					.Run();
+				if ( horizontalClearanceTrace.Hit ) continue; // Ignore if you can't walk off the edge
 
+				// Check if you can drop down
+				var verticalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, cellFound.Position.WithZ( Position.z + Grid.RealStepSize ), cellFound.Position + Vector3.Up * Grid.RealStepSize )
+					.WithGridSettings( Grid.Settings )
+					.Run();
+				if ( verticalClearanceTrace.Hit ) continue; // Ignore if you can't drop down
 
 				return cellFound;
 			}
