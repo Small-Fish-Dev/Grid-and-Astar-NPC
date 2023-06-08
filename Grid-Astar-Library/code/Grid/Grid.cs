@@ -184,12 +184,12 @@ public partial class Grid : IValid
 		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
 
 		Cell lastCell = startingCell;
-
-		for ( int i = 1; i < distanceInSteps; i++ )
+		for ( int i = 1; i <= distanceInSteps; i++ )
 		{
 			var cellToCheck = GetCellInDirection( startingCell, direction, i );
 
 			if ( cellToCheck == null ) return false;
+			if ( cellToCheck == lastCell ) continue;
 			if ( pathCreator == null && cellToCheck.Occupied ) return false;
 			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
 			if ( !cellToCheck.IsNeighbour( lastCell ) ) return false;
