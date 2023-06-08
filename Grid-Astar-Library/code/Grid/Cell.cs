@@ -363,14 +363,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 	{
 		for ( int y = 0; y <= maxCellsDistance * 2; y++ )
 		{
-			int curY = (int)Math.Ceiling( y / 2d );
-			int spiralY = curY * (y % 2 == 0 ? -1 : 1);
+			var spiralY = MathAStar.SpiralPattern( y );
 			for ( int x = 0; x <= maxCellsDistance * 2; x++ )
 			{
-				int curX = (int)Math.Ceiling( y / 2d );
-				int spiralX = curY * (y % 2 == 0 ? -1 : 1);
+				var spiralX = MathAStar.SpiralPattern( x );
 				if ( spiralX == 0 && spiralY == 0 ) continue;
-				if ( spiralX == 1 || spiralX == -1 || spiralY == 1 || spiralY == -1 ) continue; // TODO: uuughh
 
 				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + spiralX, GridPosition.y + spiralY ), Position.z );
 				if ( cellFound == null ) continue;
