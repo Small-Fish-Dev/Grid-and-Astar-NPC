@@ -1,4 +1,6 @@
-﻿namespace GridAStar;
+﻿using System.Threading;
+
+namespace GridAStar;
 
 public partial class Grid
 {
@@ -41,23 +43,33 @@ public partial class Grid
 	{
 		foreach ( var grid in Grid.Grids )
 			grid.Value.CheckOccupancy( "BlockGrid" );
-	}
+	}*/
 
 	[ConCmd.Server( "TestPath" )]
 	public async static void TestPath()
 	{
-		foreach ( var client in Game.Clients )
-		{
-			var cells = await Grid.Main.ComputePathParallel( client.Pawn.Position, new Vector3( -1577.57f, - 758.34f, 128.00f ), true );
+		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
 
-			for ( int i = 0; i < cells.Length; i++ )
+		var builder = AStarPathBuilder.From( Grid.Main )
+			.WithPartialEnabled()
+			.WithMaxDistance( 500f );
+
+		var computedPath = await builder.RunAsync( Grid.Main.GetCell( caller.Position ), Grid.Main.GetCell( Vector3.Zero, false ), CancellationToken.None );
+		computedPath.Simplify();
+
+		for ( int i = 0; i < computedPath.Cells.Count(); i++ )
+		{
+			var cell = computedPath.Cells[i];
+			cell.Draw( Color.Red, 3f, false );
+			DebugOverlay.Text( i.ToString(), cell.Position, duration: 3 );
+
+			if ( i < computedPath.Cells.Count() - 1 )
 			{
-				cells[i].Draw( Color.Red, 15f, false );
-				DebugOverlay.Text( i.ToString(), cells[i].Position, duration: 3 );
+				DebugOverlay.Line( cell.Position, computedPath.Cells[i+1].Position, 3f );
 			}
 		}
 	}
-
+	/*
 	[ConCmd.Server( "StressPath" )]
 	public static async void StressPath( int runs = 100, int seed = 42069 )
 	{

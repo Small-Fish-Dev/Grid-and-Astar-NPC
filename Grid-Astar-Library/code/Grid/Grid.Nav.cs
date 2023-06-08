@@ -56,7 +56,7 @@ public partial class Grid
 				break;
 			}
 
-			foreach ( var neighbour in currentNode.Current.GetNeighbours() )
+			foreach ( var neighbour in currentNode.Current.GetNeighbourAndConnections() )
 			{
 				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Occupied ) continue;
 				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Occupied && neighbour.OccupyingEntity != pathBuilder.PathCreator ) continue;
