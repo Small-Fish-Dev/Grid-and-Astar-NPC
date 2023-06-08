@@ -361,25 +361,15 @@ public partial class Cell : IEquatable<Cell>, IValid
 	}
 
 	/// <summary>
-	/// Return all cell connections
-	/// </summary>
-	/// <returns></returns>
-	public IEnumerable<Cell> GetConnections()
-	{
-		foreach ( var connection in CellConnections )
-		{
-			yield return connection.Cell;
-		}
-	}
-
-	/// <summary>
 	/// Returns all neighbours and connected cells where you can travel to from this cell
 	/// </summary>
 	/// <param name="ignoreHeight"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> GetNeighbourAndConnections( bool ignoreHeight = false )
+	public IEnumerable<CellConnection> GetNeighbourAndConnections( bool ignoreHeight = false )
 	{
-		return GetNeighbours( ignoreHeight ).Concat( GetConnections() );
+		return GetNeighbours( ignoreHeight )
+			.Select( x => new CellConnection( x ) )
+			.Concat( CellConnections );
 	}
 
 	/// <summary>

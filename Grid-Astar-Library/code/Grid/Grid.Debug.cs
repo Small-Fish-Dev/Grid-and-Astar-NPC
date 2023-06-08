@@ -64,9 +64,7 @@ public partial class Grid
 			DebugOverlay.Text( i.ToString(), cell.Position, duration: 3 );
 
 			if ( i < computedPath.Cells.Count() - 1 )
-			{
 				DebugOverlay.Line( cell.Position, computedPath.Cells[i+1].Position, 3f );
-			}
 		}
 	}
 	/*

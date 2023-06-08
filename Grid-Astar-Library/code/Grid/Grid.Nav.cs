@@ -58,21 +58,21 @@ public partial class Grid
 
 			foreach ( var neighbour in currentNode.Current.GetNeighbourAndConnections() )
 			{
-				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Occupied ) continue;
-				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Occupied && neighbour.OccupyingEntity != pathBuilder.PathCreator ) continue;
-				if ( pathBuilder.HasTagsToExlude && neighbour.Tags.Has( pathBuilder.TagsToExclude ) ) continue;
-				if ( pathBuilder.HasTagsToInclude && !neighbour.Tags.Has( pathBuilder.TagsToInclude ) ) continue;
-				if ( closedCellSet.Contains( neighbour ) ) continue;
+				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Cell.Occupied ) continue;
+				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Cell.Occupied && neighbour.Cell.OccupyingEntity != pathBuilder.PathCreator ) continue;
+				if ( pathBuilder.HasTagsToExlude && neighbour.Cell.Tags.Has( pathBuilder.TagsToExclude ) ) continue;
+				if ( pathBuilder.HasTagsToInclude && !neighbour.Cell.Tags.Has( pathBuilder.TagsToInclude ) ) continue;
+				if ( closedCellSet.Contains( neighbour.Cell ) ) continue;
 
-				var isInOpenSet = openCellSet.Contains( neighbour );
+				var isInOpenSet = openCellSet.Contains( neighbour.Cell );
 				Node neighbourNode;
 
 				if ( isInOpenSet )
-					neighbourNode = cellNodePair[neighbour];
+					neighbourNode = cellNodePair[neighbour.Cell];
 				else
-					neighbourNode = new Node( neighbour );
+					neighbourNode = new Node( neighbour.Cell );
 
-				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour );
+				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour.Cell );
 				var distanceToTarget = neighbourNode.Distance( targetCell );
 
 				if ( distanceToTarget > maxDistance ) continue;
@@ -86,11 +86,11 @@ public partial class Grid
 					if ( !isInOpenSet )
 					{
 						openSet.Add( neighbourNode );
-						openCellSet.Add( neighbour );
-						if ( !cellNodePair.ContainsKey( neighbour ) )
-							cellNodePair.Add( neighbour, neighbourNode );
+						openCellSet.Add( neighbour.Cell );
+						if ( !cellNodePair.ContainsKey( neighbour.Cell ) )
+							cellNodePair.Add( neighbour.Cell, neighbourNode );
 						else
-							cellNodePair[neighbour] = neighbourNode;
+							cellNodePair[neighbour.Cell] = neighbourNode;
 					}
 				}
 			}
