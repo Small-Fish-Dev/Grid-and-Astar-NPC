@@ -144,7 +144,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var centerDir = testCoordinates[i].Normal; // Test a little closer to the center, for grid-perfect terrain
 			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) - centerDir * grid.Tolerance;
 			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * grid.Tolerance;
-			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos );
+			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos )
+				.WithAllTags( grid.Settings.TagsToInclude.ToArray() )
+				.WithoutTags( grid.Settings.TagsToExclude.ToArray() );
 
 			if ( grid.WorldOnly )
 				testTrace.WorldOnly();
@@ -167,7 +169,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 	{
 		var clearanceBBox = new BBox( new Vector3( -grid.WidthClearance / 2f, -grid.WidthClearance / 2f, 0f ), new Vector3( grid.WidthClearance / 2f, grid.WidthClearance / 2f, 1f ) );
 		var startPos = position + Vector3.Up * grid.HeightClearance;
-		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize );
+		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize )
+			.WithAllTags( grid.Settings.TagsToInclude.ToArray() )
+			.WithoutTags( grid.Settings.TagsToExclude.ToArray() );
 
 		if ( grid.WorldOnly )
 			clearanceTrace.WorldOnly();
@@ -222,7 +226,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
 			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + tolerance * 2f ) )
-				.Size( grid.RealStepSize / 2f);
+				.Size( grid.RealStepSize / 2f )
+				.WithAllTags( grid.Settings.TagsToInclude.ToArray() )
+				.WithoutTags( grid.Settings.TagsToExclude.ToArray() );
 
 			if ( grid.WorldOnly )
 				stepTrace.WorldOnly();
@@ -276,9 +282,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var occupyResult = occupyTrace.Run();
 
 		if ( occupyResult.Entity != null )
-		{
 			SetOccupant( occupyResult.Entity );
-		}
 
 		return occupyResult.Hit;
 	}
@@ -357,6 +361,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <summary>
 	/// Return the first cell below spaces where a neighbour is missing
 	/// </summary>
+	/// <param name="maxCellsDistance"></param>
 	/// <param name="maxHeightDistance"></param>
 	/// <returns></returns>
 	public Cell GetNonNeighbour( int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
@@ -372,6 +377,17 @@ public partial class Cell : IEquatable<Cell>, IValid
 				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + spiralX, GridPosition.y + spiralY ), Position.z );
 				if ( cellFound == null ) continue;
 				if ( IsNeighbour( cellFound ) ) continue;
+				if ( Math.Abs( cellFound.Position.z - Position.z ) <= Grid.RealStepSize * 2 ) continue;
+				if ( Grid.LineOfSight( this, cellFound ) ) continue;
+
+				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+				//var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize );
+
+				/*if ( Grid.WorldOnly )
+					clearanceTrace.WorldOnly();
+				else
+					clearanceTrace.WorldAndEntities();*/
+
 
 				return cellFound;
 			}
