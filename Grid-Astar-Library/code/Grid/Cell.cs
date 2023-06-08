@@ -145,13 +145,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) - centerDir * grid.Tolerance;
 			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * grid.Tolerance;
 			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos )
-				.WithAllTags( grid.Settings.TagsToInclude.ToArray() )
-				.WithoutTags( grid.Settings.TagsToExclude.ToArray() );
-
-			if ( grid.WorldOnly )
-				testTrace.WorldOnly();
-			else
-				testTrace.WorldAndEntities();
+				.WithGridSettings( grid.Settings );
 
 			var testResult = testTrace.Run();
 
@@ -170,13 +164,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var clearanceBBox = new BBox( new Vector3( -grid.WidthClearance / 2f, -grid.WidthClearance / 2f, 0f ), new Vector3( grid.WidthClearance / 2f, grid.WidthClearance / 2f, 1f ) );
 		var startPos = position + Vector3.Up * grid.HeightClearance;
 		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize )
-			.WithAllTags( grid.Settings.TagsToInclude.ToArray() )
-			.WithoutTags( grid.Settings.TagsToExclude.ToArray() );
-
-		if ( grid.WorldOnly )
-			clearanceTrace.WorldOnly();
-		else
-			clearanceTrace.WorldAndEntities();
+			.WithGridSettings( grid.Settings );
 
 		var clearanceResult = clearanceTrace.Run();
 		var heightDifference = clearanceResult.EndPosition.z - ( position.z - height );
@@ -227,13 +215,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
 			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + tolerance * 2f ) )
 				.Size( grid.RealStepSize / 2f )
-				.WithAllTags( grid.Settings.TagsToInclude.ToArray() )
-				.WithoutTags( grid.Settings.TagsToExclude.ToArray() );
-
-			if ( grid.WorldOnly )
-				stepTrace.WorldOnly();
-			else
-				stepTrace.WorldAndEntities();
+				.WithGridSettings( grid.Settings );
 
 			var stepResult = stepTrace.Run();
 			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
@@ -381,12 +363,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 				if ( Grid.LineOfSight( this, cellFound ) ) continue;
 
 				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
-				//var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize );
-
-				/*if ( Grid.WorldOnly )
-					clearanceTrace.WorldOnly();
-				else
-					clearanceTrace.WorldAndEntities();*/
+				var horizontalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, Position, cellFound.Position.WithZ( Position.z ) )
+					.WithGridSettings( Grid.Settings );
 
 
 				return cellFound;

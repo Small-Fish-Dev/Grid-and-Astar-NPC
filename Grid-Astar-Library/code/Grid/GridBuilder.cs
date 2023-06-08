@@ -243,13 +243,7 @@ public struct GridBuilder
 					var endPosition = worldBounds.Mins + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) * currentGrid.AxisRotation;
 					var checkBBox = new BBox( new Vector3( -currentGrid.CellSize / 2f + currentGrid.Tolerance, -currentGrid.CellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( currentGrid.CellSize / 2f - currentGrid.Tolerance, currentGrid.CellSize / 2f - currentGrid.Tolerance, 0.001f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
-					.WithAllTags( currentGrid.Settings.TagsToInclude.ToArray() )
-					.WithoutTags( currentGrid.Settings.TagsToExclude.ToArray() );
-
-					if ( currentGrid.WorldOnly )
-						positionTrace.WorldOnly();
-					else
-						positionTrace.WorldAndEntities();
+						.WithGridSettings( currentGrid.Settings );
 
 					var positionResult = positionTrace.Run();
 
