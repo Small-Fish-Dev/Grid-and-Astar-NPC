@@ -24,47 +24,57 @@ public partial class Grid
 		if ( !Grid.Exists( identifier ) )
 			return new GridBuilder();
 
-		using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
+		try
 		{
-			Stream dataStream = fileStream;
 
-			// Check if the data is compressed
-			if ( IsCompressed( dataStream ) )
+			using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
 			{
-				dataStream = new GZipStream( fileStream, CompressionMode.Decompress );
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} is compressed, decompressing..." );
-			}
+				Stream dataStream = fileStream;
 
-			using ( var reader = new BinaryReader( dataStream ) )
-			{
-				var loadedGrid = new GridBuilder( reader.ReadString() );
-
-				await GameTask.RunInThreadAsync( () =>
+				// Check if the data is compressed
+				if ( IsCompressed( dataStream ) )
 				{
-					loadedGrid.WithBounds( reader.ReadVector3(), new BBox( reader.ReadVector3(), reader.ReadVector3() ), reader.ReadRotation() )
-					.WithAxisAligned( reader.ReadBoolean() )
-					.WithStandableAngle( reader.ReadSingle() )
-					.WithStepSize( reader.ReadSingle() )
-					.WithCellSize( reader.ReadSingle() )
-					.WithHeightClearance( reader.ReadSingle() )
-					.WithWidthClearance( reader.ReadSingle() )
-					.WithGridPerfect( reader.ReadBoolean() )
-					.WithWorldOnly( reader.ReadBoolean() )
-					.WithCylinderShaped( reader.ReadBoolean() );
+					dataStream = new GZipStream( fileStream, CompressionMode.Decompress );
+					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} is compressed, decompressing..." );
+				}
 
-					var tagsToIncludeCount = reader.ReadInt32();
+				using ( var reader = new BinaryReader( dataStream ) )
+				{
+					var loadedGrid = new GridBuilder( reader.ReadString() );
 
-					for ( int i = 0; i < tagsToIncludeCount; i++ )
-						loadedGrid.WithTags( reader.ReadString() );
+					await GameTask.RunInThreadAsync( () =>
+					{
+						loadedGrid.WithBounds( reader.ReadVector3(), new BBox( reader.ReadVector3(), reader.ReadVector3() ), reader.ReadRotation() )
+						.WithAxisAligned( reader.ReadBoolean() )
+						.WithStandableAngle( reader.ReadSingle() )
+						.WithStepSize( reader.ReadSingle() )
+						.WithCellSize( reader.ReadSingle() )
+						.WithHeightClearance( reader.ReadSingle() )
+						.WithWidthClearance( reader.ReadSingle() )
+						.WithGridPerfect( reader.ReadBoolean() )
+						.WithWorldOnly( reader.ReadBoolean() )
+						.WithMaxDropHeight( reader.ReadSingle() )
+						.WithCylinderShaped( reader.ReadBoolean() );
 
-					var tagsToExcludeCount = reader.ReadInt32();
+						var tagsToIncludeCount = reader.ReadInt32();
 
-					for ( int i = 0; i < tagsToExcludeCount; i++ )
-						loadedGrid.WithoutTags( reader.ReadString() );
-				} );
+						for ( int i = 0; i < tagsToIncludeCount; i++ )
+							loadedGrid.WithTags( reader.ReadString() );
 
-				return loadedGrid;
+						var tagsToExcludeCount = reader.ReadInt32();
+
+						for ( int i = 0; i < tagsToExcludeCount; i++ )
+							loadedGrid.WithoutTags( reader.ReadString() );
+					} );
+
+					return loadedGrid;
+				}
 			}
+		}
+		catch ( Exception error )
+		{
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load properties ({error})" );
+			return new GridBuilder();
 		}
 	}
 
@@ -118,6 +128,7 @@ public partial class Grid
 							.WithWidthClearance( reader.ReadSingle() )
 							.WithGridPerfect( reader.ReadBoolean() )
 							.WithWorldOnly( reader.ReadBoolean() )
+							.WithMaxDropHeight( reader.ReadSingle() )
 							.WithCylinderShaped( reader.ReadBoolean() );
 
 							var tagsToIncludeCount = reader.ReadInt32();
@@ -210,6 +221,7 @@ public partial class Grid
 				writer.Write( WidthClearance );
 				writer.Write( GridPerfect );
 				writer.Write( WorldOnly );
+				writer.Write( MaxDropHeight );
 				writer.Write( CylinderShaped );
 
 				var tagsToIncludeCount = 0;
