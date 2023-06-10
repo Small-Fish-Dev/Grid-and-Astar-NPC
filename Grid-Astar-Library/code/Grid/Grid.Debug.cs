@@ -53,7 +53,7 @@ public partial class Grid
 		var builder = AStarPathBuilder.From( Grid.Main );
 
 		var computedPath = await builder.RunAsync( Grid.Main.GetCell( caller.Position ), Grid.Main.GetCell( Vector3.Zero, false ), CancellationToken.None );
-		computedPath.Simplify();
+		//computedPath.Simplify();
 
 		for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
 		{
@@ -167,14 +167,10 @@ public partial class Grid
 
 						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
 
-						if ( cell.Tags.Has( "edge" ) )
+						foreach( var connection in cell.CellConnections )
 						{
-							var nonneighbour = cell.GetFirstValidDroppable();
-							if ( nonneighbour != null )
-							{
-								DebugOverlay.Line( cell.Position, nonneighbour.Position.WithZ( cell.Position.z), 1.1f );
-								DebugOverlay.Line( nonneighbour.Position.WithZ( cell.Position.z ), nonneighbour.Position, 1.1f );
-							}
+							DebugOverlay.Line( cell.Position, connection.Current.Position.WithZ( cell.Position.z ), 1.1f );
+							DebugOverlay.Line( connection.Current.Position.WithZ( cell.Position.z ), connection.Current.Position, 1.1f );
 						}
 					}
 

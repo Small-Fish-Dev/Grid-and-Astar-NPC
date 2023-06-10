@@ -28,6 +28,8 @@ public partial class HammerGrid : ModelEntity
 	public bool GridPerfect { get; set; } = GridSettings.DEFAULT_GRID_PERFECT;
 	[Net, Property, Description( "Ignore entities while creating the grid (Static props placed in hammer count as the world, otherwise they don't)" )]
 	public bool WorldOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	[Net, Property, Description( "How high up you can drop down" )]
+	public float MaxDropHeight { get; set; } = GridSettings.DEFAULT_DROP_HEIGHT;
 	[Net, Property, Description( "Cells will be generated in the shape of a squished circle instead of rectangle" )]
 	public bool CylinderShaped { get; set; } = false;
 	[Net, Property, Description( "Tags needed to be generated on, separated by commas, spaces are removed" )]
@@ -62,6 +64,7 @@ public partial class HammerGrid : ModelEntity
 			.WithWidthClearance( WidthClearance )
 			.WithGridPerfect( GridPerfect )
 			.WithWorldOnly( WorldOnly )
+			.WithMaxDropHeight( MaxDropHeight )
 			.WithCylinderShaped( CylinderShaped )
 			.WithTags( TagsToInclude.Replace( " ", string.Empty ).Split( "," ))
 			.WithoutTags( TagsToExclude.Replace( " ", string.Empty ).Split( "," ) );

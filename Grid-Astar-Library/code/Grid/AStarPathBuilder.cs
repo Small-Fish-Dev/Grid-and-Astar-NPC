@@ -12,6 +12,7 @@ public struct AStarPathBuilder
 	public bool HasTagsToInclude => TagsToInclude.Count() > 0;
 	public bool AcceptsPartial { get; private set; } = false;
 	public float MaxCheckDistance { get; private set; } = float.PositiveInfinity;
+	public float MaxDropHeight { get; private set; } = GridSettings.DEFAULT_DROP_HEIGHT;
 	public Entity PathCreator { get; private set; } = null;
 	public bool HasPathCreator => PathCreator != null;
 
@@ -53,6 +54,7 @@ public struct AStarPathBuilder
 		}
 		return this;
 	}
+
 	/// <summary>
 	/// How far from the destination are we willing to check, this is added on top of the distance between start and end, else it would never run
 	/// </summary>
@@ -62,6 +64,17 @@ public struct AStarPathBuilder
 		MaxCheckDistance = Math.Max( 0f, maxDistance );
 		return this;
 	}
+
+	/// <summary>
+	/// How high up you can drop
+	/// </summary>
+	/// <param name="maxDropHeight">Default is infinity</param>
+	public AStarPathBuilder WithMaxDropHeight( float maxDropHeight )
+	{
+		MaxDropHeight = Math.Min( Grid.MaxDropHeight, maxDropHeight );
+		return this;
+	}
+
 	/// <summary>
 	/// Accept paths that don't reach the destination, pairs well with WithMaxDistance
 	/// </summary>
