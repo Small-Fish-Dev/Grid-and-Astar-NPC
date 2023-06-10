@@ -18,14 +18,14 @@ public partial class Grid
 		// Setup.
 		var path = new List<Cell>();
 
-		var startingNode = new Node( startingCell );
-		var targetNode = new Node( targetCell );
+		var startingNode = new AStarNode( startingCell );
+		var targetNode = new AStarNode( targetCell );
 
-		var openSet = new Heap<Node>( Cells.Count );
-		var closedSet = new HashSet<Node>();
+		var openSet = new Heap<AStarNode>( Cells.Count );
+		var closedSet = new HashSet<AStarNode>();
 		var closedCellSet = new HashSet<Cell>();
 		var openCellSet = new HashSet<Cell>();
-		var cellNodePair = new Dictionary<Cell, Node>();
+		var cellNodePair = new Dictionary<Cell, AStarNode>();
 		var initialDistance = startingCell.Position.Distance( targetCell.Position );
 		var maxDistance = Math.Max( initialDistance, initialDistance + pathBuilder.MaxCheckDistance ) + CellSize; 
 
@@ -65,12 +65,12 @@ public partial class Grid
 				if ( closedCellSet.Contains( neighbour.Cell ) ) continue;
 
 				var isInOpenSet = openCellSet.Contains( neighbour.Cell );
-				Node neighbourNode;
+				AStarNode neighbourNode;
 
 				if ( isInOpenSet )
 					neighbourNode = cellNodePair[neighbour.Cell];
 				else
-					neighbourNode = new Node( neighbour.Cell );
+					neighbourNode = new AStarNode( neighbour.Cell );
 
 				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour.Cell );
 				var distanceToTarget = neighbourNode.Distance( targetCell );
@@ -102,7 +102,7 @@ public partial class Grid
 		return path;
 	}
 
-	private static void RetracePath( List<Cell> pathList, Node startNode, Node targetNode )
+	private static void RetracePath( List<Cell> pathList, AStarNode startNode, AStarNode targetNode )
 	{
 		var currentNode = targetNode;
 
