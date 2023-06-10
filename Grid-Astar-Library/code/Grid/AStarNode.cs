@@ -8,6 +8,9 @@ public partial class AStarNode : IHeapItem<AStarNode>, IEquatable<AStarNode>
 	public Vector3 StartPosition => Parent.Current.Position;
 	public Vector3 EndPosition => Current.Position;
 	public Vector3 Direction => (EndPosition - StartPosition).Normal;
+	public bool Occupied => Current.Occupied;
+	public Entity OccupyingEntity => Current.OccupyingEntity;
+	public CellTags Tags => Current.Tags;
 	public float gCost { get; internal set; } = 0f;
 	public float hCost { get; internal set; } = 0f;
 	public float fCost => gCost + hCost;

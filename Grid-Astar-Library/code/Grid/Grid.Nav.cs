@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Linq;
+using System.Threading;
 
 namespace GridAStar;
 
@@ -12,34 +13,28 @@ public partial class Grid
 	/// <param name="targetCell">The desired destination point of the path.</param>
 	/// <param name="reversed">Whether or not to reverse the resulting path.</param>
 	/// <param name="token">A cancellation token used to cancel computing the path.</param>
-	/// <returns>An <see cref="List{Cell}"/> that contains the computed path.</returns>
-	internal List<Cell> ComputePathInternal( AStarPathBuilder pathBuilder, Cell startingCell, Cell targetCell, bool reversed, CancellationToken token )
+	/// <returns>An <see cref="List{AStarNode}"/> that contains the computed path.</returns>
+	internal List<AStarNode> ComputePathInternal( AStarPathBuilder pathBuilder, Cell startingCell, Cell targetCell, bool reversed, CancellationToken token )
 	{
 		// Setup.
-		var path = new List<Cell>();
+		var path = new List<AStarNode>();
 
 		var startingNode = new AStarNode( startingCell );
 		var targetNode = new AStarNode( targetCell );
 
 		var openSet = new Heap<AStarNode>( Cells.Count );
 		var closedSet = new HashSet<AStarNode>();
-		var closedCellSet = new HashSet<Cell>();
-		var openCellSet = new HashSet<Cell>();
-		var cellNodePair = new Dictionary<Cell, AStarNode>();
-		var initialDistance = startingCell.Position.Distance( targetCell.Position );
+		var openSetReference = new Dictionary<int, AStarNode>();
+		var initialDistance = startingNode.Distance( targetNode );
 		var maxDistance = Math.Max( initialDistance, initialDistance + pathBuilder.MaxCheckDistance ) + CellSize; 
 
 		openSet.Add( startingNode );
-		openCellSet.Add( startingCell );
-		cellNodePair.Add( startingCell, startingNode );
-		cellNodePair.Add( targetCell, targetNode );
+		openSetReference.Add( startingNode.GetHashCode(), startingNode );
 
 		while ( openSet.Count > 0 && !token.IsCancellationRequested )
 		{
 			var currentNode = openSet.RemoveFirst();
 			closedSet.Add( currentNode );
-			openCellSet.Remove( currentNode.Current );
-			closedCellSet.Add( currentNode.Current );
 
 			if ( currentNode.Current == targetNode.Current )
 			{
@@ -58,39 +53,30 @@ public partial class Grid
 
 			foreach ( var neighbour in currentNode.Current.GetNeighbourAndConnections() )
 			{
-				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Cell.Occupied ) continue;
-				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Cell.Occupied && neighbour.Cell.OccupyingEntity != pathBuilder.PathCreator ) continue;
-				if ( pathBuilder.HasTagsToExlude && neighbour.Cell.Tags.Has( pathBuilder.TagsToExclude ) ) continue;
-				if ( pathBuilder.HasTagsToInclude && !neighbour.Cell.Tags.Has( pathBuilder.TagsToInclude ) ) continue;
-				if ( closedCellSet.Contains( neighbour.Cell ) ) continue;
+				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Occupied ) continue;
+				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Occupied && neighbour.OccupyingEntity != pathBuilder.PathCreator ) continue;
+				if ( pathBuilder.HasTagsToExlude && neighbour.Tags.Has( pathBuilder.TagsToExclude ) ) continue;
+				if ( pathBuilder.HasTagsToInclude && !neighbour.Tags.Has( pathBuilder.TagsToInclude ) ) continue;
+				if ( closedSet.Contains( neighbour ) ) continue;
 
-				var isInOpenSet = openCellSet.Contains( neighbour.Cell );
-				AStarNode neighbourNode;
+				var isInOpenSet = openSetReference.ContainsKey( neighbour.GetHashCode() );
+				var currentNeighbour = isInOpenSet ? openSetReference[neighbour.GetHashCode() ] : neighbour;
 
-				if ( isInOpenSet )
-					neighbourNode = cellNodePair[neighbour.Cell];
-				else
-					neighbourNode = new AStarNode( neighbour.Cell );
-
-				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( neighbour.Cell );
-				var distanceToTarget = neighbourNode.Distance( targetCell );
+				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( currentNeighbour );
+				var distanceToTarget = currentNeighbour.Distance( targetNode );
 
 				if ( distanceToTarget > maxDistance ) continue;
 
-				if ( newMovementCostToNeighbour < neighbourNode.gCost || !isInOpenSet )
+				if ( newMovementCostToNeighbour < currentNeighbour.gCost || !isInOpenSet )
 				{
-					neighbourNode.gCost = newMovementCostToNeighbour;
-					neighbourNode.hCost = distanceToTarget;
-					neighbourNode.Parent = currentNode;
+					currentNeighbour.gCost = newMovementCostToNeighbour;
+					currentNeighbour.hCost = distanceToTarget;
+					currentNeighbour.Parent = currentNode;
 
 					if ( !isInOpenSet )
 					{
-						openSet.Add( neighbourNode );
-						openCellSet.Add( neighbour.Cell );
-						if ( !cellNodePair.ContainsKey( neighbour.Cell ) )
-							cellNodePair.Add( neighbour.Cell, neighbourNode );
-						else
-							cellNodePair[neighbour.Cell] = neighbourNode;
+						openSet.Add( currentNeighbour );
+						openSetReference.Add( currentNeighbour.GetHashCode(), currentNeighbour );
 					}
 				}
 			}
@@ -102,13 +88,13 @@ public partial class Grid
 		return path;
 	}
 
-	private static void RetracePath( List<Cell> pathList, AStarNode startNode, AStarNode targetNode )
+	private static void RetracePath( List<AStarNode> pathList, AStarNode startNode, AStarNode targetNode )
 	{
 		var currentNode = targetNode;
 
 		while ( currentNode != startNode )
 		{
-			pathList.Add( currentNode.Current );
+			pathList.Add( currentNode );
 			currentNode = currentNode.Parent;
 		}
 

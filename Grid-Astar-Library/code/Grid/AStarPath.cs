@@ -3,20 +3,20 @@
 public struct AStarPath
 {
 	public AStarPathBuilder Settings { get; internal set; }
-	public List<Cell> Cells { get; set; }
+	public List<AStarNode> Nodes { get; set; }
 	public Grid Grid => Settings.Grid;
-	public int Count => Cells.Count();
-	public bool IsEmpty => Cells == null || Count == 0;
+	public int Count => Nodes.Count();
+	public bool IsEmpty => Nodes == null || Count == 0;
 
 	public AStarPath() { }
 
-	public AStarPath( AStarPathBuilder builder, List<Cell> cells ) : this()
+	public AStarPath( AStarPathBuilder builder, List<AStarNode> nodes ) : this()
 	{
 		Settings = builder;
-		Cells = cells;
+		Nodes = nodes;
 	}
 
-	public static AStarPath From( AStarPathBuilder builder, List<Cell> cells ) => new AStarPath( builder, cells );
+	public static AStarPath From( AStarPathBuilder builder, List<AStarNode> nodes ) => new AStarPath( builder, nodes );
 
 	public static AStarPath Empty() => new AStarPath();
 
@@ -35,12 +35,12 @@ public struct AStarPath
 
 			while ( Count > 2 && segmentEnd < Count - 1 )
 			{
-				var currentCell = Cells[segmentStart];
-				var furtherCell = Cells[segmentEnd];
+				var currentNode = Nodes[segmentStart];
+				var furtherNode = Nodes[segmentEnd];
 
-				if ( Settings.Grid.LineOfSight( currentCell, furtherCell, Settings.PathCreator ) )
+				if ( Settings.Grid.LineOfSight( currentNode.Current, furtherNode.Current, Settings.PathCreator ) )
 					for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
-						Cells.RemoveAt( toDelete );
+						Nodes.RemoveAt( toDelete );
 
 				if ( segmentEnd == Count - 1 )
 					break;

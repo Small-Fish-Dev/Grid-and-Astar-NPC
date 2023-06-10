@@ -103,7 +103,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( ( Position + Bounds.Mins ).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public CellTags Tags { get; set; }
-	public List<CellConnection> CellConnections { get; set; } = new();
+	public List<AStarNode> CellConnections { get; set; } = new();
 
 	public bool Occupied
 	{
@@ -265,7 +265,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return (true,true);
 	}
 
-	public void AddConnection( Cell other, string tag = "" ) => CellConnections.Add( new CellConnection( other, tag == "" ? string.Empty : tag ) );
+	public void AddConnection( Cell other, string tag = "" ) => CellConnections.Add( new AStarNode( other, tag == "" ? string.Empty : tag ) );
 
 	public void SetOccupant( Entity entity )
 	{
@@ -365,10 +365,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// </summary>
 	/// <param name="ignoreHeight"></param>
 	/// <returns></returns>
-	public IEnumerable<CellConnection> GetNeighbourAndConnections( bool ignoreHeight = false )
+	public IEnumerable<AStarNode> GetNeighbourAndConnections( bool ignoreHeight = false )
 	{
 		return GetNeighbours( ignoreHeight )
-			.Select( x => new CellConnection( x ) )
+			.Select( x => new AStarNode( x ) )
 			.Concat( CellConnections );
 	}
 

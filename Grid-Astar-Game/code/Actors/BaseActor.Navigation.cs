@@ -9,10 +9,10 @@ public abstract partial class BaseActor
 	internal AStarPath currentPath { get; set; }
 	public int CurrentPathLength => currentPath.Count;
 	internal int currentPathIndex { get; set; } = -1; // -1 = Not set / Hasn't started
-	internal GridAStar.Cell currentPathCell => IsFollowingPath ? currentPath.Cells[currentPathIndex] : null;
-	internal GridAStar.Cell lastPathCell => currentPath.Count > 0 ? currentPath.Cells[^1] : null;
+	internal GridAStar.Cell currentPathCell => IsFollowingPath ? currentPath.Nodes[currentPathIndex].Current : null;
+	internal GridAStar.Cell lastPathCell => currentPath.Count > 0 ? currentPath.Nodes[^1].Current : null;
 	internal GridAStar.Cell targetPathCell { get; set; } = null;
-	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath.Cells[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )] : null;
+	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath.Nodes[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )].Current : null;
 	public bool IsFollowingPath => currentPathIndex >= 0 && currentPath.Count > 0;
 	[Net] public BaseActor Following { get; set; } = null;
 	public bool IsFollowingSomeone => Following != null;

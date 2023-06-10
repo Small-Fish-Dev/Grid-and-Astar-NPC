@@ -50,21 +50,19 @@ public partial class Grid
 	{
 		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
 
-		var builder = AStarPathBuilder.From( Grid.Main )
-			.WithPartialEnabled()
-			.WithMaxDistance( 500f );
+		var builder = AStarPathBuilder.From( Grid.Main );
 
 		var computedPath = await builder.RunAsync( Grid.Main.GetCell( caller.Position ), Grid.Main.GetCell( Vector3.Zero, false ), CancellationToken.None );
 		computedPath.Simplify();
 
-		for ( int i = 0; i < computedPath.Cells.Count(); i++ )
+		for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
 		{
-			var cell = computedPath.Cells[i];
-			cell.Draw( Color.Red, 3f, false );
-			DebugOverlay.Text( i.ToString(), cell.Position, duration: 3 );
+			var node = computedPath.Nodes[i];
+			node.Current.Draw( Color.Red, 3f, false );
+			DebugOverlay.Text( i.ToString(), node.EndPosition, duration: 3 );
 
-			if ( i < computedPath.Cells.Count() - 1 )
-				DebugOverlay.Line( cell.Position, computedPath.Cells[i+1].Position, 3f );
+			if ( i < computedPath.Nodes.Count() - 1 )
+				DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i+1].EndPosition, 3f );
 		}
 	}
 	/*
