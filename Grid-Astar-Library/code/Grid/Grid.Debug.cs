@@ -50,7 +50,8 @@ public partial class Grid
 	{
 		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
 
-		var builder = AStarPathBuilder.From( Grid.Main );
+		var builder = AStarPathBuilder.From( Grid.Main )
+			.WithMaxDropHeight( 100f );
 
 		var computedPath = await builder.RunAsync( Grid.Main.GetCell( caller.Position ), Grid.Main.GetCell( Vector3.Zero, false ), CancellationToken.None );
 		//computedPath.Simplify();

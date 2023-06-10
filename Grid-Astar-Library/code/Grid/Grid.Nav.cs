@@ -57,6 +57,7 @@ public partial class Grid
 				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Occupied && neighbour.OccupyingEntity != pathBuilder.PathCreator ) continue;
 				if ( pathBuilder.HasTagsToExlude && neighbour.Tags.Has( pathBuilder.TagsToExclude ) ) continue;
 				if ( pathBuilder.HasTagsToInclude && !neighbour.Tags.Has( pathBuilder.TagsToInclude ) ) continue;
+				if ( neighbour.MovementTag == "drop" && currentNode.Current.Bottom.z - neighbour.Current.Position.z > pathBuilder.MaxDropHeight ) continue;
 				if ( closedSet.Contains( neighbour ) ) continue;
 
 				var isInOpenSet = openSetReference.ContainsKey( neighbour.GetHashCode() );
