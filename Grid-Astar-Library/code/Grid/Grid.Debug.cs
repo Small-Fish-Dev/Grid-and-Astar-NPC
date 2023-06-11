@@ -114,7 +114,7 @@ public partial class Grid
 	}*/
 
 	[ConCmd.Server( "gridastar_regenerate" )]
-	public static void RegenerateGrids()
+	public static void RegenerateGrids( bool save = false, bool compress = false )
 	{
 		RegenerateOnClient( To.Everyone );
 
@@ -124,7 +124,9 @@ public partial class Grid
 
 			foreach ( var grid in allGrids )
 			{
-				await grid.CreateFromSettings();
+				var newGrid = await grid.CreateFromSettings();
+				if ( save )
+					await newGrid.Save( compress );
 			}
 
 			Event.Run( Grid.LoadedAll );
