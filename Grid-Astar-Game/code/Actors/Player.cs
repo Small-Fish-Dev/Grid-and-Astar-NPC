@@ -71,21 +71,6 @@ partial class Player : BaseActor
 		var targetCell = Grid.Main.GetCell( trace.HitPosition );
 
 
-		var builder = AStarPathBuilder.From( Grid.Main )
-			.WithMaxDropHeight( 100f );
-
-		var computedPath = await builder.RunAsync( standingCell, targetCell, CancellationToken.None );
-
-		for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
-		{
-			var node = computedPath.Nodes[i];
-			node.Current.Draw( Color.White, 1f, false );
-			DebugOverlay.Text( i.ToString(), node.EndPosition, duration: 1 );
-
-			if ( i < computedPath.Nodes.Count() - 1 )
-				DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i + 1].EndPosition, 1f );
-		}
-
 		Log.Error( Grid.Main.LineOfSight( standingCell, targetCell ) );
 	}
 }

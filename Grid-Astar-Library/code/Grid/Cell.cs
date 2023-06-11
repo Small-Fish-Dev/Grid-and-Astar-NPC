@@ -381,13 +381,14 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <returns></returns>
 	public Cell GetFirstValidDroppable( int minCellDistance = 1, int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
 	{
-		for ( int y = minCellDistance * 2; y <= maxCellsDistance * 2; y++ )
+		for ( int y = 0; y <= maxCellsDistance * 2; y++ )
 		{
 			var spiralY = MathAStar.SpiralPattern( y );
-			for ( int x = minCellDistance * 2; x <= maxCellsDistance * 2; x++ )
+			for ( int x = 0; x <= maxCellsDistance * 2; x++ )
 			{
 				var spiralX = MathAStar.SpiralPattern( x );
 				if ( spiralX == 0 && spiralY == 0 ) continue;
+				//if ( Math.Abs( spiralX ) <= minCellDistance && Math.Abs( spiralY ) <= minCellDistance ) continue;
 
 				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + spiralX, GridPosition.y + spiralY ), Position.z );
 
@@ -396,10 +397,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 				if ( IsNeighbour( cellFound ) ) continue; // Ignore if the cell is touching
 
 				var verticalDistance = Bottom.z - cellFound.Position.z;
-				if ( verticalDistance > maxHeightDistance ) continue; // Ignore if it's too high
+				//if ( verticalDistance > maxHeightDistance ) continue; // Ignore if it's too high
 
 				var horizontalDistance = new Vector2( spiralX, spiralY ).Length;
-				if ( verticalDistance < Grid.RealStepSize * horizontalDistance ) continue; // Prevents steps from counting each other
+				//if ( verticalDistance < Grid.RealStepSize * horizontalDistance ) continue; // Prevents steps from counting each other
 
 				if ( Grid.LineOfSight( this, cellFound ) ) continue; // Ignore if the cell cal be walked to
 
