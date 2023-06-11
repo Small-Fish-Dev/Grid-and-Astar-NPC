@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.IO.Compression;
 namespace GridAStar;
 
@@ -147,6 +148,8 @@ public partial class Grid
 						var cellsToRead = reader.ReadInt32();
 						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
 
+						var connectedDictionary = new Dictionary<Cell, List<(Vector3, string)>>();
+
 						for ( int i = 0; i < cellsToRead; i++ )
 						{
 							var cellPosition = reader.ReadVector3();
@@ -160,6 +163,29 @@ public partial class Grid
 
 							var cell = new Cell( currentGrid, cellPosition, cellVertices, tags );
 							currentGrid.AddCell( cell );
+
+							var connectedAmount = reader.ReadInt32();
+							if ( connectedAmount > 0 )
+							{
+								connectedDictionary.Add( cell, new List<(Vector3, string)>() );
+
+								for ( int connected = 0; connected < connectedAmount; connected++ )
+								{
+									var connectedPosition = reader.ReadVector3();
+									var connectedTag = reader.ReadString();
+									connectedDictionary[cell].Add( (connectedPosition, connectedTag) );
+								}
+							}
+						}
+
+						foreach ( var parentCell in connectedDictionary )
+						{
+							foreach( var cellToConnect in parentCell.Value )
+							{
+								var cellPosition = cellToConnect.Item1;
+								var cellTag = cellToConnect.Item2;
+								parentCell.Key.AddConnection( currentGrid.GetCell( cellPosition ), cellTag );
+							}
 						}
 
 						currentGrid.Initialize();
@@ -264,6 +290,12 @@ public partial class Grid
 							writer.Write( cell.Tags.All.Count() );
 							foreach ( var tag in cell.Tags.All )
 								writer.Write( tag );
+							writer.Write( cell.CellConnections.Count() );
+							foreach ( var cellConnection in cell.CellConnections )
+							{
+								writer.Write( cellConnection.Current.Position );
+								writer.Write( cellConnection.MovementTag );
+							}
 						}
 					}
 				} );
