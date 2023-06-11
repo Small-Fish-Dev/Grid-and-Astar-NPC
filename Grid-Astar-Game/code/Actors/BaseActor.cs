@@ -52,7 +52,7 @@ public abstract partial class BaseActor : AnimatedEntity
 	/// <returns></returns>
 	public GridAStar.Cell GetCellInDirection( Vector3 directionNormal, int numOfCellsInDirection = 1 )
 	{
-		return CurrentGrid.GetCell( Position + (directionNormal * CurrentGrid.CellSize) * numOfCellsInDirection );
+		return CurrentGrid.GetNearestCell( Position + (directionNormal * CurrentGrid.CellSize) * numOfCellsInDirection );
 	}
 
 }

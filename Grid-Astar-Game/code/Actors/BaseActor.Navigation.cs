@@ -7,12 +7,14 @@ namespace GridAStarNPC;
 public abstract partial class BaseActor
 {
 	internal AStarPath currentPath { get; set; }
-	public int CurrentPathLength => currentPath.Count;
+	public float CurrentPathLength => currentPath.Length;
 	internal int currentPathIndex { get; set; } = -1; // -1 = Not set / Hasn't started
 	internal GridAStar.Cell currentPathCell => IsFollowingPath ? currentPath.Nodes[currentPathIndex].Current : null;
 	internal GridAStar.Cell lastPathCell => currentPath.Count > 0 ? currentPath.Nodes[^1].Current : null;
 	internal GridAStar.Cell targetPathCell { get; set; } = null;
 	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath.Nodes[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )].Current : null;
+	internal GridAStar.AStarNode nextPathNode => IsFollowingPath ? currentPath.Nodes[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )] : null;
+	public string NextMovementTag => IsFollowingPath ? nextPathNode.MovementTag : string.Empty;
 	public bool IsFollowingPath => currentPathIndex >= 0 && currentPath.Count > 0;
 	[Net] public BaseActor Following { get; set; } = null;
 	public bool IsFollowingSomeone => Following != null;
@@ -81,9 +83,12 @@ public abstract partial class BaseActor
 			//DebugOverlay.Text( i.ToString(), currentPath[i].Position, duration: Time.Delta );
 		}
 
-		IsRunning = CurrentPathLength > 20;
+		IsRunning = CurrentPathLength > 200f;
 
-		Direction = (nextPathCell.Position - Position).Normal;
+		if ( NextMovementTag == "drop" )
+			IsRunning = false;
+
+		Direction = (nextPathCell.Position - Position).WithZ(0).Normal;
 
 		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) * (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) )
 			currentPathIndex++;

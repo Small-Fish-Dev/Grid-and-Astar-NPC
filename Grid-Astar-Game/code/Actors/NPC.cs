@@ -22,8 +22,8 @@ public partial class NPC : BaseActor
 	{
 		base.Spawn();
 		AccelerationSpeed = 150f;
-		WalkSpeed = 50f;
-		RunSpeed = 200f;
+		WalkSpeed = 100f;
+		RunSpeed = 400f;
 	}
 
 	public override void Think()

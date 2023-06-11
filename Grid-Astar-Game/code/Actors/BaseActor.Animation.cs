@@ -9,5 +9,7 @@ public abstract partial class BaseActor
 
 		var animationHelper = new CitizenAnimationHelper( this );
 		animationHelper.WithVelocity( Velocity );
+
+		animationHelper.IsGrounded = GroundEntity != null;
 	}
 }

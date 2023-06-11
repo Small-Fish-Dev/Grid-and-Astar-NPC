@@ -7,6 +7,7 @@ public struct AStarPath
 	public Grid Grid => Settings.Grid;
 	public int Count => Nodes.Count();
 	public bool IsEmpty => Nodes == null || Count == 0;
+	public float Length { get; set; } = 0f;
 
 	public AStarPath() { }
 
@@ -14,11 +15,20 @@ public struct AStarPath
 	{
 		Settings = builder;
 		Nodes = nodes;
+		CalculateLenght();
 	}
 
 	public static AStarPath From( AStarPathBuilder builder, List<AStarNode> nodes ) => new AStarPath( builder, nodes );
 
 	public static AStarPath Empty() => new AStarPath();
+
+	public void CalculateLenght()
+	{
+		var length = 0f;
+		for ( int i = 0; i < Nodes.Count - 1; i++ )
+			length += Nodes[i].EndPosition.Distance( Nodes[i + 1].EndPosition );
+		Length = length;
+	}
 
 	/// <summary>
 	/// Simplify the path by iterating over line of sights between the given segment size, joining them if valid
@@ -49,5 +59,7 @@ public struct AStarPath
 				segmentEnd = Math.Min( segmentStart + segmentAmounts, Count - 1 );
 			}
 		}
+
+		CalculateLenght();
 	}
 }
