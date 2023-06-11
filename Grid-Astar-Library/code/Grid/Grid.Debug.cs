@@ -54,7 +54,6 @@ public partial class Grid
 			.WithMaxDropHeight( 100f );
 
 		var computedPath = await builder.RunAsync( Grid.Main.GetCell( caller.Position ), Grid.Main.GetCell( Vector3.Zero, false ), CancellationToken.None );
-		//computedPath.Simplify();
 
 		for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
 		{

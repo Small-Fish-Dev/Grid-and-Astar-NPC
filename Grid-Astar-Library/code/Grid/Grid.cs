@@ -165,6 +165,29 @@ public partial class Grid : IValid
 	}
 
 	/// <summary>
+	/// Returns the neighbour in that direction
+	/// </summary>
+	/// <param name="cell"></param>
+	/// <param name="direction"></param>
+	/// <returns></returns>
+	public Cell GetNeighbourInDirection( Cell cell, Vector3 direction )
+	{
+		var horizontalDirection = direction.WithZ( 0 ).Normal;
+		var localCoordinates = horizontalDirection.ToIntVector2();
+		var coordinatesToCheck = cell.GridPosition + localCoordinates;
+
+		var cellsAtCoordinates = Cells.GetValueOrDefault( coordinatesToCheck );
+
+		if ( cellsAtCoordinates == null ) return null;
+
+		foreach ( var cellAtCoordinate in cellsAtCoordinates )
+			if ( cell.IsNeighbour( cellAtCoordinate ) )
+				return cellAtCoordinate;
+
+		return null;
+	}
+
+	/// <summary>
 	/// Returns if there's a valid, unoccupied, and direct path from a cell to another
 	/// </summary>
 	/// <param name="startingCell"></param>
@@ -185,15 +208,16 @@ public partial class Grid : IValid
 		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
 
 		Cell lastCell = startingCell;
-		for ( int i = 1; i <= distanceInSteps; i++ )
+		for ( int i = 1; i < distanceInSteps; i++ )
 		{
-			var cellToCheck = GetCellInDirection( startingCell, direction, i );
+			var cellToCheck = GetNeighbourInDirection( lastCell, direction );
 
 			if ( cellToCheck == null ) return false;
 			if ( cellToCheck == lastCell ) continue;
 			if ( pathCreator == null && cellToCheck.Occupied ) return false;
 			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
 			if ( !cellToCheck.IsNeighbour( lastCell ) ) return false;
+
 
 			lastCell = cellToCheck;
 		}

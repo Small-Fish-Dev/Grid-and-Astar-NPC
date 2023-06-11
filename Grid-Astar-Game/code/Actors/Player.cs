@@ -1,4 +1,5 @@
 ﻿using GridAStar;
+using System.Threading;
 
 namespace GridAStarNPC;
 
@@ -57,5 +58,34 @@ partial class Player : BaseActor
 		Camera.Rotation = InputRotation;
 
 		Camera.FirstPersonViewer = this;
+	}
+
+	[ConCmd.Server( "TestLOD" )]
+	public async static void TestLOD()
+	{
+		var caller = ConsoleSystem.Caller.Pawn as Player;
+		var standingCell = Grid.Main.GetCell( caller.Position );
+		var trace = Sandbox.Trace.Ray( caller.EyePosition, caller.EyePosition + caller.InputRotation.Forward * 10000f )
+			.Ignore( caller )
+			.Run();
+		var targetCell = Grid.Main.GetCell( trace.HitPosition );
+
+
+		var builder = AStarPathBuilder.From( Grid.Main )
+			.WithMaxDropHeight( 100f );
+
+		var computedPath = await builder.RunAsync( standingCell, targetCell, CancellationToken.None );
+
+		for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
+		{
+			var node = computedPath.Nodes[i];
+			node.Current.Draw( Color.White, 1f, false );
+			DebugOverlay.Text( i.ToString(), node.EndPosition, duration: 1 );
+
+			if ( i < computedPath.Nodes.Count() - 1 )
+				DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i + 1].EndPosition, 1f );
+		}
+
+		Log.Error( Grid.Main.LineOfSight( standingCell, targetCell ) );
 	}
 }
