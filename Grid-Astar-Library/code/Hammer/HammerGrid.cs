@@ -82,17 +82,24 @@ public partial class HammerGrid : ModelEntity
 
 			foreach ( var grid in allGrids )
 			{
-				if ( GridAStar.Grid.Exists( grid.SaveIdentifier ) )
+				var existsOnLocal = GridAStar.Grid.Exists( grid.SaveIdentifier );
+				var existsOnMounted = GridAStar.Grid.ExistsMounted( grid.SaveIdentifier );
+				if ( existsOnLocal || existsOnMounted )
 				{
 					var properties = await GridAStar.Grid.LoadProperties( grid.SaveIdentifier );
 
 					if ( grid.PropertiesEqual( properties ) )
 					{
-						if ( await GridAStar.Grid.Load( grid.SaveIdentifier ) == null ) // If everything is valid, which it should be, it will load the map in
+						var loadedGrid = await GridAStar.Grid.Load( grid.SaveIdentifier );
+
+						if ( loadedGrid == null ) // If everything is valid, which it should be, it will load the map in
 						{
 							var newGrid = await grid.CreateFromSettings(); // Else it will create a new one
 							await newGrid.Save();
 						}
+						else
+							if ( existsOnMounted && !existsOnLocal )
+								await loadedGrid.Save();
 					}
 					else
 					{

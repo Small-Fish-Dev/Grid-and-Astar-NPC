@@ -6,13 +6,16 @@ namespace GridAStar;
 public static partial class GridSettings
 {
 	public const string DEFAULT_SAVE_PATH = "./grid-%identifier%.dat";   // Where the grid is saved (%identifier% will be the grid's saveidentifier)
+	public const string DEFAULT_MOUNTED_LOAD_FOLDER = "Grids";			// Which folder should it look for any grid that comes with the game (Just give the name and nothing else)
 }
 
 public partial class Grid
 {
 	public string SavePath => GetSavePath( SaveIdentifier );
 	public static string GetSavePath( string identifier = "main" ) => GridSettings.DEFAULT_SAVE_PATH.Replace( "%identifier%", identifier );
+	public static string GetMountedPath( string identifier = "main" ) => $"./{GridSettings.DEFAULT_MOUNTED_LOAD_FOLDER}{GetSavePath( identifier ).Substring(1)}";
 	public static bool Exists( string identifier = "main" ) => FileSystem.Data.FileExists( Grid.GetSavePath( identifier ) );
+	public static bool ExistsMounted( string identifier = "main" ) => FileSystem.Mounted.FileExists( Grid.GetMountedPath( identifier ) );
 	public bool Exists() => FileSystem.Data.FileExists( SavePath );
 
 	/// <summary>
@@ -22,13 +25,19 @@ public partial class Grid
 	/// <returns></returns>
 	public async static Task<GridBuilder> LoadProperties( string identifier = "main" )
 	{
+		var isOnMounted = false;
 		if ( !Grid.Exists( identifier ) )
-			return new GridBuilder();
+		{
+			if ( Grid.ExistsMounted( identifier ) )
+				isOnMounted = true;
+			else
+				return new GridBuilder();
+		}
 
 		try
 		{
 
-			using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
+			using ( var fileStream = isOnMounted ? FileSystem.Mounted.OpenRead( GetMountedPath( identifier ) ) : FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
 			{
 				Stream dataStream = fileStream;
 
@@ -88,16 +97,27 @@ public partial class Grid
 	{
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Loading grid {identifier}" );
 
+		var isOnMounted = false;
+
 		if ( !Grid.Exists( identifier ) )
 		{
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} not found" );
-			return null;
+			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} not found on local" );
+			if ( Grid.ExistsMounted( identifier ) )
+			{
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} found on mounted" );
+				isOnMounted = true;
+			}
+			else
+			{
+				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} not found on mounted" );
+				return null;
+			}
 		}
 
 		var loadWatch = new Stopwatch();
 		loadWatch.Start();
 
-		using ( var fileStream = FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
+		using ( var fileStream = isOnMounted ? FileSystem.Mounted.OpenRead( GetMountedPath( identifier ) ) : FileSystem.Data.OpenRead( GetSavePath( identifier ) ) )
 		{
 			Stream dataStream = fileStream;
 
