@@ -379,7 +379,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <param name="maxCellsDistance"></param>
 	/// <param name="maxHeightDistance"></param>
 	/// <returns></returns>
-	public Cell GetFirstValidDroppable( int minCellDistance = 1, int maxCellsDistance = 2, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	public Cell GetFirstValidDroppable( int minCellDistance = 1, int maxCellsDistance = 3, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
 	{
 		for ( int y = 0; y <= maxCellsDistance * 2; y++ )
 		{
@@ -398,12 +398,14 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 				var verticalDistance = Position.z - cellFound.Position.z;
 				if ( verticalDistance > maxHeightDistance ) continue; // Ignore if it's too high
-				if ( verticalDistance < Grid.RealStepSize ) continue; // It's probably a step already here
+
+				var horizontalDistance = new Vector2( spiralX, spiralY ).Length - 1f;
+				if ( verticalDistance < Grid.RealStepSize * horizontalDistance ) continue; // It's probably a step already here
 
 				if ( Grid.LineOfSight( this, cellFound ) ) continue; // Ignore if the cell cal be walked to
 
 				// Check if you can walk off the edge
-				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance - Grid.RealStepSize ) );
 				var horizontalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.RealStepSize, cellFound.Position.WithZ( Position.z + Grid.RealStepSize ) )
 					.WithGridSettings( Grid.Settings )
 					.Run();
