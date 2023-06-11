@@ -388,7 +388,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			{
 				var spiralX = MathAStar.SpiralPattern( x );
 				if ( spiralX == 0 && spiralY == 0 ) continue;
-				//if ( Math.Abs( spiralX ) <= minCellDistance && Math.Abs( spiralY ) <= minCellDistance ) continue;
+				if ( Math.Abs( spiralX ) <= minCellDistance && Math.Abs( spiralY ) <= minCellDistance ) continue;
 
 				var cellFound = Grid.GetCell( new IntVector2( GridPosition.x + spiralX, GridPosition.y + spiralY ), Position.z );
 
@@ -396,11 +396,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 				if ( cellFound == this ) continue; // Ignore if it's the same cell
 				if ( IsNeighbour( cellFound ) ) continue; // Ignore if the cell is touching
 
-				var verticalDistance = Bottom.z - cellFound.Position.z;
-				//if ( verticalDistance > maxHeightDistance ) continue; // Ignore if it's too high
-
-				var horizontalDistance = new Vector2( spiralX, spiralY ).Length;
-				//if ( verticalDistance < Grid.RealStepSize * horizontalDistance ) continue; // Prevents steps from counting each other
+				var verticalDistance = Position.z - cellFound.Position.z;
+				if ( verticalDistance > maxHeightDistance ) continue; // Ignore if it's too high
+				if ( verticalDistance < Grid.RealStepSize ) continue; // It's probably a step already here
 
 				if ( Grid.LineOfSight( this, cellFound ) ) continue; // Ignore if the cell cal be walked to
 
