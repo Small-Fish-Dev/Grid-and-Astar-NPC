@@ -15,4 +15,13 @@ public static class MathAStar
 		return halfInput * alternatedInput;
 	}
 
+	public static Vector3 Parabola( Vector3 horizontalVelocity, Vector3 verticalVelocity, Vector3 gravity, float time )
+	{
+		var horizontalPosition = horizontalVelocity * time;
+		var verticalPosition = verticalVelocity * time;
+		var gravityOffset = 0.5f * gravity * time * time;
+
+		return horizontalPosition + verticalPosition + gravityOffset;
+	}
+
 }

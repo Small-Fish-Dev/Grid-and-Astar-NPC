@@ -1,4 +1,6 @@
-﻿namespace GridAStarNPC;
+﻿using GridAStar;
+
+namespace GridAStarNPC;
 
 public abstract partial class BaseActor
 {
@@ -20,13 +22,16 @@ public abstract partial class BaseActor
 	// If you want to move your actor just set the Direction, anything that isn't 0 will start moving
 	public virtual void ComputeMotion()
 	{
-		if ( Direction != Vector3.Zero )
-			WishSpeed = Math.Clamp( WishSpeed + AccelerationSpeed * Time.Delta, 0f, IsRunning ? RunSpeed : WalkSpeed );
-		else
-			WishSpeed = 0f;
+		if ( GroundEntity != null )
+		{
+			if ( Direction != Vector3.Zero )
+				WishSpeed = Math.Clamp( WishSpeed + AccelerationSpeed * Time.Delta, 0f, IsRunning ? RunSpeed : WalkSpeed );
+			else
+				WishSpeed = 0f;
 
-		Velocity = Vector3.Lerp( Velocity, WishVelocity, 15f * Time.Delta ) // Smooth horizontal movement
-			.WithZ( Velocity.z ); // Don't smooth vertical movement
+			Velocity = Vector3.Lerp( Velocity, WishVelocity, 15f * Time.Delta ) // Smooth horizontal movement
+				.WithZ( Velocity.z ); // Don't smooth vertical movement
+		}
 
 		if ( TimeSinceLostFooting > Time.Delta * 2f )
 			Velocity -= Vector3.Down * (TimeSinceLostFooting + 1f) * Game.PhysicsWorld.Gravity * Time.Delta * 5f;
@@ -60,6 +65,24 @@ public abstract partial class BaseActor
 			TimeSinceLostFooting = 0f;
 			Velocity -= Vector3.Down * Game.PhysicsWorld.Gravity * Time.Delta;
 		}
+
+		if ( Input.Down( "jump" ) )
+		{
+			if ( GroundEntity != null )
+			{
+				GroundEntity = null;
+				Velocity = Velocity.WithZ( 300f );
+
+				for ( float i = 0; i < 100f; i++ )
+				{
+					var step = i * Time.Delta;
+					var point = Position + MathAStar.Parabola( Velocity.WithZ(0), Velocity.WithX(0).WithY(0), Game.PhysicsWorld.Gravity, step );
+					DebugOverlay.Sphere( point, 1f, Color.Red, 1 );
+				}
+			}
+		}
+
+		DebugOverlay.Sphere( Position, 10f, Color.Blue );
 	}
 }
 
