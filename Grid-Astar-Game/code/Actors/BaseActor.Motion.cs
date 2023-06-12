@@ -74,12 +74,22 @@ public abstract partial class BaseActor
 				GroundEntity = null;
 				Velocity = Velocity.WithZ( 300f );
 
-				for ( float i = 0; i < 40f; i++ )
+				for ( float i = 0; i < 80f; i++ )
 				{
-					var step = i * 24f;
+					var step = i * Grid.Main.CellSize / 4;
 					var point = MathAStar.ParabolaHeight( step, Velocity.WithZ(0).Length, 300f, Game.PhysicsWorld.Gravity.z );
-					DebugOverlay.Sphere( Position + Direction * step + Vector3.Up * point, 1f, Color.Red, 5f );
-					DebugOverlay.Line( Position + Direction * step + Vector3.Up * point, Position + Direction * step + Vector3.Down * 10000f, 5f );
+					var position = Position + Direction * step + Vector3.Up * point;
+					DebugOverlay.Sphere( position, 1f, Color.Red, 5f );
+					DebugOverlay.Line( position, position + Vector3.Down * 10000f, 5f );
+
+					var amountOfPossibleCells = (int)Math.Ceiling( Grid.Main.WidthClearance / Grid.Main.CellSize / 2);
+					for ( int x = -amountOfPossibleCells; x <= amountOfPossibleCells; x++ )
+					{
+						for ( int y = -amountOfPossibleCells; y <= amountOfPossibleCells; y++ )
+						{
+							Grid.Main.GetCell( position + Vector3.Forward * Grid.Main.CellSize * x + Vector3.Right * Grid.Main.CellSize * y )?.Draw( 5f, false, false, true );
+						}
+					}
 				}
 			}
 		}
