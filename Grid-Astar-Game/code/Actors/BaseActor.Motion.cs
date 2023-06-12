@@ -68,16 +68,18 @@ public abstract partial class BaseActor
 
 		if ( Input.Down( "jump" ) )
 		{
+			if ( Game.IsClient ) return;
 			if ( GroundEntity != null )
 			{
 				GroundEntity = null;
 				Velocity = Velocity.WithZ( 300f );
 
-				for ( float i = 0; i < 100f; i++ )
+				for ( float i = 0; i < 40f; i++ )
 				{
-					var step = i * Time.Delta;
-					var point = Position + MathAStar.Parabola( Velocity.WithZ(0), Velocity.WithX(0).WithY(0), Game.PhysicsWorld.Gravity, step );
-					DebugOverlay.Sphere( point, 1f, Color.Red, 1 );
+					var step = i * 24f;
+					var point = MathAStar.ParabolaHeight( step, Velocity.WithZ(0).Length, 300f, Game.PhysicsWorld.Gravity.z );
+					DebugOverlay.Sphere( Position + Direction * step + Vector3.Up * point, 1f, Color.Red, 5f );
+					DebugOverlay.Line( Position + Direction * step + Vector3.Up * point, Position + Direction * step + Vector3.Down * 10000f, 5f );
 				}
 			}
 		}

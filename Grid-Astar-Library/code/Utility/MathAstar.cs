@@ -1,4 +1,6 @@
-﻿namespace GridAStar;
+﻿using System;
+
+namespace GridAStar;
 
 public static class MathAStar
 {
@@ -15,7 +17,7 @@ public static class MathAStar
 		return halfInput * alternatedInput;
 	}
 
-	public static Vector3 Parabola( Vector3 horizontalVelocity, Vector3 verticalVelocity, Vector3 gravity, float time )
+	public static Vector3 Parabola3D( Vector3 horizontalVelocity, Vector3 verticalVelocity, Vector3 gravity, float time )
 	{
 		var horizontalPosition = horizontalVelocity * time;
 		var verticalPosition = verticalVelocity * time;
@@ -24,4 +26,22 @@ public static class MathAStar
 		return horizontalPosition + verticalPosition + gravityOffset;
 	}
 
+	public static Vector2 Parabola( float horizontalVelocity, float verticalVelocity, float gravity, float time )
+	{
+		float horizontalPosition = horizontalVelocity * time;
+		float verticalPosition = verticalVelocity * time;
+		float gravityOffset = 0.5f * gravity * time * time;
+
+		return new Vector2( horizontalPosition, verticalPosition + gravityOffset);
+	}
+
+	public static float ParabolaHeight( float horizontalPosition, float horizontalVelocity, float verticalVelocity, float gravity )
+	{
+		float time = horizontalPosition / horizontalVelocity;
+
+		float verticalPosition = verticalVelocity * time;
+		float gravityOffset = 0.5f * gravity * time * time;
+
+		return verticalPosition + gravityOffset;
+	}
 }
