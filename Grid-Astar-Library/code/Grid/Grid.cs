@@ -281,7 +281,7 @@ public partial class Grid : IValid
 		}
 	}
 
-	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight )
+	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )
 	{
 		var horizontalDirection = horizontalVelocity.WithZ(0).Normal;
 		var horizontalSpeed = horizontalVelocity.WithZ(0).Length;
@@ -292,21 +292,21 @@ public partial class Grid : IValid
 
 		while ( lastPositionChecked.z >= minHeight )
 		{
-			var horizontalOffset = CellSize * currentDistance;
+			var horizontalOffset = CellSize * currentDistance / subSteps;
 			var verticalOffset = MathAStar.ParabolaHeight( horizontalOffset, horizontalSpeed, verticalSpeed, gravity );
 			var nextPositionToCheck = startingPosition + horizontalDirection * horizontalOffset + Vector3.Up * verticalOffset;
 
-			var clearanceBBox = new BBox( new Vector3( -WidthClearance / 2f, -WidthClearance / 2f, 0f ), new Vector3( WidthClearance / 2f, WidthClearance / 2f, HeightClearance ) );
+			var clearanceBBox = new BBox( new Vector3( -WidthClearance / 2f, -WidthClearance / 2f, RealStepSize ), new Vector3( WidthClearance / 2f, WidthClearance / 2f, HeightClearance ) );
 			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
 				.WithGridSettings( Settings )
 				.Run();
-			DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 3f );
-			DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 3f );
-			DebugOverlay.TraceResult( jumpTrace, 5f );
+			//DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 5f );
+			//DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
+			//DebugOverlay.TraceResult( jumpTrace, 5f );
 
 			if ( jumpTrace.Hit )
 			{
-				DebugOverlay.Box( clearanceBBox.Translate( jumpTrace.EndPosition ), Color.Blue, 3f );
+				//DebugOverlay.Box( clearanceBBox.Translate( jumpTrace.EndPosition ), Color.Blue, 5f );
 				return jumpTrace.EndPosition;
 			}
 
