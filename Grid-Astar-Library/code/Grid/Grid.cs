@@ -117,21 +117,20 @@ public partial class Grid : IValid
 
 	public Cell GetCellInArea( Vector3 position, float width, bool onlyBelow = true, bool withinStepRange = true )
 	{
-		var cellsToCheck = (int)Math.Ceiling( width / CellSize );
+		var cellsToCheck = (int)Math.Ceiling( width / CellSize ) * 2;
 		for ( int y = 0; y <= cellsToCheck; y++ )
 		{
 			var spiralY = MathAStar.SpiralPattern( y );
 			for ( int x = 0; x <= cellsToCheck; x++ )
 			{
 				var spiralX = MathAStar.SpiralPattern( x );
-
-				var cellFound = GetCell( position + AxisRotation.Forward * spiralX * CellSize + AxisRotation.Right * spiralY * CellSize, onlyBelow );
+				var cellFound = GetCell( position + AxisRotation.Forward * spiralX * CellSize + AxisRotation.Right * spiralY * CellSize + Vector3.Up * RealStepSize, onlyBelow );
 
 				if ( cellFound == null ) continue;
 
 				if ( withinStepRange )
-					if ( position.z - cellFound.Position.z <= RealStepSize )
-						return cellFound;
+					if ( position.z - cellFound.Position.z <= RealStepSize ) return cellFound; else continue;
+
 				return cellFound;
 			}
 		}
