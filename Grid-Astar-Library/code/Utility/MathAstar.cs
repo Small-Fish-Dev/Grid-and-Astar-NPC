@@ -26,22 +26,30 @@ public static class MathAStar
 		return horizontalPosition + verticalPosition + gravityOffset;
 	}
 
-	public static Vector2 Parabola( float horizontalVelocity, float verticalVelocity, float gravity, float time )
+	public static Vector2 Parabola( float horizontalSpeed, float verticalSpeed, float gravity, float time )
 	{
-		float horizontalPosition = horizontalVelocity * time;
-		float verticalPosition = verticalVelocity * time;
+		float horizontalPosition = horizontalSpeed * time;
+		float verticalPosition = verticalSpeed * time;
 		float gravityOffset = 0.5f * gravity * time * time;
 
 		return new Vector2( horizontalPosition, verticalPosition + gravityOffset);
 	}
 
-	public static float ParabolaHeight( float horizontalPosition, float horizontalVelocity, float verticalVelocity, float gravity )
+	public static float ParabolaHeight( float horizontalPosition, float horizontalSpeed, float verticalSpeed, float gravity )
 	{
-		float time = horizontalPosition / horizontalVelocity;
+		float time = horizontalPosition / horizontalSpeed;
 
-		float verticalPosition = verticalVelocity * time;
+		float verticalPosition = verticalSpeed * time;
 		float gravityOffset = 0.5f * gravity * time * time;
 
 		return verticalPosition + gravityOffset;
+	}
+
+	public static float ParabolaMaxHeight( float verticalVelocity, float gravity )
+	{
+		float timeToPeak = -verticalVelocity / gravity;
+		float maxVerticalPosition = verticalVelocity * timeToPeak + 0.5f * gravity * timeToPeak * timeToPeak;
+
+		return maxVerticalPosition;
 	}
 }
