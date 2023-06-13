@@ -283,8 +283,8 @@ public partial class Grid : IValid
 
 	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight )
 	{
-		var horizontalSpeed = horizontalVelocity.Length;
-		var horizontalDirection = horizontalVelocity.Normal;
+		var horizontalDirection = horizontalVelocity.WithZ(0).Normal;
+		var horizontalSpeed = horizontalVelocity.WithZ(0).Length;
 		var maxHeight = startingPosition.z + MathAStar.ParabolaMaxHeight( verticalSpeed, gravity );
 		var minHeight = maxHeight - maxDropHeight;
 		var currentDistance = 1;
@@ -294,17 +294,21 @@ public partial class Grid : IValid
 		{
 			var horizontalOffset = CellSize * currentDistance;
 			var verticalOffset = MathAStar.ParabolaHeight( horizontalOffset, horizontalSpeed, verticalSpeed, gravity );
-			var nextPositionToCheck = lastPositionChecked + horizontalDirection * horizontalOffset + Vector3.Up * verticalOffset;
+			var nextPositionToCheck = startingPosition + horizontalDirection * horizontalOffset + Vector3.Up * verticalOffset;
 
 			var clearanceBBox = new BBox( new Vector3( -WidthClearance / 2f, -WidthClearance / 2f, 0f ), new Vector3( WidthClearance / 2f, WidthClearance / 2f, HeightClearance ) );
 			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
 				.WithGridSettings( Settings )
 				.Run();
-			DebugOverlay.Sphere( nextPositionToCheck, 15f, Color.Red, 3f );
+			DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 3f );
+			DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 3f );
 			DebugOverlay.TraceResult( jumpTrace, 5f );
 
 			if ( jumpTrace.Hit )
-				return jumpTrace.HitPosition;
+			{
+				DebugOverlay.Box( clearanceBBox.Translate( jumpTrace.EndPosition ), Color.Blue, 3f );
+				return jumpTrace.EndPosition;
+			}
 
 			lastPositionChecked = nextPositionToCheck;
 			currentDistance++;

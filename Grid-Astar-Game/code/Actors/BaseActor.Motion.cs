@@ -45,6 +45,7 @@ public abstract partial class BaseActor
 			.Ignore( this );
 
 		helper.TryMoveWithStep( Time.Delta, StepSize );
+		helper.TryUnstuck();
 
 		Position = helper.Position;
 		Velocity = helper.Velocity;
