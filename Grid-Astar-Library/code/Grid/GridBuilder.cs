@@ -310,7 +310,8 @@ public struct GridBuilder
 
 		Stopwatch jumpableCells = new Stopwatch();
 		jumpableCells.Start();
-		currentGrid.AssignJumpableCells();
+		currentGrid.AssignJumpableCells( "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z );
+		currentGrid.AssignJumpableCells( "longjump", 350f, 300f, Game.PhysicsWorld.Gravity.z );
 		jumpableCells.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
 

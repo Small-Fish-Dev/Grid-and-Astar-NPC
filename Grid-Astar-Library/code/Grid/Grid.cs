@@ -298,18 +298,12 @@ public partial class Grid : IValid
 				cell.AddConnection( droppableCell, "drop" );
 		}
 	}
-	public void AssignJumpableCells()
+	public void AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity )
 	{
 		foreach ( var cell in CellsWithTag( "edge" ) )
-		{
-			foreach ( var jumpableCell in cell.GetValidJumpables( 200, 300, Game.PhysicsWorld.Gravity.z, 8, MaxDropHeight ) )
-			{
+			foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight ) )
 				if ( jumpableCell != null )
-					cell.AddConnection( jumpableCell, "jump" );
-
-				jumpableCell.Draw( 10f );
-			}
-		}
+					cell.AddConnection( jumpableCell, movementTag );
 	}
 
 	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )

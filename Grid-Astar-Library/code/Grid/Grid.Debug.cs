@@ -171,6 +171,7 @@ public partial class Grid
 
 						foreach ( var connection in cell.CellConnections )
 						{
+							if ( !connection.MovementTag.Contains("jump") ) continue;
 							DebugOverlay.Line( cell.Position, connection.Current.Position.WithZ( cell.Position.z ), 1.1f );
 							DebugOverlay.Line( connection.Current.Position.WithZ( cell.Position.z ), connection.Current.Position, 1.1f );
 						}
