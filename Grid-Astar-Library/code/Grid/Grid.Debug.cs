@@ -50,10 +50,9 @@ public partial class Grid
 	{
 		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
 
-		var builder = AStarPathBuilder.From( Grid.Main )
-			.WithMaxDropHeight( 100f );
+		var builder = AStarPathBuilder.From( Grid.Main );
 
-		var computedPath = await builder.RunAsync( Grid.Main.GetCell( caller.Position ), Grid.Main.GetCell( Vector3.Zero, false ), CancellationToken.None );
+		var computedPath = await builder.RunInParallel( Grid.Main.GetCellInArea( caller.Position, Grid.Main.WidthClearance ), Grid.Main.GetCell( Vector3.Zero, false ), new CancellationTokenSource() );
 
 		for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
 		{
@@ -172,8 +171,11 @@ public partial class Grid
 						foreach ( var connection in cell.CellConnections )
 						{
 							if ( !connection.MovementTag.Contains("jump") ) continue;
-							DebugOverlay.Line( cell.Position, connection.Current.Position.WithZ( cell.Position.z ), 1.1f );
-							DebugOverlay.Line( connection.Current.Position.WithZ( cell.Position.z ), connection.Current.Position, 1.1f );
+
+							var highest = cell.Position.z > connection.Current.Position.z ? cell : connection.Current;
+							var lowest = highest == cell ? connection.Current : cell;
+							DebugOverlay.Line( highest.Position, lowest.Position.WithZ( highest.Position.z ), 1.1f );
+							DebugOverlay.Line( lowest.Position.WithZ( cell.Position.z ), lowest.Position, 1.1f );
 						}
 					}
 

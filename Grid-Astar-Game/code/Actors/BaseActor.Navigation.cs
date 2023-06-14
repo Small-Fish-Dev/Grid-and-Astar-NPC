@@ -28,6 +28,7 @@ public abstract partial class BaseActor
 	/// <returns></returns>
 	public virtual async Task<bool> NavigateTo( GridAStar.Cell targetCell )
 	{
+		//TODO: CancellationToken when calling NavigateTo again
 		if ( targetCell == null ) return false;
 		if ( targetCell == NearestCell ) return false;
 
@@ -40,7 +41,6 @@ public abstract partial class BaseActor
 
 		if ( computedPath.IsEmpty ) return false;
 
-		computedPath.Simplify();
 		currentPath = computedPath;
 		currentPathIndex = 0;
 		HasArrivedDestination = false;
@@ -86,6 +86,28 @@ public abstract partial class BaseActor
 
 		if ( NextMovementTag == "drop" )
 			IsRunning = false;
+
+		if ( GroundEntity != null )
+		{
+			if ( NextMovementTag == "shortjump" )
+			{
+				Velocity = (Velocity.Normal * 200f).WithZ( 300f );
+				SetAnimParameter( "jump", true );
+				GroundEntity = null;
+			}
+			if ( NextMovementTag == "longJump" )
+			{
+				Velocity = (Velocity.Normal * 350f).WithZ( 300f );
+				SetAnimParameter( "jump", true );
+				GroundEntity = null;
+			}
+			if ( NextMovementTag == "highjump" )
+			{
+				Velocity = (Velocity.Normal * 50f).WithZ( 600f );
+				SetAnimParameter( "jump", true );
+				GroundEntity = null;
+			}
+		}
 
 		Direction = (nextPathCell.Position - Position).WithZ( 0 ).Normal;
 

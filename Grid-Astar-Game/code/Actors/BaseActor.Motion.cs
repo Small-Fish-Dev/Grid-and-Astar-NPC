@@ -67,17 +67,20 @@ public abstract partial class BaseActor
 			Velocity -= Vector3.Down * Game.PhysicsWorld.Gravity * Time.Delta;
 		}
 
-		if ( Input.Down( "jump" ) )
+		if ( Client.IsValid() )
 		{
-			if ( Game.IsClient ) return;
-			if ( GroundEntity != null )
+			if ( Input.Down( "jump" ) )
 			{
-				GroundEntity = null;
-				Velocity = Velocity.WithZ( 300f );
+				if ( Game.IsClient ) return;
+				if ( GroundEntity != null )
+				{
+					GroundEntity = null;
+					Velocity = Velocity.WithZ( 300f );
+				}
 			}
 		}
-
-		DebugOverlay.Sphere( Position, 10f, Color.Blue );
+		DebugOverlay.Line( Position, Position + Direction * 30f );
+		//DebugOverlay.Sphere( Position, 10f, Color.Blue );
 	}
 }
 
