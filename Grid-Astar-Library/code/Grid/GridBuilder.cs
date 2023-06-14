@@ -308,6 +308,12 @@ public struct GridBuilder
 		droppableCells.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
 
+		Stopwatch jumpableCells = new Stopwatch();
+		jumpableCells.Start();
+		currentGrid.AssignJumpableCells();
+		jumpableCells.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
+
 		totalWatch.Stop();
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
 

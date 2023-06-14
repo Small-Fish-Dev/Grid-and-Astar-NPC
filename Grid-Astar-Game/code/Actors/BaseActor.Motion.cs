@@ -74,8 +74,6 @@ public abstract partial class BaseActor
 			{
 				GroundEntity = null;
 				Velocity = Velocity.WithZ( 300f );
-
-				Grid.Main.TraceParabola( Position, Velocity.WithZ( 0 ), 300f, Game.PhysicsWorld.Gravity.z, Grid.Main.MaxDropHeight );
 			}
 		}
 

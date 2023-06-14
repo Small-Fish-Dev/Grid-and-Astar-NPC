@@ -424,6 +424,56 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return null;
 	}
 
+	public List<Cell> GetValidJumpables( float horizontalSpeed, float verticalSpeed, float gravity, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	{
+		var jumpableCells = new List<Cell>();
+
+		for ( int side = 0; side < sidesToCheck; side++ )
+		{
+			var directionToCheck = Rotation.FromYaw( 360 / sidesToCheck * side ).Forward;
+			var horizontalVelocity = directionToCheck * horizontalSpeed;
+
+			var endPosition = Grid.Main.TraceParabola( Position, horizontalVelocity, verticalSpeed, gravity, maxHeightDistance );
+
+			var cell = Grid.Main.GetCellInArea( endPosition, Grid.WidthClearance );
+
+			if ( cell == null ) continue;
+			var isValid = true;
+
+			if ( Grid.LineOfSight( cell, this ) )
+				isValid = false;
+
+			if ( isValid )
+			{
+				foreach ( var otherCell in jumpableCells )
+				{
+					if ( Grid.LineOfSight( cell, otherCell ) )
+					{
+						isValid = false;
+						break;
+					}
+				}
+			}
+
+			if ( isValid )
+			{
+				foreach ( var connectedCell in CellConnections )
+				{
+					if ( Grid.LineOfSight( cell, connectedCell.Current ) )
+					{
+						isValid = false;
+						break;
+					}
+				}
+			}
+
+			if ( isValid )
+				jumpableCells.Add( cell );
+		}
+
+		return jumpableCells;
+	}
+
 	/// <summary>
 	/// Draw this cell with color
 	/// </summary>

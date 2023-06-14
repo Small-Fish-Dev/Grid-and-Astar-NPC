@@ -298,6 +298,19 @@ public partial class Grid : IValid
 				cell.AddConnection( droppableCell, "drop" );
 		}
 	}
+	public void AssignJumpableCells()
+	{
+		foreach ( var cell in CellsWithTag( "edge" ) )
+		{
+			foreach ( var jumpableCell in cell.GetValidJumpables( 200, 300, Game.PhysicsWorld.Gravity.z, 8, MaxDropHeight ) )
+			{
+				if ( jumpableCell != null )
+					cell.AddConnection( jumpableCell, "jump" );
+
+				jumpableCell.Draw( 10f );
+			}
+		}
+	}
 
 	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )
 	{
@@ -325,12 +338,9 @@ public partial class Grid : IValid
 			if ( jumpTrace.Hit )
 			{
 				//DebugOverlay.Box( clearanceBBox.Translate( jumpTrace.EndPosition ), Color.Blue, 5f );
-				for ( int i = 0; i < 100; i++ )
-				{
-					var cell = Grid.Main.GetCellInArea( jumpTrace.EndPosition, WidthClearance );
-					if ( cell != null )
-						cell.Draw( Color.Blue, 3f, false, false, true );
-				}
+				//var cell = Grid.Main.GetCellInArea( jumpTrace.EndPosition, WidthClearance );
+				//if ( cell != null )
+					//cell.Draw( Color.Blue, 3f, false, false, true );
 				return jumpTrace.EndPosition;
 			}
 
