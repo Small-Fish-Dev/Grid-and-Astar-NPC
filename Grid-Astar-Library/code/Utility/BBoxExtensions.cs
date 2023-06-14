@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public static partial class BBoxExtensions
 {
@@ -38,11 +36,11 @@ public static partial class BBoxExtensions
 		if ( rotation.Angles() == Angles.Zero )
 			pointToCheck = (point - position) * rotation.Inverse;
 
-		var radiusX = ( bbox.Maxs.x - bbox.Mins.x ) / 2f;
-		var radiusY = ( bbox.Maxs.y - bbox.Mins.y ) / 2f;
+		var radiusX = (bbox.Maxs.x - bbox.Mins.x) / 2f;
+		var radiusY = (bbox.Maxs.y - bbox.Mins.y) / 2f;
 
 		var insideSphere = pointToCheck.x * pointToCheck.x / (radiusX * radiusX) + pointToCheck.y * pointToCheck.y / (radiusY * radiusY);
-		
+
 		return insideSphere <= 1f;
 	}
 

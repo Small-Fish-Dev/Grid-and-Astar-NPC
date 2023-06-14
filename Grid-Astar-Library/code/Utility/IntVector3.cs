@@ -40,14 +40,14 @@ public struct IntVector3
 		}
 	}
 
-	public IntVector3(int x, int y, int z )
+	public IntVector3( int x, int y, int z )
 	{
 		this.x = x;
 		this.y = y;
 		this.z = z;
 	}
 
-	public IntVector3(int x, int y) : this(x, y, 0)
+	public IntVector3( int x, int y ) : this( x, y, 0 )
 	{
 	}
 

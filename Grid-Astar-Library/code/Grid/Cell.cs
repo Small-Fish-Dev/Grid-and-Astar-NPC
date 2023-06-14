@@ -25,7 +25,7 @@ public struct CellTags
 
 	public bool Has( List<string> tags )
 	{
-		foreach( string tag in tags )
+		foreach ( string tag in tags )
 			if ( Has( tag ) )
 				return true;
 		return false;
@@ -82,7 +82,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// 2 = Top Left
 	/// 3 = Top Right
 	/// </summary>
-	public float[] Vertices = new float[4]; 
+	public float[] Vertices = new float[4];
 	// Note: There is no performance boost in having the variables below being set in the constructor
 	/// <summary>
 	/// Get the point with both minimum coordinates
@@ -101,7 +101,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public float Height => Vertices.Max() - Vertices.Min();
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
-	public BBox WorldBounds => new BBox( ( Position + Bounds.Mins ).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
+	public BBox WorldBounds => new BBox( (Position + Bounds.Mins).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public CellTags Tags { get; set; }
 	public List<AStarNode> CellConnections { get; set; } = new();
 
@@ -146,7 +146,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	}
 
 	//(IsWalkable, IsSteps)
-	private static (bool,bool) TraceCoordinates( Grid grid, Vector3 position, ref float[] validCoordinates )
+	private static (bool, bool) TraceCoordinates( Grid grid, Vector3 position, ref float[] validCoordinates )
 	{
 		Vector3[] testCoordinates = new Vector3[4] {
 			new Vector3( -grid.CellSize / 2, -grid.CellSize / 2 ) * grid.AxisRotation,
@@ -167,8 +167,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 			var testResult = testTrace.Run();
 
-			if ( testResult.StartedSolid ) return (false,false);
-			if ( !testResult.Hit ) return (false,false);
+			if ( testResult.StartedSolid ) return (false, false);
+			if ( !testResult.Hit ) return (false, false);
 
 			validCoordinates[i] = testResult.HitPosition.z;
 			testCoordinates[i] = testResult.HitPosition;
@@ -185,17 +185,17 @@ public partial class Cell : IEquatable<Cell>, IValid
 			.WithGridSettings( grid.Settings );
 
 		var clearanceResult = clearanceTrace.Run();
-		var heightDifference = clearanceResult.EndPosition.z - ( position.z - height );
+		var heightDifference = clearanceResult.EndPosition.z - (position.z - height);
 
 		return heightDifference <= grid.RealStepSize + height;
 	}
 
 
 	//(IsWalkable, IsSteps)
-	private static (bool,bool) TestForSteps( Grid grid, Vector3 position, Vector3[] testCoordinates )
+	private static (bool, bool) TestForSteps( Grid grid, Vector3 position, Vector3[] testCoordinates )
 	{
 		if ( grid.RealStepSize <= 0.1f ) // At this point why bother
-			return (true,true);
+			return (true, true);
 
 		var lowestToHighest = testCoordinates
 			.OrderBy( x => x.z )
@@ -218,7 +218,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	private static (bool, bool) TestForStep( Grid grid, Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition )
 	{
 		var stepsTried = 0;
-		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / (grid.RealStepSize / 2f ) ) + 1, 3 );
+		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / (grid.RealStepSize / 2f)) + 1, 3 );
 		var stepDistances = new float[maxSteps];
 
 		if ( highestPosition.z - lowestPosition.z <= grid.StepSize / 2 ) // No stairs here
@@ -231,7 +231,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var stepPositionEnd = endPosition.WithZ( stepPositionStart.z );
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
-			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * ( stepDistance + tolerance * 2f ) )
+			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * (stepDistance + tolerance * 2f) )
 				.Size( grid.RealStepSize / 2f )
 				.WithGridSettings( grid.Settings );
 
@@ -240,10 +240,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 			if ( stepsTried == 0 )
 				if ( stepResult.EndPosition.Distance( endPosition ) <= tolerance * 3f ) // Pack it up, no stairs here
-					return (true,false);
+					return (true, false);
 
 			if ( stepResult.Hit && stepAngle > grid.StandableAngle && stepAngle < 89.9f ) // MoveHelper straight up doesn't count it as a step if it's not 90°
-				return (false,false);
+				return (false, false);
 
 			if ( stepResult.Hit && stepAngle < grid.StandableAngle ) // Guess not a step but just a slope
 				return (true, false);
@@ -262,7 +262,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			stepsTried++;
 		}
 
-		return (true,true);
+		return (true, true);
 	}
 
 	public void AddConnection( Cell other, string tag = "" ) => CellConnections.Add( new AStarNode( other, tag == "" ? string.Empty : tag ) );
@@ -293,7 +293,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	{
 		Grid = grid;
 		Position = position;
-		GridPosition = ( Position - Grid.WorldBounds.Mins - grid.CellSize / 2).ToIntVector2( grid.CellSize );
+		GridPosition = (Position - Grid.WorldBounds.Mins - grid.CellSize / 2).ToIntVector2( grid.CellSize );
 		Vertices = vertices;
 
 		if ( tags != null && tags.Count() > 0 )
@@ -455,7 +455,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			DebugOverlay.Text( $"{GridPosition}", Position, duration, 200 );
 
 		int index = 0;
-		foreach( var tag in Tags.All )
+		foreach ( var tag in Tags.All )
 		{
 			DebugOverlay.Text( $"{tag}", Position, index, color, duration, 200 );
 			index++;

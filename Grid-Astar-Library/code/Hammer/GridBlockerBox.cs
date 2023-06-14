@@ -1,6 +1,4 @@
 ﻿using Editor;
-using Sandbox;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace GridAStar;
@@ -48,7 +46,7 @@ public partial class GridBlockerBox : ModelEntity
 	public void Apply()
 	{
 		if ( CurrentGrid == null ) return;
-		
+
 		foreach ( var cellStack in CurrentGrid.Cells )
 		{
 			foreach ( var cell in cellStack.Value )

@@ -104,8 +104,8 @@ public struct AStarPathBuilder
 	public AStarPath Run( Vector3 startingPosition, Cell targetCell, bool reversed = false ) => Run( Grid.GetCell( startingPosition ), targetCell, reversed );
 	public AStarPath Run( Cell startingCell, Vector3 targetPosition, bool reversed = false ) => Run( startingCell, Grid.GetCell( targetPosition ), reversed );
 	public AStarPath Run( Vector3 startingPosition, Vector3 targetPosition, bool reversed = false ) => Run( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), reversed );
-	
-	
+
+
 	internal AStarPath Run( Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false )
 	{
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return AStarPath.Empty();

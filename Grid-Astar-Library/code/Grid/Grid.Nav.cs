@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 
 namespace GridAStar;
 
@@ -26,7 +25,7 @@ public partial class Grid
 		var closedSet = new HashSet<AStarNode>();
 		var openSetReference = new Dictionary<int, AStarNode>();
 		var initialDistance = startingNode.Distance( targetNode );
-		var maxDistance = Math.Max( initialDistance, initialDistance + pathBuilder.MaxCheckDistance ) + CellSize; 
+		var maxDistance = Math.Max( initialDistance, initialDistance + pathBuilder.MaxCheckDistance ) + CellSize;
 
 		openSet.Add( startingNode );
 		openSetReference.Add( startingNode.GetHashCode(), startingNode );
@@ -61,7 +60,7 @@ public partial class Grid
 				if ( closedSet.Contains( neighbour ) ) continue;
 
 				var isInOpenSet = openSetReference.ContainsKey( neighbour.GetHashCode() );
-				var currentNeighbour = isInOpenSet ? openSetReference[neighbour.GetHashCode() ] : neighbour;
+				var currentNeighbour = isInOpenSet ? openSetReference[neighbour.GetHashCode()] : neighbour;
 
 				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( currentNeighbour );
 				var distanceToTarget = currentNeighbour.Distance( targetNode );

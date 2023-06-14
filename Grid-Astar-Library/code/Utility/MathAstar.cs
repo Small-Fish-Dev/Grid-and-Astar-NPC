@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public static class MathAStar
 {
@@ -32,7 +30,7 @@ public static class MathAStar
 		float verticalPosition = verticalSpeed * time;
 		float gravityOffset = 0.5f * gravity * time * time;
 
-		return new Vector2( horizontalPosition, verticalPosition + gravityOffset);
+		return new Vector2( horizontalPosition, verticalPosition + gravityOffset );
 	}
 
 	public static float ParabolaHeight( float horizontalPosition, float horizontalSpeed, float verticalSpeed, float gravity )

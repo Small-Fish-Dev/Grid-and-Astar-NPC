@@ -1,18 +1,13 @@
 ﻿global using Sandbox;
 global using System;
-global using Sandbox.UI;
-global using System.Runtime.CompilerServices;
-global using System.Collections;
 global using System.Linq;
-global using System.Collections.Generic;
-global using System.Diagnostics;
 global using System.Threading.Tasks;
 
 namespace GridAStarNPC;
 
 public partial class GridGame : GameManager
 {
-	public GridGame(){}
+	public GridGame() { }
 
 	public override void ClientJoined( IClient client )
 	{

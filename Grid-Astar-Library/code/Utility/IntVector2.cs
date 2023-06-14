@@ -35,7 +35,7 @@ public struct IntVector2 : IEquatable<IntVector2>
 		}
 	}
 
-	public IntVector2(int x, int y )
+	public IntVector2( int x, int y )
 	{
 		this.x = x;
 		this.y = y;
@@ -44,7 +44,7 @@ public struct IntVector2 : IEquatable<IntVector2>
 	public IntVector2 WithX( int x ) => new IntVector2( x, this.y );
 	public IntVector2 WithY( int y ) => new IntVector2( this.x, y );
 	public Vector2 ToVector2() => new Vector2( x, y );
-	public float DistanceSquared( IntVector2 other ) => ToVector2().DistanceSquared( other.ToVector2());
+	public float DistanceSquared( IntVector2 other ) => ToVector2().DistanceSquared( other.ToVector2() );
 	public override string ToString() => $"{x},{y}";
 	public override bool Equals( object obj ) => obj is IntVector2 other && Equals( other );
 	public bool Equals( IntVector2 other ) => x == other.x && y == other.y;

@@ -1,19 +1,18 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 namespace GridAStar;
 
 public static partial class GridSettings
 {
 	public const string DEFAULT_SAVE_PATH = "./grid-%identifier%.dat";   // Where the grid is saved (%identifier% will be the grid's saveidentifier)
-	public const string DEFAULT_MOUNTED_LOAD_FOLDER = "Grids";			// Which folder should it look for any grid that comes with the game (Just give the name and nothing else)
+	public const string DEFAULT_MOUNTED_LOAD_FOLDER = "Grids";          // Which folder should it look for any grid that comes with the game (Just give the name and nothing else)
 }
 
 public partial class Grid
 {
 	public string SavePath => GetSavePath( SaveIdentifier );
 	public static string GetSavePath( string identifier = "main" ) => GridSettings.DEFAULT_SAVE_PATH.Replace( "%identifier%", identifier );
-	public static string GetMountedPath( string identifier = "main" ) => $"./{GridSettings.DEFAULT_MOUNTED_LOAD_FOLDER}{GetSavePath( identifier ).Substring(1)}";
+	public static string GetMountedPath( string identifier = "main" ) => $"./{GridSettings.DEFAULT_MOUNTED_LOAD_FOLDER}{GetSavePath( identifier ).Substring( 1 )}";
 	public static bool Exists( string identifier = "main" ) => FileSystem.Data.FileExists( Grid.GetSavePath( identifier ) );
 	public static bool ExistsMounted( string identifier = "main" ) => FileSystem.Mounted.FileExists( Grid.GetMountedPath( identifier ) );
 	public bool Exists() => FileSystem.Data.FileExists( SavePath );
@@ -200,7 +199,7 @@ public partial class Grid
 
 						foreach ( var parentCell in connectedDictionary )
 						{
-							foreach( var cellToConnect in parentCell.Value )
+							foreach ( var cellToConnect in parentCell.Value )
 							{
 								var cellPosition = cellToConnect.Item1;
 								var cellTag = cellToConnect.Item2;

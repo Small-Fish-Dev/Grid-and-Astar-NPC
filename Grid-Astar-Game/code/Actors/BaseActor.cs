@@ -10,13 +10,13 @@ public abstract partial class BaseActor : AnimatedEntity
 	public GridAStar.Grid CurrentGrid = GridAStar.Grid.Main;
 	public GridAStar.Cell NearestCell => CurrentGrid?.GetCell( Position );
 
-	public BaseActor() 
-	{ 
+	public BaseActor()
+	{
 		CurrentGrid ??= GridAStar.Grid.Main;
 	}
 
 	public BaseActor( GridAStar.Grid initialGrid ) : base()
-	{ 
+	{
 		CurrentGrid = initialGrid;
 	}
 

@@ -1,6 +1,4 @@
 ﻿using Editor;
-using Sandbox;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace GridAStar;
@@ -66,7 +64,7 @@ public partial class HammerGrid : ModelEntity
 			.WithWorldOnly( WorldOnly )
 			.WithMaxDropHeight( MaxDropHeight )
 			.WithCylinderShaped( CylinderShaped )
-			.WithTags( TagsToInclude.Replace( " ", string.Empty ).Split( "," ))
+			.WithTags( TagsToInclude.Replace( " ", string.Empty ).Split( "," ) )
 			.WithoutTags( TagsToExclude.Replace( " ", string.Empty ).Split( "," ) );
 
 		return settings;
@@ -99,7 +97,7 @@ public partial class HammerGrid : ModelEntity
 						}
 						else
 							if ( existsOnMounted && !existsOnLocal )
-								await loadedGrid.Save();
+							await loadedGrid.Save();
 					}
 					else
 					{

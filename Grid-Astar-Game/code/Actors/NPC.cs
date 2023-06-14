@@ -1,5 +1,4 @@
 ﻿using GridAStar;
-using System;
 
 namespace GridAStarNPC;
 
@@ -41,7 +40,7 @@ public partial class NPC : BaseActor
 				}
 			}
 		}
-		
+
 		if ( !IsFollowingSomeone )
 		{
 			if ( nextIdleMode && !IsFollowingPath )
@@ -70,7 +69,7 @@ public partial class NPC : BaseActor
 	{
 		if ( Time.Tick % 40 == 0 )
 		{
-			var startPos = new Vector3( 802.80f, -448.82f, 890f- 64f );
+			var startPos = new Vector3( 802.80f, -448.82f, 890f - 64f );
 			var targetPos = new Vector3( 622.21f, -308.05f, 128f - 64f );
 			if ( !Grid.Grids.ContainsKey( "tower" ) ) return;
 			var currentGrid = Grid.Grids["tower"];

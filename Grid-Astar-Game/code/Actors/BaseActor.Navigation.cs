@@ -1,5 +1,4 @@
 ﻿using GridAStar;
-using System.Collections.Immutable;
 using System.Threading;
 
 namespace GridAStarNPC;
@@ -88,7 +87,7 @@ public abstract partial class BaseActor
 		if ( NextMovementTag == "drop" )
 			IsRunning = false;
 
-		Direction = (nextPathCell.Position - Position).WithZ(0).Normal;
+		Direction = (nextPathCell.Position - Position).WithZ( 0 ).Normal;
 
 		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) * (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) )
 			currentPathIndex++;

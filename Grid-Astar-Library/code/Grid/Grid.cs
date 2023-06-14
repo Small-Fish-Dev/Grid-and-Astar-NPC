@@ -1,14 +1,9 @@
 ﻿global using Sandbox;
 global using System;
-global using Sandbox.UI;
-global using System.Runtime.CompilerServices;
-global using System.Collections;
-global using System.Linq;
 global using System.Collections.Generic;
 global using System.Diagnostics;
+global using System.Linq;
 global using System.Threading.Tasks;
-using Sandbox.Internal;
-using System.Runtime.InteropServices;
 
 namespace GridAStar;
 
@@ -20,7 +15,7 @@ public static partial class GridSettings
 	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
 	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;  // How much vertical space there should be
 	public const float DEFAULT_WIDTH_CLEARANCE = 24f;   // How much horizontal space there should be
-	public const float DEFAULT_DROP_HEIGHT = 400f;		// How high you can drop down from
+	public const float DEFAULT_DROP_HEIGHT = 400f;      // How high you can drop down from
 	public const bool DEFAULT_GRID_PERFECT = false;     // For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
 	public const bool DEFAULT_WORLD_ONLY = true;        // Will it only hit the world or also static entities
 }
@@ -29,14 +24,14 @@ public partial class Grid : IValid
 {
 	public static Grid Main
 	{
-		get 
+		get
 		{
 			if ( Grids.ContainsKey( "main" ) )
 				return Grids["main"];
 			else
 				return null;
 		}
-		set 
+		set
 		{
 			if ( Grids.ContainsKey( "main" ) )
 				Grids["main"] = value;
@@ -221,8 +216,8 @@ public partial class Grid : IValid
 	{
 		var startingPosition = startingCell.Position;
 		var endingPosition = endingCell.Position;
-		var direction = ( endingPosition - startingPosition ).Normal;
-		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize);
+		var direction = (endingPosition - startingPosition).Normal;
+		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize );
 
 		if ( pathCreator == null && startingCell.Occupied ) return false;
 		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
@@ -233,7 +228,7 @@ public partial class Grid : IValid
 		Cell lastCell = startingCell;
 		for ( int i = 0; i <= distanceInSteps; i++ )
 		{
-			direction = ( endingPosition - lastCell.Position ).Normal;
+			direction = (endingPosition - lastCell.Position).Normal;
 			var cellToCheck = GetNeighbourInDirection( lastCell, direction );
 
 			if ( cellToCheck == null ) return false;
@@ -296,9 +291,9 @@ public partial class Grid : IValid
 	/// <returns></returns>
 	public void AssignDroppableCells()
 	{
-		foreach( var cell in CellsWithTag( "edge" ) )
+		foreach ( var cell in CellsWithTag( "edge" ) )
 		{
-			var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight);
+			var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight );
 			if ( droppableCell != null )
 				cell.AddConnection( droppableCell, "drop" );
 		}
@@ -306,8 +301,8 @@ public partial class Grid : IValid
 
 	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )
 	{
-		var horizontalDirection = horizontalVelocity.WithZ(0).Normal;
-		var horizontalSpeed = horizontalVelocity.WithZ(0).Length;
+		var horizontalDirection = horizontalVelocity.WithZ( 0 ).Normal;
+		var horizontalSpeed = horizontalVelocity.WithZ( 0 ).Length;
 		var maxHeight = startingPosition.z + MathAStar.ParabolaMaxHeight( verticalSpeed, gravity );
 		var minHeight = maxHeight - maxDropHeight;
 		var currentDistance = 1;
@@ -330,7 +325,7 @@ public partial class Grid : IValid
 			if ( jumpTrace.Hit )
 			{
 				//DebugOverlay.Box( clearanceBBox.Translate( jumpTrace.EndPosition ), Color.Blue, 5f );
-				for( int i = 0; i < 100; i++ )
+				for ( int i = 0; i < 100; i++ )
 				{
 					var cell = Grid.Main.GetCellInArea( jumpTrace.EndPosition, WidthClearance );
 					if ( cell != null )

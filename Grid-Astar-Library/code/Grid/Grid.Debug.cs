@@ -62,7 +62,7 @@ public partial class Grid
 			DebugOverlay.Text( i.ToString(), node.EndPosition, duration: 3 );
 
 			if ( i < computedPath.Nodes.Count() - 1 )
-				DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i+1].EndPosition, 3f );
+				DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i + 1].EndPosition, 3f );
 		}
 	}
 	/*
@@ -164,12 +164,12 @@ public partial class Grid
 					{
 						var position = cell.Position.ToScreen();
 						if ( position.z < 0f ) continue;
-						if ( position.x < 0f || position.x > 1f) continue;
+						if ( position.x < 0f || position.x > 1f ) continue;
 						if ( position.y < 0f || position.y > 1f ) continue;
 
 						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
 
-						foreach( var connection in cell.CellConnections )
+						foreach ( var connection in cell.CellConnections )
 						{
 							DebugOverlay.Line( cell.Position, connection.Current.Position.WithZ( cell.Position.z ), 1.1f );
 							DebugOverlay.Line( connection.Current.Position.WithZ( cell.Position.z ), connection.Current.Position, 1.1f );
