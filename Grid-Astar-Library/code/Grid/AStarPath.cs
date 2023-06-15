@@ -46,11 +46,14 @@ public struct AStarPath
 			while ( Count > 2 && segmentEnd < Count - 1 )
 			{
 				var currentNode = Nodes[segmentStart];
+				var nextNode = Nodes[segmentStart + 1];
 				var furtherNode = Nodes[segmentEnd];
 
-				if ( Settings.Grid.LineOfSight( currentNode.Current, furtherNode.Current, Settings.PathCreator ) )
-					for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
-						Nodes.RemoveAt( toDelete );
+				if ( nextNode.MovementTag != "" && nextNode.MovementTag != string.Empty && furtherNode.MovementTag != "" && furtherNode.MovementTag != string.Empty )
+					if ( Settings.Grid.LineOfSight( currentNode.Current, furtherNode.Current, Settings.PathCreator ) )
+						for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
+							Nodes.RemoveAt( toDelete );
+
 
 				if ( segmentEnd == Count - 1 )
 					break;

@@ -1,124 +1,162 @@
 ﻿using GridAStar;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace GridAStarNPC;
 
 public abstract partial class BaseActor
 {
-	internal AStarPath currentPath { get; set; }
-	public float CurrentPathLength => currentPath.Length;
-	internal int currentPathIndex { get; set; } = -1; // -1 = Not set / Hasn't started
-	internal GridAStar.Cell currentPathCell => IsFollowingPath ? currentPath.Nodes[currentPathIndex].Current : null;
-	internal GridAStar.Cell lastPathCell => currentPath.Count > 0 ? currentPath.Nodes[^1].Current : null;
-	internal GridAStar.Cell targetPathCell { get; set; } = null;
-	internal GridAStar.Cell nextPathCell => IsFollowingPath ? currentPath.Nodes[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )].Current : null;
-	internal GridAStar.AStarNode nextPathNode => IsFollowingPath ? currentPath.Nodes[Math.Min( currentPathIndex + 1, currentPath.Count - 1 )] : null;
-	public string NextMovementTag => IsFollowingPath ? nextPathNode.MovementTag : string.Empty;
-	public bool IsFollowingPath => currentPathIndex >= 0 && currentPath.Count > 0;
-	[Net] public BaseActor Following { get; set; } = null;
-	public bool IsFollowingSomeone => Following != null;
-	public bool HasArrivedDestination { get; internal set; } = false;
-	public virtual float PathRetraceFrequency { get; set; } = 0.1f; // How many seconds before it checks if the path is being followed or the target position changed
-	internal TimeUntil lastRetraceCheck { get; set; } = 0f;
-
-	/// <summary>
-	/// Start navigating from its current position to the target cell. Returns false if the path isn't valid
-	/// </summary>
-	/// <param name="targetCell"></param>
-	/// <returns></returns>
-	public virtual async Task<bool> NavigateTo( GridAStar.Cell targetCell )
+	private AStarPath currentPath { get; set; }
+	public AStarPath CurrentPath
 	{
-		//TODO: CancellationToken when calling NavigateTo again
-		if ( targetCell == null ) return false;
-		if ( targetCell == NearestCell ) return false;
+		get => currentPath;
+		set
+		{
+			if ( !currentPath.IsEmpty && currentPath.Nodes == value.Nodes )
+				return;
+			currentPath = value;
+			HasArrivedDestination = false;
+		}
+	}
+	public virtual float PathRetraceFrequency { get; set; } = 0.5f; // How many seconds before it checks if the path is being followed or the target position changed
+	internal CancellationTokenSource CurrentPathToken { get; set; } = new();
+	public AStarNode CurrentPathNode => IsFollowingPath ? CurrentPath.Nodes[0] : null; // The latest cell crossed in the path
+	public AStarNode LastPathNode => IsFollowingPath ? CurrentPath.Nodes[^1] : null; // The final cell in the path
+	public AStarNode NextPathNode => IsFollowingPath ? CurrentPath.Nodes[Math.Min( 1, CurrentPath.Count - 1 )] : null;
+	public string NextMovementTag => IsFollowingPath ? NextPathNode.MovementTag : string.Empty;
+	public bool IsFollowingPath => !HasArrivedDestination && CurrentPath.Count > 0; // Is the entity following a path
+	private Line CurrentPathLine => new( CurrentPathNode.EndPosition, NextPathNode.EndPosition );
+	public float DistanceFromIdealPath => CurrentPathLine.Distance( Position ); // How far the entity strayed off path, used to recalculate path
+	public Entity Target { get; set; } = null;
+	public Vector3 IdealDirection => IsFollowingPath ? (NextPathNode.EndPosition.WithZ( 0 ) - Position.WithZ( 0 )).Normal : Vector3.Zero;
+	public bool IsFollowingSomeone => IsFollowingPath && Target != null; // Is the entity following a moving target
+	public bool HasArrivedDestination { get; private set; } = true; // Has the entity successfully reached their destination
+	public bool ForcedStop { get; set; } = false;
+	internal TimeUntil NextRetraceCheck { get; set; } = 0f;
 
-		var builder = AStarPathBuilder.From( CurrentGrid )
-			.WithPathCreator( this )
-			.WithPartialEnabled()
-			.WithMaxDistance( 500f );
+	public void ComputeNavigation()
+	{
+		if ( Game.IsClient )
+			return;
 
-		var computedPath = await builder.RunAsync( NearestCell, targetCell, CancellationToken.None );
+		if ( NextRetraceCheck )
+		{
+			var targetPathCell = GetTargetPathCell();
 
-		if ( computedPath.IsEmpty ) return false;
+			if ( targetPathCell != null )
+			{
+				if ( IsFollowingPath )
+				{
+					if ( targetPathCell != LastPathNode.Current ) // If the target cell is not the current path's last cell, retrace path
+						NavigateTo( targetPathCell );
+					else
+					{
+						if ( GroundEntity != null ) // This code is useless when they're jumping or dropping
+						{
+							var minimumDistanceUntilRetrace = CurrentGrid.CellSize * 1.42f + CurrentGrid.StepSize / 2f;
 
-		currentPath = computedPath;
-		currentPathIndex = 0;
-		HasArrivedDestination = false;
-		targetPathCell = lastPathCell;
+							if ( IsFollowingPath && DistanceFromIdealPath > minimumDistanceUntilRetrace ) // Or if you strayed away from the path too far
+								NavigateTo( targetPathCell );
+						}
+					}
+				}
+				else
+					NavigateTo( targetPathCell );
+			}
 
-		return true;
+			NextRetraceCheck = PathRetraceFrequency;
+		}
+
+		if ( IsFollowingPath )
+		{
+			for ( var i = 1; i < CurrentPath.Count; i++ )
+				DebugOverlay.Line( CurrentPath.Nodes[i].EndPosition, CurrentPath.Nodes[i - 1].EndPosition, Time.Delta, false );
+
+			Direction = IdealDirection;
+			IsRunning = CurrentPath.Length >= 500f;
+
+			var minimumDistanceUntilNext = CurrentGrid.CellSize; // * 1.42f ?
+
+			if ( Position.WithZ( 0 ).Distance( NextPathNode.EndPosition.WithZ( 0 ) ) <= minimumDistanceUntilNext ) // Move onto the next cell
+				if ( Math.Abs( Position.z - NextPathNode.EndPosition.z ) <= CurrentGrid.StepSize ) // Make sure it's within the stepsize
+				{
+					CurrentPath.Nodes.RemoveAt( 0 );
+					if ( CurrentPathNode == LastPathNode )
+						HasArrivedDestination = true;
+				}
+
+			if ( NextMovementTag == "drop" )
+				IsRunning = false;
+
+			if ( GroundEntity != null )
+			{
+				if ( NextMovementTag == "shortjump" )
+				{
+					Velocity = (IdealDirection * 200f).WithZ( 300f );
+					SetAnimParameter( "jump", true );
+					GroundEntity = null;
+				}
+				if ( NextMovementTag == "longJump" )
+				{
+					Velocity = (IdealDirection * 350f).WithZ( 300f );
+					SetAnimParameter( "jump", true );
+					GroundEntity = null;
+				}
+				if ( NextMovementTag == "highjump" )
+				{
+					Velocity = (IdealDirection * 100f).WithZ( 600f );
+					SetAnimParameter( "jump", true );
+					GroundEntity = null;
+				}
+			}
+
+		}
+
 	}
 
-	public async virtual void ComputeNavigation()
+	public Cell GetTargetPathCell()
 	{
-		if ( lastRetraceCheck )
+		if ( Target != null )
+			return CurrentGrid.GetCell( Target.Position ) ?? CurrentGrid.GetNearestCell( Target.Position );
+		else if ( IsFollowingPath )
+			return LastPathNode.Current;
+		else
+			return null;
+	}
+
+	public void NavigateTo( Cell targetCell )
+	{
+		GameTask.RunInThreadAsync( async () =>
 		{
-			if ( IsFollowingSomeone )
+			var startingCell = CurrentGrid.GetCell( Position ) ?? CurrentGrid.GetNearestCell( Position );
+
+			if ( startingCell == null || targetCell == null || startingCell == targetCell ) return;
+
+			var pathBuilder = new AStarPathBuilder( CurrentGrid )
+			.WithPartialEnabled()
+			.WithMaxDistance( 500f )
+			.WithPathCreator( this );
+
+			if ( false )//CurrentGrid.LineOfSight( startingCell, targetCell ) )
 			{
-				var closestDirection = (Position - Following.Position).Normal;
-				targetPathCell = Following.GetCellInDirection( closestDirection, 1 );
+				// If there's direct line of sight, move in a straight path from A to B
+				var nodeList = new List<AStarNode>() { new AStarNode( startingCell ), new AStarNode( targetCell ) };
+				CurrentPath = AStarPath.From( pathBuilder, nodeList );
 			}
-
-			if ( IsFollowingPath )
+			else
 			{
-				if ( targetPathCell != lastPathCell ) // If the target cell is not the current navpath's last cell, retrace path
-					await NavigateTo( targetPathCell );
+				CurrentPathToken.Cancel();
+				CurrentPathToken = new CancellationTokenSource();
 
-				if ( Position.DistanceSquared( currentPathCell.Position ) > (CurrentGrid.CellSize * 1.42f) * (CurrentGrid.CellSize * 1.42f) ) // Or if you strayed away from the path too far
-					await NavigateTo( targetPathCell );
+				var computedPath = await pathBuilder.RunAsync( startingCell, targetCell, CurrentPathToken.Token );
+
+				if ( computedPath.IsEmpty || computedPath.Length < 1 )
+					return;
+
+				//computedPath.Simplify();
+
+				CurrentPath = computedPath;
 			}
-			lastRetraceCheck = PathRetraceFrequency;
-		}
-
-		if ( !IsFollowingPath )
-		{
-			Direction = Vector3.Zero;
-			return;
-		}
-
-		for ( int i = 0; i < currentPath.Count; i++ )
-		{
-			//currentPath[i].Draw( Color.White, Time.Delta );
-			//DebugOverlay.Text( i.ToString(), currentPath[i].Position, duration: Time.Delta );
-		}
-
-		IsRunning = CurrentPathLength > 200f;
-
-		if ( NextMovementTag == "drop" )
-			IsRunning = false;
-
-		if ( GroundEntity != null )
-		{
-			if ( NextMovementTag == "shortjump" )
-			{
-				Velocity = (Velocity.Normal * 200f).WithZ( 300f );
-				SetAnimParameter( "jump", true );
-				GroundEntity = null;
-			}
-			if ( NextMovementTag == "longJump" )
-			{
-				Velocity = (Velocity.Normal * 350f).WithZ( 300f );
-				SetAnimParameter( "jump", true );
-				GroundEntity = null;
-			}
-			if ( NextMovementTag == "highjump" )
-			{
-				Velocity = (Velocity.Normal * 50f).WithZ( 600f );
-				SetAnimParameter( "jump", true );
-				GroundEntity = null;
-			}
-		}
-
-		Direction = (nextPathCell.Position - Position).WithZ( 0 ).Normal;
-
-		if ( Position.DistanceSquared( nextPathCell.Position ) <= (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) * (CurrentGrid.CellSize / 2 + CurrentGrid.StepSize) )
-			currentPathIndex++;
-
-		if ( currentPathIndex >= currentPath.Count || currentPathCell == targetPathCell )
-		{
-			HasArrivedDestination = true;
-			currentPathIndex = -1;
-		}
-
+		} );
 	}
 }

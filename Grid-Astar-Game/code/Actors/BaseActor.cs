@@ -39,7 +39,7 @@ public abstract partial class BaseActor : AnimatedEntity
 	[GameEvent.Tick.Server]
 	public virtual void Think()
 	{
-		ComputeNavigation();
+		GameTask.RunInThreadAsync( ComputeNavigation );
 		ComputeMotion();
 		ComputeAnimations();
 	}

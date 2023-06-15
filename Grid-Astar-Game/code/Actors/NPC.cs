@@ -21,8 +21,8 @@ public partial class NPC : BaseActor
 	{
 		base.Spawn();
 		AccelerationSpeed = 150f;
-		WalkSpeed = 100f;
-		RunSpeed = 400f;
+		WalkSpeed = 200f;
+		RunSpeed = 350f;
 	}
 
 	public override void Think()
@@ -41,17 +41,16 @@ public partial class NPC : BaseActor
 			}
 		}
 
-		if ( !IsFollowingSomeone )
+		if ( Target == null )
 		{
-			if ( nextIdleMode && !IsFollowingPath )
-			{
-				var random = Vector3.Random;
-				var targetPosition = random * 3000;
-				var targetCell = CurrentGrid.GetCell( targetPosition, false );
+				//var random = Vector3.Random;
+				//var targetPosition = random * 3000;
+				//var targetCell = CurrentGrid.GetCell( targetPosition, false );
 
-				NavigateTo( CurrentGrid.GetCell( Entity.All.OfType<Player>().First().Position ) );
-				nextIdleMode = Game.Random.Float( TimeBetweenIdleMove.x, TimeBetweenIdleMove.y );
-			}
+				//NavigateTo( CurrentGrid.GetCell( Entity.All.OfType<Player>().First().Position ) );
+				//nextIdleMode = Game.Random.Float( TimeBetweenIdleMove.x, TimeBetweenIdleMove.y );
+
+			Target = Entity.All.OfType<Player>().First();
 		}
 	}
 

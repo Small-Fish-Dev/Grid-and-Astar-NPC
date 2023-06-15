@@ -330,7 +330,6 @@ public partial class Cell : IEquatable<Cell>, IValid
 		foreach ( var comparePair in verticesToCompare )
 		{
 			var heightDifference = Math.Abs( Vertices[comparePair[0]] - cell.Vertices[comparePair[1]] );
-
 			if ( heightDifference >= 0.1f ) return false;
 		}
 
