@@ -224,6 +224,7 @@ public struct GridBuilder
 	/// <summary>
 	/// Creates a new grid with the settings given
 	/// <returns></returns>
+	/// </summary>
 	public async Task<Grid> Create()
 	{
 		Stopwatch totalWatch = new Stopwatch();
@@ -233,15 +234,13 @@ public struct GridBuilder
 
 		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Creating grid {currentGrid.Identifier}" );
 
-		var rotatedBounds = currentGrid.RotatedBounds;
-		var worldBounds = currentGrid.WorldBounds;
 
-		var minimumGrid = rotatedBounds.Mins.ToIntVector2( currentGrid.CellSize );
-		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( currentGrid.CellSize );
+		var minimumGrid = currentGrid.Bounds.Mins.ToIntVector2( currentGrid.CellSize );
+		var maximumGrid = currentGrid.Bounds.Maxs.ToIntVector2( currentGrid.CellSize );
 		var totalColumns = maximumGrid.y - minimumGrid.y;
 		var totalRows = maximumGrid.x - minimumGrid.x;
-		var minHeight = rotatedBounds.Mins.z;
-		var maxHeight = rotatedBounds.Maxs.z;
+		var minHeight = currentGrid.Bounds.Mins.z;
+		var maxHeight = currentGrid.Bounds.Maxs.z;
 
 		await GameTask.RunInThreadAsync( () =>
 		{
@@ -251,8 +250,8 @@ public struct GridBuilder
 			{
 				for ( int row = 0; row < totalRows; row++ )
 				{
-					var startPosition = worldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, currentGrid.Tolerance * 2f ) * currentGrid.Transform.Rotation;
-					var endPosition = worldBounds.Mins + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) * currentGrid.Transform.Rotation;
+					var startPosition = currentGrid.Transform.PointToWorld( currentGrid.Bounds.Mins.WithZ( maxHeight ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, currentGrid.Tolerance * 2f ) );
+					var endPosition = currentGrid.Transform.PointToWorld( currentGrid.Bounds.Mins.WithZ( maxHeight ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) );
 					var checkBBox = new BBox( new Vector3( -currentGrid.CellSize / 2f + currentGrid.Tolerance, -currentGrid.CellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( currentGrid.CellSize / 2f - currentGrid.Tolerance, currentGrid.CellSize / 2f - currentGrid.Tolerance, 0.001f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
 						.WithGridSettings( currentGrid.Settings );
@@ -261,18 +260,15 @@ public struct GridBuilder
 
 					while ( positionResult.Hit && startPosition.z >= endPosition.z )
 					{
-						if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
+						if ( !currentGrid.CylinderShaped || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
 						{
-							if ( !currentGrid.CylinderShaped || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
+							var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
+							if ( angle <= currentGrid.StandableAngle )
 							{
-								var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
-								if ( angle <= currentGrid.StandableAngle )
-								{
-									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
+								var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
 
-									if ( newCell != null )
-										currentGrid.AddCell( newCell );
-								}
+								if ( newCell != null )
+									currentGrid.AddCell( newCell );
 							}
 						}
 
