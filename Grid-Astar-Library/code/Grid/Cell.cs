@@ -74,6 +74,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public Grid Grid { get; set; }
 	public Rotation Rotation => Grid.Transform.Rotation;
 	public Vector3 Position { get; set; }
+	public Transform Transform => new Transform( Position, Rotation );
 	public IntVector2 GridPosition { get; set; }
 	/// <summary>
 	/// Since we know the size of each cell, all we need to define is the height of each vertices
@@ -88,19 +89,19 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// <summary>
 	/// Get the point with both minimum coordinates
 	/// </summary>
-	public Vector3 BottomLeft => Position + Rotation.Up * Vertices[0] + Rotation.Forward * (-Grid.CellSize / 2f) + Rotation.Right * (-Grid.CellSize / 2f);
+	public Vector3 BottomLeft => Transform.PointToWorld( new Vector3( -Grid.CellSize / 2f, -Grid.CellSize / 2f, Vertices[0] ) );
 	/// <summary>
 	/// Get the point with minimum x and maximum y
 	/// </summary>
-	public Vector3 BottomRight => Position.WithZ( Vertices[1] ) + new Vector3( -Grid.CellSize / 2, Grid.CellSize / 2, 0f ) * Rotation;
+	public Vector3 BottomRight => Transform.PointToWorld( new Vector3( -Grid.CellSize / 2f, Grid.CellSize / 2f, Vertices[1] ) );
 	// Get the point with maxinum x and minimum y
-	public Vector3 TopLeft => Position.WithZ( Vertices[2] ) + new Vector3( Grid.CellSize / 2, -Grid.CellSize / 2, 0f ) * Rotation;
+	public Vector3 TopLeft => Transform.PointToWorld( new Vector3( Grid.CellSize / 2f, -Grid.CellSize / 2f, Vertices[2] ) );
 	/// <summary>
 	/// Get the point with both maximum coordinates
 	/// </summary>
-	public Vector3 TopRight => Position.WithZ( Vertices[3] ) + new Vector3( Grid.CellSize / 2, Grid.CellSize / 2, 0f ) * Rotation;
+	public Vector3 TopRight => Transform.PointToWorld( new Vector3( Grid.CellSize / 2f, Grid.CellSize / 2f, Vertices[3] ) );
 	public float Height => Vertices.Max() - Vertices.Min();
-	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
+	public Vector3 Bottom => Transform.PointToWorld( Vector3.Up * Vertices.Min() );
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( (Position + Bounds.Mins).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public CellTags Tags { get; set; }
@@ -171,8 +172,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( testResult.StartedSolid ) return (false, false);
 			if ( !testResult.Hit ) return (false, false);
 
-			validCoordinates[i] = testResult.HitPosition.z;
-			testCoordinates[i] = testResult.HitPosition;
+			var localTransform = new Transform( position, grid.Transform.Rotation );
+			var localDifference = localTransform.PointToLocal( testResult.HitPosition );
+
+			validCoordinates[i] = localDifference.z;
+			testCoordinates[i] = testResult.HitPosition; // TODO Fix stairs and other stuff to use local difference
 		}
 
 		return TestForSteps( grid, position, testCoordinates );
