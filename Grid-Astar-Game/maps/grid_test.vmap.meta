@@ -1,21 +1,27 @@
 {
   "publish": {
+    "Allowed": true,
     "Enabled": false,
     "ProjectConfig": {
-      "Title": null,
-      "Type": null,
-      "Org": null,
-      "Ident": null,
+      "Title": "grid_test",
+      "Type": "map",
+      "Org": "local",
+      "Ident": "grid_test",
       "Tags": null,
       "Schema": 0,
       "HasAssets": false,
       "AssetsPath": null,
-      "ResourcePaths": null,
+      "Resources": null,
+      "MenuResources": null,
       "HasCode": false,
       "CodePath": null,
       "PackageReferences": [],
-      "EditorReferences": [],
-      "Metadata": {}
+      "EditorReferences": [
+        "randkassets.ep4_shelves#12598"
+      ],
+      "Metadata": {
+        "SingleAssetSource": "maps/grid_test.vmap"
+      }
     }
   }
 }
