@@ -251,8 +251,8 @@ public struct GridBuilder
 			{
 				for ( int row = 0; row < totalRows; row++ )
 				{
-					var startPosition = worldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, currentGrid.Tolerance * 2f ) * currentGrid.AxisRotation;
-					var endPosition = worldBounds.Mins + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) * currentGrid.AxisRotation;
+					var startPosition = worldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, currentGrid.Tolerance * 2f ) * currentGrid.Transform.Rotation;
+					var endPosition = worldBounds.Mins + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) * currentGrid.Transform.Rotation;
 					var checkBBox = new BBox( new Vector3( -currentGrid.CellSize / 2f + currentGrid.Tolerance, -currentGrid.CellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( currentGrid.CellSize / 2f - currentGrid.Tolerance, currentGrid.CellSize / 2f - currentGrid.Tolerance, 0.001f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
 						.WithGridSettings( currentGrid.Settings );
@@ -276,19 +276,13 @@ public struct GridBuilder
 							}
 						}
 
-						startPosition = positionResult.HitPosition + Vector3.Down * currentGrid.HeightClearance;
+						startPosition = positionResult.HitPosition + currentGrid.Transform.Rotation.Down * currentGrid.HeightClearance;
 
 						while ( Sandbox.Trace.TestPoint( startPosition, radius: currentGrid.CellSize / 2f - currentGrid.Tolerance ) )
-							startPosition += Vector3.Down * currentGrid.HeightClearance;
+							startPosition += currentGrid.Transform.Rotation.Down * currentGrid.HeightClearance;
 
 						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
-						.WithAllTags( currentGrid.Settings.TagsToInclude.ToArray() )
-						.WithoutTags( currentGrid.Settings.TagsToExclude.ToArray() );
-
-						if ( currentGrid.WorldOnly )
-							positionTrace.WorldOnly();
-						else
-							positionTrace.WorldAndEntities();
+						.WithGridSettings( currentGrid.Settings );
 
 						positionResult = positionTrace.Run();
 					}

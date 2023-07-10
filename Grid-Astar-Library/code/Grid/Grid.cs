@@ -63,7 +63,7 @@ public partial class Grid : IValid
 	public bool CylinderShaped => Settings.CylinderShaped;
 	public float RealStepSize => GridPerfect ? 0.1f : Math.Max( 0.1f, StepSize );
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
-	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
+	public Transform Transform => new Transform( Position, AxisAligned ? new Rotation() : Rotation );
 	bool IValid.IsValid { get; }
 
 	public Grid()
@@ -119,7 +119,7 @@ public partial class Grid : IValid
 			for ( int x = 0; x <= cellsToCheck; x++ )
 			{
 				var spiralX = MathAStar.SpiralPattern( x );
-				var cellFound = GetCell( position + AxisRotation.Forward * spiralX * CellSize + AxisRotation.Right * spiralY * CellSize + Vector3.Up * RealStepSize, onlyBelow );
+				var cellFound = GetCell( position + Transform.Rotation.Forward * spiralX * CellSize + Transform.Rotation.Right * spiralY * CellSize + Vector3.Up * RealStepSize, onlyBelow );
 
 				if ( cellFound == null ) continue;
 
