@@ -72,7 +72,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// The parent grid
 	/// </summary>
 	public Grid Grid { get; set; }
-	public Rotation Rotation => Grid.AxisAligned ? new Rotation() : Grid.Rotation;
+	public Rotation Rotation => Grid.Transform.Rotation;
 	public Vector3 Position { get; set; }
 	public IntVector2 GridPosition { get; set; }
 	/// <summary>
@@ -84,10 +84,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// </summary>
 	public float[] Vertices = new float[4];
 	// Note: There is no performance boost in having the variables below being set in the constructor
+
 	/// <summary>
 	/// Get the point with both minimum coordinates
 	/// </summary>
-	public Vector3 BottomLeft => Position.WithZ( Vertices[0] ) + new Vector3( -Grid.CellSize / 2, -Grid.CellSize / 2, 0f ) * Rotation;
+	public Vector3 BottomLeft => Position + Rotation.Up * Vertices[0] + Rotation.Forward * (-Grid.CellSize / 2f) + Rotation.Right * (-Grid.CellSize / 2f);
 	/// <summary>
 	/// Get the point with minimum x and maximum y
 	/// </summary>
@@ -149,19 +150,19 @@ public partial class Cell : IEquatable<Cell>, IValid
 	private static (bool, bool) TraceCoordinates( Grid grid, Vector3 position, ref float[] validCoordinates )
 	{
 		Vector3[] testCoordinates = new Vector3[4] {
-			new Vector3( -grid.CellSize / 2, -grid.CellSize / 2 ) * grid.AxisRotation,
-			new Vector3( -grid.CellSize / 2, grid.CellSize / 2 ) * grid.AxisRotation,
-			new Vector3( grid.CellSize / 2, -grid.CellSize / 2 ) * grid.AxisRotation,
-			new Vector3( grid.CellSize / 2, grid.CellSize / 2 ) * grid.AxisRotation
+			new Vector3( -grid.CellSize / 2, -grid.CellSize / 2 ),
+			new Vector3( -grid.CellSize / 2, grid.CellSize / 2 ),
+			new Vector3( grid.CellSize / 2, -grid.CellSize / 2 ),
+			new Vector3( grid.CellSize / 2, grid.CellSize / 2 )
 		};
 
 		var maxHeight = Math.Max( grid.CellSize * MathF.Tan( MathX.DegreeToRadian( grid.StandableAngle ) ), grid.RealStepSize );
 
 		for ( int i = 0; i < 4; i++ )
 		{
-			var centerDir = testCoordinates[i].Normal; // Test a little closer to the center, for grid-perfect terrain
-			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) - centerDir * grid.Tolerance;
-			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * grid.Tolerance;
+			var centerDir = (testCoordinates[i] * grid.Transform.Rotation).Normal; // Test a little closer to the center, for grid-perfect terrain
+			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) * grid.Transform.Rotation - centerDir * grid.Tolerance;
+			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) * grid.Transform.Rotation - centerDir * grid.Tolerance;
 			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos )
 				.WithGridSettings( grid.Settings );
 
@@ -278,7 +279,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		if ( OccupyingEntity != null && OccupyingEntity.Transform == currentOccupyingTransform ) return Occupied;
 
 		var occupyTrace = Sandbox.Trace.Box( Bounds, Position, Position )
-			.EntitiesOnly()
+			.DynamicOnly()
 			.WithTag( tag );
 
 		var occupyResult = occupyTrace.Run();

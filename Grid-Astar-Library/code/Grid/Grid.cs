@@ -1,13 +1,9 @@
 ﻿global using Sandbox;
 global using System;
-global using Sandbox.UI;
-global using System.Runtime.CompilerServices;
-global using System.Collections;
-global using System.Linq;
 global using System.Collections.Generic;
 global using System.Diagnostics;
+global using System.Linq;
 global using System.Threading.Tasks;
-using Sandbox.Internal;
 
 namespace GridAStar;
 
@@ -15,26 +11,27 @@ namespace GridAStar;
 public static partial class GridSettings
 {
 	public const float DEFAULT_STANDABLE_ANGLE = 40f;   // How steep the terrain can be on a cell before it gets discarded
-	public const float DEFAULT_STEP_SIZE = 12f;			// How big steps can be on a cell before it gets discarded
+	public const float DEFAULT_STEP_SIZE = 12f;         // How big steps can be on a cell before it gets discarded
 	public const float DEFAULT_CELL_SIZE = 16f;         // How large each cell will be in hammer units
 	public const float DEFAULT_HEIGHT_CLEARANCE = 72f;  // How much vertical space there should be
 	public const float DEFAULT_WIDTH_CLEARANCE = 24f;   // How much horizontal space there should be
-	public const bool DEFAULT_GRID_PERFECT = false;		// For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
-	public const bool DEFAULT_WORLD_ONLY = true;		// Will it only hit the world or also static entities
+	public const float DEFAULT_DROP_HEIGHT = 400f;      // How high you can drop down from
+	public const bool DEFAULT_GRID_PERFECT = false;     // For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
+	public const bool DEFAULT_WORLD_ONLY = true;        // Will it only hit the world or also static entities
 }
 
 public partial class Grid : IValid
 {
 	public static Grid Main
 	{
-		get 
+		get
 		{
 			if ( Grids.ContainsKey( "main" ) )
 				return Grids["main"];
 			else
 				return null;
 		}
-		set 
+		set
 		{
 			if ( Grids.ContainsKey( "main" ) )
 				Grids["main"] = value;
@@ -45,32 +42,39 @@ public partial class Grid : IValid
 
 	public static Dictionary<string, Grid> Grids { get; set; } = new();
 
-	public string Identifier { get; set; }
+	public GridBuilder Settings { get; internal set; }
+	public string Identifier => Settings.Identifier;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
-	public Vector3 Position { get; set; }
-	public BBox Bounds { get; set; }
+	public Vector3 Position => Settings.Position;
+	public BBox Bounds => Settings.Bounds;
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
-	public Rotation Rotation { get; set; }
-	public bool AxisAligned { get; set; }
-	public float StandableAngle { get; set; }
-	public float StepSize { get; set; }
-	public float CellSize { get; set; }
-	public float HeightClearance { get; set; }
-	public float WidthClearance { get; set; }
-	public bool GridPerfect { get; set; }
-	public bool WorldOnly { get; set; }
+	public Rotation Rotation => Settings.Rotation;
+	public bool AxisAligned => Settings.AxisAligned;
+	public float StandableAngle => Settings.StandableAngle;
+	public float StepSize => Settings.StepSize;
+	public float CellSize => Settings.CellSize;
+	public float HeightClearance => Settings.HeightClearance;
+	public float WidthClearance => Settings.WidthClearance;
+	public bool GridPerfect => Settings.GridPerfect;
+	public bool WorldOnly => Settings.WorldOnly;
+	public float MaxDropHeight => Settings.MaxDropHeight;
+	public bool CylinderShaped => Settings.CylinderShaped;
 	public float RealStepSize => GridPerfect ? 0.1f : Math.Max( 0.1f, StepSize );
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
-	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
+	public Transform Transform => new Transform( Position, AxisAligned ? new Rotation() : Rotation );
 	bool IValid.IsValid { get; }
 
-	public Grid() { }
-
-	public Grid( string identifier ) : this()
+	public Grid()
 	{
-		Identifier = identifier;
+		Settings = new GridBuilder();
+		Event.Register( this );
+	}
+
+	public Grid( GridBuilder settings ) : this()
+	{
+		Settings = settings;
 		Event.Register( this );
 	}
 
@@ -104,6 +108,29 @@ public partial class Grid : IValid
 
 		return validCells.OrderBy( x => x.Position.DistanceSquared( position ) )
 			.FirstOrDefault();
+	}
+
+	public Cell GetCellInArea( Vector3 position, float width, bool onlyBelow = true, bool withinStepRange = true )
+	{
+		var cellsToCheck = (int)Math.Ceiling( width / CellSize ) * 2;
+		for ( int y = 0; y <= cellsToCheck; y++ )
+		{
+			var spiralY = MathAStar.SpiralPattern( y );
+			for ( int x = 0; x <= cellsToCheck; x++ )
+			{
+				var spiralX = MathAStar.SpiralPattern( x );
+				var cellFound = GetCell( position + Transform.Rotation.Forward * spiralX * CellSize + Transform.Rotation.Right * spiralY * CellSize + Vector3.Up * RealStepSize, onlyBelow );
+
+				if ( cellFound == null ) continue;
+
+				if ( withinStepRange )
+					if ( position.z - cellFound.Position.z <= RealStepSize ) return cellFound; else continue;
+
+				return cellFound;
+			}
+		}
+
+		return null;
 	}
 
 	/// <summary>
@@ -156,6 +183,29 @@ public partial class Grid : IValid
 	}
 
 	/// <summary>
+	/// Returns the neighbour in that direction
+	/// </summary>
+	/// <param name="cell"></param>
+	/// <param name="direction"></param>
+	/// <returns></returns>
+	public Cell GetNeighbourInDirection( Cell cell, Vector3 direction )
+	{
+		var horizontalDirection = direction.WithZ( 0 ).Normal;
+		var localCoordinates = horizontalDirection.ToIntVector2();
+		var coordinatesToCheck = cell.GridPosition + localCoordinates;
+
+		var cellsAtCoordinates = Cells.GetValueOrDefault( coordinatesToCheck );
+
+		if ( cellsAtCoordinates == null ) return null;
+
+		foreach ( var cellAtCoordinate in cellsAtCoordinates )
+			if ( cell.IsNeighbour( cellAtCoordinate ) )
+				return cellAtCoordinate;
+
+		return null;
+	}
+
+	/// <summary>
 	/// Returns if there's a valid, unoccupied, and direct path from a cell to another
 	/// </summary>
 	/// <param name="startingCell"></param>
@@ -166,8 +216,8 @@ public partial class Grid : IValid
 	{
 		var startingPosition = startingCell.Position;
 		var endingPosition = endingCell.Position;
-		var direction = ( endingPosition - startingPosition ).Normal;
-		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize);
+		var direction = (endingPosition - startingPosition).Normal;
+		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize );
 
 		if ( pathCreator == null && startingCell.Occupied ) return false;
 		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
@@ -176,12 +226,14 @@ public partial class Grid : IValid
 		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
 
 		Cell lastCell = startingCell;
-
-		for ( int i = 1; i < distanceInSteps; i++ )
+		for ( int i = 0; i <= distanceInSteps; i++ )
 		{
-			var cellToCheck = GetCellInDirection( startingCell, direction, i );
+			direction = (endingPosition - lastCell.Position).Normal;
+			var cellToCheck = GetNeighbourInDirection( lastCell, direction );
 
 			if ( cellToCheck == null ) return false;
+			if ( cellToCheck == endingCell ) return true;
+			if ( cellToCheck == lastCell ) continue;
 			if ( pathCreator == null && cellToCheck.Occupied ) return false;
 			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
 			if ( !cellToCheck.IsNeighbour( lastCell ) ) return false;
@@ -195,117 +247,7 @@ public partial class Grid : IValid
 	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
 	public bool IsInsideCylinder( Vector3 point ) => Bounds.IsInsideSquishedRotatedCylinder( Position, point, Rotation );
 
-	/// <summary>
-	/// Creates a new grid and generates cells within the bounds given
-	/// </summary>
-	/// <param name="position"></param>
-	/// <param name="bounds"></param>
-	/// <param name="rotation"></param>
-	/// <param name="axisAligned"></param>
-	/// <param name="identifier"></param>
-	/// <param name="standableAngle"></param>
-	/// <param name="stepSize"></param>
-	/// <param name="cellSize"></param>
-	/// <param name="heightClearance"></param>
-	/// <param name="widthClearance"></param>
-	/// <param name="gridPerfect"></param>
-	/// <param name="worldOnly"></param>
-	/// <param name="cylinder"></param>
-	/// <param name="save"></param>
-	/// <returns></returns>
-	public async static Task<Grid> Create( Vector3 position, BBox bounds, Rotation rotation, string identifier = "main", bool axisAligned = true, float standableAngle = GridSettings.DEFAULT_STANDABLE_ANGLE, float stepSize = GridSettings.DEFAULT_STEP_SIZE, float cellSize = GridSettings.DEFAULT_CELL_SIZE, float heightClearance = GridSettings.DEFAULT_HEIGHT_CLEARANCE, float widthClearance = GridSettings.DEFAULT_WIDTH_CLEARANCE, bool gridPerfect = GridSettings.DEFAULT_GRID_PERFECT, bool worldOnly = GridSettings.DEFAULT_WORLD_ONLY, bool cylinder = false, bool save = true )
-	{
-		Stopwatch totalWatch = new Stopwatch();
-		totalWatch.Start();
-
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Creating grid {identifier}" );
-
-		var currentGrid = new Grid( identifier );
-		currentGrid.Position = position;
-		currentGrid.Bounds = bounds;
-		currentGrid.Rotation = rotation;
-		currentGrid.AxisAligned = axisAligned;
-		currentGrid.StandableAngle = standableAngle;
-		currentGrid.StepSize = stepSize;
-		currentGrid.CellSize = cellSize;
-		currentGrid.HeightClearance = heightClearance;
-		currentGrid.WidthClearance = widthClearance;
-		currentGrid.GridPerfect = gridPerfect;
-		currentGrid.WorldOnly = worldOnly;
-
-		var rotatedBounds = bounds.GetRotatedBounds( rotation );
-
-		var minimumGrid = rotatedBounds.Mins.ToIntVector2( cellSize );
-		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( cellSize );
-		var totalColumns = maximumGrid.y - minimumGrid.y;
-		var totalRows = maximumGrid.x - minimumGrid.x;
-		var minHeight = rotatedBounds.Mins.z;
-		var maxHeight = rotatedBounds.Maxs.z;
-
-		var box = new BBox( position + rotatedBounds.Mins, position + rotatedBounds.Maxs );
-		await GameTask.RunInThreadAsync( () =>
-		{
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
-
-			for ( int column = 0; column < totalColumns; column++ )
-			{
-				for ( int row = 0; row < totalRows; row++ )
-				{
-					var startPosition = box.Mins.WithZ( box.Maxs.z ) + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, currentGrid.Tolerance * 2f ) * currentGrid.AxisRotation;
-					var endPosition = box.Mins + new Vector3( row * cellSize + cellSize / 2f, column * cellSize + cellSize / 2f, -currentGrid.Tolerance ) * currentGrid.AxisRotation;
-					var checkBBox = new BBox( new Vector3( -cellSize / 2f + currentGrid.Tolerance, -cellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( cellSize / 2f - currentGrid.Tolerance, cellSize / 2f - currentGrid.Tolerance, 0.001f ) );
-					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
-
-					if ( worldOnly )
-						positionTrace.WorldOnly();
-					else
-						positionTrace.WorldAndEntities();
-
-					var positionResult = positionTrace.Run();
-
-					while ( positionResult.Hit && startPosition.z >= endPosition.z )
-					{
-						if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
-						{
-							if ( !cylinder || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
-							{
-								if ( Vector3.GetAngle( Vector3.Up, positionResult.Normal ) <= standableAngle )
-								{
-									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
-
-									if ( newCell != null )
-										currentGrid.AddCell( newCell );
-								}
-							}
-						}
-
-						startPosition = positionResult.HitPosition + Vector3.Down * heightClearance;
-
-						while ( Sandbox.Trace.TestPoint( startPosition, radius: cellSize / 2f - currentGrid.Tolerance ) )
-							startPosition += Vector3.Down * heightClearance;
-
-						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition );
-
-						if ( worldOnly )
-							positionTrace.WorldOnly();
-						else
-							positionTrace.WorldAndEntities();
-
-						positionResult = positionTrace.Run();
-					}
-				}
-			}
-		} );
-
-		totalWatch.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
-
-		await currentGrid.Initialize( save );
-
-		return currentGrid;
-	}
-
-	public async Task<bool> Initialize( bool save = true )
+	public void Initialize()
 	{
 		if ( Grids.ContainsKey( Identifier ) )
 		{
@@ -316,11 +258,6 @@ public partial class Grid : IValid
 		}
 		else
 			Grids.Add( Identifier, this );
-
-		if ( save )
-			await this.Save();
-
-		return true;
 	}
 
 	public void Delete( bool deleteSave = false )
@@ -334,42 +271,106 @@ public partial class Grid : IValid
 			DeleteSave();
 	}
 
-	public override int GetHashCode()
-	{
-		var identifierHashCode = Identifier.GetHashCode();
-		var positionHashCode = Position.GetHashCode();
-		var boundsHashCode = Bounds.GetHashCode();
-		var rotationHashCode = Rotation.GetHashCode();
-		var axisAlignedHashCode = AxisAligned.GetHashCode();
-		var standableAngleHashCode = StandableAngle.GetHashCode();
-		var stepSizeHashCode = StepSize.GetHashCode();
-		var cellSizeHashCode = CellSize.GetHashCode();
-		var heightClearanceHashCode = HeightClearance.GetHashCode();
-		var widthClearanceHashCode = WidthClearance.GetHashCode();
-		var gridPerfectHashCode = GridPerfect.GetHashCode();
-		var worldOnlyHashCode = WorldOnly.GetHashCode();
-
-		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode );
-
-		return HashCode.Combine( hashCodeFirst, hashCodeSecond );
-	}
+	public override int GetHashCode() => Settings.GetHashCode();
 
 	/// <summary>
-	/// Return a list of all cells in this grid that do not have 8 neighbours
+	/// Gives the edge tag to all cells with less than 8 neighbours
 	/// </summary>
 	/// <returns></returns>
-	public List<Cell> FindOuterCells()
+	public void AssignEdgeCells()
 	{
-		var outerCells = new List<Cell>();
-
 		foreach ( var cellStack in Cells )
 			foreach ( var cell in cellStack.Value )
 				if ( cell.GetNeighbours().Count() < 8 )
-					outerCells.Add( cell );
-
-		return outerCells;
+					cell.Tags.Add( "edge" );
 	}
+
+	/// <summary>
+	/// Adds the droppable connection to cells you can drop from
+	/// </summary>
+	/// <returns></returns>
+	public void AssignDroppableCells()
+	{
+		foreach ( var cell in CellsWithTag( "edge" ) )
+		{
+			var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight );
+			if ( droppableCell != null )
+				cell.AddConnection( droppableCell, "drop" );
+		}
+	}
+	public void AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity )
+	{
+		foreach ( var cell in CellsWithTag( "edge" ) )
+			foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight ) )
+				if ( jumpableCell != null )
+					cell.AddConnection( jumpableCell, movementTag );
+	}
+
+	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )
+	{
+		var horizontalDirection = horizontalVelocity.WithZ( 0 ).Normal;
+		var horizontalSpeed = horizontalVelocity.WithZ( 0 ).Length;
+		var maxHeight = startingPosition.z + MathAStar.ParabolaMaxHeight( verticalSpeed, gravity );
+		var minHeight = maxHeight - maxDropHeight;
+		var currentDistance = 1;
+		var lastPositionChecked = startingPosition;
+
+		while ( lastPositionChecked.z >= minHeight )
+		{
+			var horizontalOffset = CellSize * currentDistance / subSteps;
+			var verticalOffset = MathAStar.ParabolaHeight( horizontalOffset, horizontalSpeed, verticalSpeed, gravity );
+			var nextPositionToCheck = startingPosition + horizontalDirection * horizontalOffset + Vector3.Up * verticalOffset;
+
+			var clearanceBBox = new BBox( new Vector3( -WidthClearance / 2f, -WidthClearance / 2f, RealStepSize ), new Vector3( WidthClearance / 2f, WidthClearance / 2f, HeightClearance ) );
+			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
+				.WithGridSettings( Settings )
+				.Run();
+			//DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 5f );
+			//DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
+			//DebugOverlay.TraceResult( jumpTrace, 5f );
+
+			if ( jumpTrace.Hit )
+			{
+				//DebugOverlay.Box( clearanceBBox.Translate( jumpTrace.EndPosition ), Color.Blue, 5f );
+				//var cell = Grid.Main.GetCellInArea( jumpTrace.EndPosition, WidthClearance );
+				//if ( cell != null )
+					//cell.Draw( Color.Blue, 3f, false, false, true );
+				return jumpTrace.EndPosition;
+			}
+
+			lastPositionChecked = nextPositionToCheck;
+			currentDistance++;
+		}
+
+		return lastPositionChecked;
+	}
+
+	/// <summary>
+	/// Returns all cells with that tag
+	/// </summary>
+	/// <param name="tag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTag( string tag ) => Cells.Values
+			.SelectMany( stack => stack )
+			.Where( cell => cell.Tags.Has( tag ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => Cells.Values
+			.SelectMany( stack => stack )
+			.Where( cell => cell.Tags.Has( tags ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => Cells.Values
+			.SelectMany( stack => stack )
+			.Where( cell => cell.Tags.Has( tags ) );
 
 	/// <summary>
 	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone
