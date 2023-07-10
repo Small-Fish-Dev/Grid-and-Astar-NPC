@@ -54,5 +54,4 @@ public static partial class BBoxExtensions
 
 		return biggerBbox.Contains( pointToCheck );
 	}
-
 }
