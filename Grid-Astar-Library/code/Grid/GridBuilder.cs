@@ -251,26 +251,29 @@ public struct GridBuilder
 				for ( int row = 0; row < totalRows; row++ )
 				{
 					var startPosition = currentGrid.Transform.PointToWorld( currentGrid.Bounds.Mins.WithZ( maxHeight ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, currentGrid.Tolerance * 2f ) );
-					var endPosition = currentGrid.Transform.PointToWorld( currentGrid.Bounds.Mins.WithZ( maxHeight ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) );
+					var endPosition = currentGrid.Transform.PointToWorld( currentGrid.Bounds.Mins.WithZ( minHeight ) + new Vector3( row * currentGrid.CellSize + currentGrid.CellSize / 2f, column * currentGrid.CellSize + currentGrid.CellSize / 2f, -currentGrid.Tolerance ) );
 					var checkBBox = new BBox( new Vector3( -currentGrid.CellSize / 2f + currentGrid.Tolerance, -currentGrid.CellSize / 2f + currentGrid.Tolerance, 0f ), new Vector3( currentGrid.CellSize / 2f - currentGrid.Tolerance, currentGrid.CellSize / 2f - currentGrid.Tolerance, 0.001f ) );
 					var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
 						.WithGridSettings( currentGrid.Settings );
 
 					var positionResult = positionTrace.Run();
 
-					while ( positionResult.Hit && startPosition.z >= endPosition.z )
+					while ( positionResult.Hit && currentGrid.Transform.PointToLocal( startPosition ).z >= currentGrid.Transform.PointToLocal( endPosition ).z )
 					{
-						if ( !currentGrid.CylinderShaped || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
-						{
-							var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
-							if ( angle <= currentGrid.StandableAngle )
-							{
-								var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
+						//if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
+						//{
+							//if ( !currentGrid.CylinderShaped || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
+							//{
+								//var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
+								//if ( angle <= currentGrid.StandableAngle )
+								//{
+									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
 
-								if ( newCell != null )
-									currentGrid.AddCell( newCell );
-							}
-						}
+									if ( newCell != null )
+										currentGrid.AddCell( newCell );
+								//}
+							//}
+						//}
 
 						startPosition = positionResult.HitPosition + currentGrid.Transform.Rotation.Down * currentGrid.HeightClearance;
 

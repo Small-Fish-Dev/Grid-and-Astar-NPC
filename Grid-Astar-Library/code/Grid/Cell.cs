@@ -134,15 +134,15 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var height = position.z - validCoordinates.Min();
 
 		var coordinatesAndStairs = TraceCoordinates( grid, position, ref validCoordinates );
-		if ( !coordinatesAndStairs.Item1 )
-			return null;
+		//if ( !coordinatesAndStairs.Item1 )
+			//return null;
 
-		if ( !TestForClearance( grid, position, height ) )
-			return null;
+		//if ( !TestForClearance( grid, position, height ) )
+			//return null;
 
 		var cell = new Cell( grid, position, validCoordinates );
-		if ( coordinatesAndStairs.Item2 )
-			cell.Tags.Add( "step" );
+		//if ( coordinatesAndStairs.Item2 )
+			//cell.Tags.Add( "step" );
 
 		return cell;
 	}
@@ -179,7 +179,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			testCoordinates[i] = testResult.HitPosition; // TODO Fix stairs and other stuff to use local difference
 		}
 
-		return TestForSteps( grid, position, testCoordinates );
+		return (true, false);//TestForSteps( grid, position, testCoordinates );
 	}
 
 	private static bool TestForClearance( Grid grid, Vector3 position, float height )
