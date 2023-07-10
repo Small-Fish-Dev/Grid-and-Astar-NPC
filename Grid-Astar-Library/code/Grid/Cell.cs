@@ -433,9 +433,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var directionToCheck = Rotation.FromYaw( 360 / sidesToCheck * side ).Forward;
 			var horizontalVelocity = directionToCheck * horizontalSpeed;
 
-			var endPosition = Grid.Main.TraceParabola( Position, horizontalVelocity, verticalSpeed, gravity, maxHeightDistance );
+			var endPosition = Grid.TraceParabola( Position, horizontalVelocity, verticalSpeed, gravity, maxHeightDistance );
 
-			var cell = Grid.Main.GetCellInArea( endPosition, Grid.WidthClearance );
+			var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
 
 			if ( cell == null ) continue;
 			var isValid = true;
