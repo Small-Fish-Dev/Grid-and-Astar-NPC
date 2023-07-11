@@ -241,7 +241,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 				.WithGridSettings( grid.Settings );
 
 			var stepResult = stepTrace.Run();
-			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
+			var stepAngle = Vector3.GetAngle( grid.Transform.Rotation.Up, stepResult.Normal );
 
 			if ( stepsTried == 0 )
 				if ( stepResult.EndPosition.Distance( endPosition ) <= tolerance * 3f ) // Pack it up, no stairs here

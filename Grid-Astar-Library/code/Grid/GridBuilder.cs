@@ -260,20 +260,17 @@ public struct GridBuilder
 
 					while ( positionResult.Hit && currentGrid.Transform.PointToLocal( startPosition ).z >= currentGrid.Transform.PointToLocal( endPosition ).z )
 					{
-						//if ( currentGrid.IsInsideBounds( positionResult.HitPosition ) )
-						//{
-							//if ( !currentGrid.CylinderShaped || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
-							//{
-								//var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
-								//if ( angle <= currentGrid.StandableAngle )
-								//{
-									var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
+						if ( !currentGrid.CylinderShaped || currentGrid.IsInsideCylinder( positionResult.HitPosition ) )
+						{
+							var angle = Vector3.GetAngle( currentGrid.Transform.Rotation.Up, positionResult.Normal );
+							if ( angle <= currentGrid.StandableAngle )
+							{
+								var newCell = Cell.TryCreate( currentGrid, positionResult.HitPosition );
 
-									if ( newCell != null )
-										currentGrid.AddCell( newCell );
-								//}
-							//}
-						//}
+								if ( newCell != null )
+									currentGrid.AddCell( newCell );
+							}
+						}
 
 						startPosition = positionResult.HitPosition + currentGrid.Transform.Rotation.Down * currentGrid.HeightClearance;
 
