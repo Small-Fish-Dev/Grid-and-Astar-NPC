@@ -203,7 +203,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			return (true, true);
 
 		var lowestToHighest = testCoordinates
-			.OrderBy( x => x.z )
+			.OrderBy( x => grid.Transform.PointToLocal( x ).z )
 			.ToArray();
 
 		var stepTestMin = TestForStep( grid, lowestToHighest[0], lowestToHighest[3], position, lowestToHighest[0] );
@@ -225,15 +225,12 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var localLowest = grid.Transform.PointToLocal( lowestPosition );
 		var localHighest = grid.Transform.PointToLocal( highestPosition );
 		var stepsTried = 0;
+		var tolerance = 0.01f;
 		var maxSteps = (int)Math.Max( (Math.Abs( localHighest.z - localLowest.z ) / (grid.RealStepSize / 2f)) + 1, 3 );
 		var stepDistances = new float[maxSteps];
 
-		if ( localHighest.z - localLowest.z <= grid.StepSize / 2 ) // No stairs here
-			return (true, false);
-
 		while ( stepsTried < maxSteps )
 		{
-			var tolerance = 0.01f;
 			var stepPositionStart = startPosition + grid.Transform.Rotation.Up * (grid.RealStepSize / 4f + grid.RealStepSize / 2f * stepsTried + tolerance);
 			var stepPositionEnd = grid.Transform.PointToWorld( grid.Transform.PointToLocal( endPosition ).WithZ( grid.Transform.PointToLocal( stepPositionStart ).z ) );
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
@@ -249,13 +246,17 @@ public partial class Cell : IEquatable<Cell>, IValid
 				if ( stepResult.EndPosition.Distance( endPosition ) <= tolerance * 3f ) // Pack it up, no stairs here
 					return (true, false);
 
+			if ( !stepResult.Hit ) // Flat
+				return (true, false);
+
 			if ( stepResult.Hit && stepAngle > grid.StandableAngle && stepAngle < 89.9f ) // MoveHelper straight up doesn't count it as a step if it's not 90°
 				return (false, false);
 
 			if ( stepResult.Hit && stepAngle < grid.StandableAngle ) // Guess not a step but just a slope
 				return (true, false);
 
-			var distanceFromStart = startPosition.Distance( grid.Transform.PointToWorld( grid.Transform.PointToLocal( stepResult.EndPosition ).WithZ( grid.Transform.PointToLocal( startPosition ).z ) ) );
+			var localStatPosition = grid.Transform.PointToLocal( startPosition );
+			var distanceFromStart = localStatPosition.Distance( grid.Transform.PointToLocal( stepResult.EndPosition ).WithZ( localStatPosition.z ) );
 
 			if ( stepsTried >= 2 )
 			{
