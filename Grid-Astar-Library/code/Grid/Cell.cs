@@ -134,15 +134,15 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var height = position.z - validCoordinates.Min();
 
 		var coordinatesAndStairs = TraceCoordinates( grid, position, ref validCoordinates );
-		//if ( !coordinatesAndStairs.Item1 )
-			//return null;
+		if ( !coordinatesAndStairs.Item1 )
+			return null;
 
-		//if ( !TestForClearance( grid, position, height ) )
-			//return null;
+		if ( !TestForClearance( grid, position, height ) )
+			return null;
 
 		var cell = new Cell( grid, position, validCoordinates );
-		//if ( coordinatesAndStairs.Item2 )
-			//cell.Tags.Add( "step" );
+		if ( coordinatesAndStairs.Item2 )
+			cell.Tags.Add( "step" );
 
 		return cell;
 	}
@@ -176,21 +176,21 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var localDifference = localTransform.PointToLocal( testResult.HitPosition );
 
 			validCoordinates[i] = localDifference.z;
-			testCoordinates[i] = testResult.HitPosition; // TODO Fix stairs and other stuff to use local difference
+			testCoordinates[i] = testResult.HitPosition;
 		}
 
-		return (true, false);//TestForSteps( grid, position, testCoordinates );
+		return TestForSteps( grid, position, testCoordinates );
 	}
 
 	private static bool TestForClearance( Grid grid, Vector3 position, float height )
 	{
 		var clearanceBBox = new BBox( new Vector3( -grid.WidthClearance / 2f, -grid.WidthClearance / 2f, 0f ), new Vector3( grid.WidthClearance / 2f, grid.WidthClearance / 2f, 1f ) );
-		var startPos = position + Vector3.Up * grid.HeightClearance;
-		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize )
+		var startPos = position + grid.Transform.Rotation.Up * grid.HeightClearance;
+		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + grid.Transform.Rotation.Up * grid.StepSize )
 			.WithGridSettings( grid.Settings );
 
 		var clearanceResult = clearanceTrace.Run();
-		var heightDifference = clearanceResult.EndPosition.z - (position.z - height);
+		var heightDifference = grid.Transform.PointToLocal(clearanceResult.EndPosition).z - (grid.Transform.PointToLocal( position ).z - height);
 
 		return heightDifference <= grid.RealStepSize + height;
 	}
@@ -222,18 +222,20 @@ public partial class Cell : IEquatable<Cell>, IValid
 	//(IsWalkable, IsSteps)
 	private static (bool, bool) TestForStep( Grid grid, Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition )
 	{
+		var localLowest = grid.Transform.PointToLocal( lowestPosition );
+		var localHighest = grid.Transform.PointToLocal( highestPosition );
 		var stepsTried = 0;
-		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / (grid.RealStepSize / 2f)) + 1, 3 );
+		var maxSteps = (int)Math.Max( (Math.Abs( localHighest.z - localLowest.z ) / (grid.RealStepSize / 2f)) + 1, 3 );
 		var stepDistances = new float[maxSteps];
 
-		if ( highestPosition.z - lowestPosition.z <= grid.StepSize / 2 ) // No stairs here
+		if ( localHighest.z - localLowest.z <= grid.StepSize / 2 ) // No stairs here
 			return (true, false);
 
 		while ( stepsTried < maxSteps )
 		{
 			var tolerance = 0.01f;
-			var stepPositionStart = startPosition + Vector3.Up * (grid.RealStepSize / 4f + grid.RealStepSize / 2f * stepsTried + tolerance);
-			var stepPositionEnd = endPosition.WithZ( stepPositionStart.z );
+			var stepPositionStart = startPosition + grid.Transform.Rotation.Up * (grid.RealStepSize / 4f + grid.RealStepSize / 2f * stepsTried + tolerance);
+			var stepPositionEnd = grid.Transform.PointToWorld( grid.Transform.PointToLocal( endPosition ).WithZ( grid.Transform.PointToLocal( stepPositionStart ).z ) );
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
 			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * (stepDistance + tolerance * 2f) )
@@ -253,7 +255,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( stepResult.Hit && stepAngle < grid.StandableAngle ) // Guess not a step but just a slope
 				return (true, false);
 
-			var distanceFromStart = startPosition.Distance( stepResult.EndPosition.WithZ( startPosition.z ) );
+			var distanceFromStart = startPosition.Distance( grid.Transform.PointToWorld( grid.Transform.PointToLocal( stepResult.EndPosition ).WithZ( grid.Transform.PointToLocal( startPosition ).z ) ) );
 
 			if ( stepsTried >= 2 )
 			{
