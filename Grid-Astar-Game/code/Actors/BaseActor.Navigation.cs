@@ -93,23 +93,34 @@ public abstract partial class BaseActor
 
 			if ( GroundEntity != null )
 			{
-				if ( NextMovementTag == "shortjump" )
+				if ( NextMovementTag.Contains( "jump" ) )
 				{
-					Velocity = (IdealDirection * 200f).WithZ( 300f );
-					SetAnimParameter( "jump", true );
-					GroundEntity = null;
-				}
-				if ( NextMovementTag == "longJump" )
-				{
-					Velocity = (IdealDirection * 350f).WithZ( 300f );
-					SetAnimParameter( "jump", true );
-					GroundEntity = null;
-				}
-				if ( NextMovementTag == "highjump" )
-				{
-					Velocity = (IdealDirection * 100f).WithZ( 600f );
-					SetAnimParameter( "jump", true );
-					GroundEntity = null;
+					if ( Position.Distance( CurrentPathNode.EndPosition ) >= minimumDistanceUntilNext )
+						Direction = (CurrentPathNode.EndPosition.WithZ( 0 ) - Position.WithZ( 0 )).Normal;
+					else
+					{
+						if ( NextMovementTag == "shortjump" )
+						{
+							Position = CurrentPathNode.EndPosition;
+							Velocity = (IdealDirection * 200f).WithZ( 300f );
+							SetAnimParameter( "jump", true );
+							GroundEntity = null;
+						}
+						if ( NextMovementTag == "longJump" )
+						{
+							Position = CurrentPathNode.EndPosition;
+							Velocity = (IdealDirection * 350f).WithZ( 300f );
+							SetAnimParameter( "jump", true );
+							GroundEntity = null;
+						}
+						if ( NextMovementTag == "highjump" )
+						{
+							Position = CurrentPathNode.EndPosition;
+							Velocity = (IdealDirection * 100f).WithZ( 600f );
+							SetAnimParameter( "jump", true );
+							GroundEntity = null;
+						}
+					}
 				}
 			}
 
