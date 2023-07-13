@@ -45,8 +45,8 @@ public partial class Grid : IValid
 	public GridBuilder Settings { get; internal set; }
 	public string Identifier => Settings.Identifier;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
-	public IEnumerable<Cell> AllCells => CellStacks.Values.SelectMany( list => list );
 	public Dictionary<IntVector2, List<Cell>> CellStacks { get; internal set; } = new();
+	public IEnumerable<Cell> AllCells => CellStacks.Values.SelectMany( list => list );
 	public Vector3 Position => Settings.Position;
 	public BBox Bounds => Settings.Bounds;
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
@@ -303,12 +303,32 @@ public partial class Grid : IValid
 				cell.AddConnection( droppableCell, "drop" );
 		}
 	}
-	public void AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity )
+
+	/// <summary>
+	/// Create a new definition for connections between jumpable cells. This method is slow right now on bigger maps, use <paramref name="generateFraction"/> for better performance
+	/// </summary>
+	/// <param name="movementTag"></param>
+	/// <param name="horizontalSpeed"></param>
+	/// <param name="verticalSpeed"></param>
+	/// <param name="gravity"></param>
+	/// <param name="generateFraction">0.1 = Generate a connection only 10% of the times</param>
+	public void AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.2f )
 	{
+		var totalFraction = 0f;
+
 		foreach ( var cell in CellsWithTag( "edge" ) )
-			foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight ) )
-				if ( jumpableCell != null )
-					cell.AddConnection( jumpableCell, movementTag );
+		{
+			if ( totalFraction >= 1f )
+			{
+				foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight ) )
+					if ( jumpableCell != null )
+						cell.AddConnection( jumpableCell, movementTag );
+
+				totalFraction = 0f;
+			}
+
+			totalFraction += generateFraction;
+		}
 	}
 
 	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )
