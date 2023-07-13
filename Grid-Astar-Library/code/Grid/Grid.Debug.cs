@@ -170,31 +170,30 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.CellStacks )
-					foreach ( var cell in cellStack.Value )
+				foreach ( var cell in grid.Value.AllCells )
+				{
+					var position = cell.Position.ToScreen();
+					if ( position.z < 0f ) continue;
+					if ( position.x < 0f || position.x > 1f ) continue;
+					if ( position.y < 0f || position.y > 1f ) continue;
+
+					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
+
+					foreach ( var connection in cell.CellConnections )
 					{
-						var position = cell.Position.ToScreen();
-						if ( position.z < 0f ) continue;
-						if ( position.x < 0f || position.x > 1f ) continue;
-						if ( position.y < 0f || position.y > 1f ) continue;
+						if ( !connection.MovementTag.Contains("jump") ) continue;
 
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
-
-						foreach ( var connection in cell.CellConnections )
-						{
-							if ( !connection.MovementTag.Contains("jump") ) continue;
-
-							var highest = cell.Position.z > connection.Current.Position.z ? cell : connection.Current;
-							var lowest = highest == cell ? connection.Current : cell;
-							DebugOverlay.Line( highest.Position, lowest.Position.WithZ( highest.Position.z ), 1.1f );
-							DebugOverlay.Line( lowest.Position.WithZ( cell.Position.z ), lowest.Position, 1.1f );
-						}
+						var highest = cell.Position.z > connection.Current.Position.z ? cell : connection.Current;
+						var lowest = highest == cell ? connection.Current : cell;
+						DebugOverlay.Line( highest.Position, lowest.Position.WithZ( highest.Position.z ), 1.1f );
+						DebugOverlay.Line( lowest.Position.WithZ( cell.Position.z ), lowest.Position, 1.1f );
 					}
+				}
 
 			nextDraw = 1f;
 		}
 	}
-
+	/*
 	[Event.Debug.Overlay( "displaygridclientnodepth", "[Client] Display Grid (No depth)", "grid_on" )]
 	public static void GridOverlayClientNoDepth()
 	{
@@ -248,7 +247,7 @@ public partial class Grid
 
 			nextDraw = 1f;
 		}
-	}
+	}*/
 }
 
 
