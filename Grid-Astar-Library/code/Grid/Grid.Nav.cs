@@ -21,7 +21,7 @@ public partial class Grid
 		var startingNode = new AStarNode( startingCell );
 		var targetNode = new AStarNode( targetCell );
 
-		var openSet = new Heap<AStarNode>( CellStacks.Count );
+		var openSet = new Heap<AStarNode>( AllCells.Count() );
 		var closedSet = new HashSet<AStarNode>();
 		var openSetReference = new Dictionary<int, AStarNode>();
 		var initialDistance = startingNode.Distance( targetNode );

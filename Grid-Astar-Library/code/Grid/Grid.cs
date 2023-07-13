@@ -45,6 +45,7 @@ public partial class Grid : IValid
 	public GridBuilder Settings { get; internal set; }
 	public string Identifier => Settings.Identifier;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
+	public IEnumerable<Cell> AllCells => CellStacks.Values.SelectMany( list => list );
 	public Dictionary<IntVector2, List<Cell>> CellStacks { get; internal set; } = new();
 	public Vector3 Position => Settings.Position;
 	public BBox Bounds => Settings.Bounds;
@@ -99,7 +100,7 @@ public partial class Grid : IValid
 	/// <returns></returns>
 	public Cell GetNearestCell( Vector3 position, bool onlyBelow = true, bool unoccupiedOnly = false )
 	{
-		var validCells = CellStacks.Values.SelectMany( x => x );
+		var validCells = AllCells;
 
 		if ( unoccupiedOnly )
 			validCells = validCells.Where( x => !x.Occupied );
@@ -280,13 +281,13 @@ public partial class Grid : IValid
 	/// <summary>
 	/// Gives the edge tag to all cells with less than 8 neighbours
 	/// </summary>
+	/// <param name="maxNeighourCount">How many neighbours a cell needs to have to not be considered an edge</param>
 	/// <returns></returns>
-	public void AssignEdgeCells()
+	public void AssignEdgeCells( int maxNeighourCount = 8 )
 	{
-		foreach ( var cellStack in CellStacks )
-			foreach ( var cell in cellStack.Value )
-				if ( cell.GetNeighbours().Count() < 8 )
-					cell.Tags.Add( "edge" );
+		foreach ( var cell in AllCells )
+			if ( cell.GetNeighbours().Count() < maxNeighourCount )
+				cell.Tags.Add( "edge" );
 	}
 
 	/// <summary>
@@ -354,27 +355,21 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="tag"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTag( string tag ) => CellStacks.Values
-			.SelectMany( stack => stack )
-			.Where( cell => cell.Tags.Has( tag ) );
+	public IEnumerable<Cell> CellsWithTag( string tag ) => AllCells.Where( cell => cell.Tags.Has( tag ) );
 
 	/// <summary>
 	/// Returns all cells with those tags
 	/// </summary>
 	/// <param name="tags"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => CellStacks.Values
-			.SelectMany( stack => stack )
-			.Where( cell => cell.Tags.Has( tags ) );
+	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => AllCells.Where( cell => cell.Tags.Has( tags ) );
 
 	/// <summary>
 	/// Returns all cells with those tags
 	/// </summary>
 	/// <param name="tags"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => CellStacks.Values
-			.SelectMany( stack => stack )
-			.Where( cell => cell.Tags.Has( tags ) );
+	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => AllCells.Where( cell => cell.Tags.Has( tags ) );
 
 	/// <summary>
 	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone
@@ -382,9 +377,8 @@ public partial class Grid : IValid
 	/// <param name="tag"></param>
 	public void CheckOccupancy( string tag )
 	{
-		foreach ( var cellStack in CellStacks )
-			foreach ( var cell in cellStack.Value )
-				cell.Occupied = cell.TestForOccupancy( tag );
+		foreach ( var cell in AllCells )
+			cell.Occupied = cell.TestForOccupancy( tag );
 	}
 }
 
