@@ -70,7 +70,10 @@ public abstract partial class BaseActor
 		if ( IsFollowingPath )
 		{
 			for ( var i = 1; i < CurrentPath.Count; i++ )
+			{
 				DebugOverlay.Line( CurrentPath.Nodes[i].EndPosition, CurrentPath.Nodes[i - 1].EndPosition, Time.Delta, false );
+				DebugOverlay.Text( CurrentPath.Nodes[i].MovementTag, CurrentPath.Nodes[i].EndPosition, Time.Delta, 5000f );
+			}
 
 			Direction = IdealDirection;
 			IsRunning = CurrentPath.Length >= 500f;
@@ -134,12 +137,11 @@ public abstract partial class BaseActor
 
 			var pathBuilder = new AStarPathBuilder( CurrentGrid )
 			.WithPartialEnabled()
-			.WithMaxDistance( 500f )
+			.WithMaxDistance( 1500f )
 			.WithPathCreator( this );
 
-			if ( false )//CurrentGrid.LineOfSight( startingCell, targetCell ) )
+			if ( CurrentGrid.LineOfSight( startingCell, targetCell ) ) // If there's direct line of sight, move in a straight path from A to B
 			{
-				// If there's direct line of sight, move in a straight path from A to B
 				var nodeList = new List<AStarNode>() { new AStarNode( startingCell ), new AStarNode( targetCell ) };
 				CurrentPath = AStarPath.From( pathBuilder, nodeList );
 			}
@@ -153,7 +155,7 @@ public abstract partial class BaseActor
 				if ( computedPath.IsEmpty || computedPath.Length < 1 )
 					return;
 
-				//computedPath.Simplify();
+				computedPath.Simplify();
 
 				CurrentPath = computedPath;
 			}

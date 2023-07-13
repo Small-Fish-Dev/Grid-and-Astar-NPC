@@ -49,7 +49,7 @@ public struct AStarPath
 				var nextNode = Nodes[segmentStart + 1];
 				var furtherNode = Nodes[segmentEnd];
 
-				if ( nextNode.MovementTag != "" && nextNode.MovementTag != string.Empty && furtherNode.MovementTag != "" && furtherNode.MovementTag != string.Empty )
+				if ( nextNode.MovementTag == "" || nextNode.MovementTag == string.Empty || furtherNode.MovementTag == "" || furtherNode.MovementTag == string.Empty )
 					if ( Settings.Grid.LineOfSight( currentNode.Current, furtherNode.Current, Settings.PathCreator ) )
 						for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
 							Nodes.RemoveAt( toDelete );
