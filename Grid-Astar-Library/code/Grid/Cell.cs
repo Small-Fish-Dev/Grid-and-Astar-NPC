@@ -278,7 +278,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		if ( OccupyingEntity != null && OccupyingEntity.Transform == currentOccupyingTransform ) return Occupied;
 
 		var occupyTrace = Sandbox.Trace.Box( Bounds, Position, Position )
-			.EntitiesOnly()
+			.DynamicOnly()
 			.WithTag( tag );
 
 		var occupyResult = occupyTrace.Run();

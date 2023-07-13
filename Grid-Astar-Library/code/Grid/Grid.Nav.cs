@@ -23,7 +23,7 @@ public partial class Grid
 
 		var openSet = new Heap<AStarNode>( AllCells.Count() );
 		var closedSet = new HashSet<AStarNode>();
-		var openSetReference = new Dictionary<int, AStarNode>();
+		var openSetReference = new Dictionary<int, AStarNode>(); // .NET Still doesn't let you get an item inside of a HashSet by HashCode
 		var initialDistance = startingNode.Distance( targetNode );
 		var maxDistance = Math.Max( initialDistance, initialDistance + pathBuilder.MaxCheckDistance ) + CellSize;
 
@@ -82,7 +82,7 @@ public partial class Grid
 			}
 		}
 
-		if ( reversed )
+		if ( reversed ) // TODO: Some cell connections can't just be reversed ex: dropping down
 			path.Reverse();
 
 		return path;

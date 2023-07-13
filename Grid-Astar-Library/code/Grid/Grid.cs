@@ -201,7 +201,7 @@ public partial class Grid : IValid
 		if ( cellsAtCoordinates == null ) return null;
 
 		foreach ( var cellAtCoordinate in cellsAtCoordinates )
-			if ( cell.IsNeighbour( cellAtCoordinate ) )
+			if ( cell.IsNeighbour( cellAtCoordinate ) && cell != cellAtCoordinate )
 				return cellAtCoordinate;
 
 		return null;
@@ -219,7 +219,6 @@ public partial class Grid : IValid
 	{
 		var startingPosition = startingCell.Position;
 		var endingPosition = endingCell.Position;
-		var direction = (endingPosition - startingPosition).Normal;
 		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize );
 
 		if ( pathCreator == null && startingCell.Occupied ) return false;
@@ -231,7 +230,7 @@ public partial class Grid : IValid
 		Cell lastCell = startingCell;
 		for ( int i = 0; i <= distanceInSteps; i++ )
 		{
-			direction = (endingPosition - lastCell.Position).Normal;
+			var direction = (endingPosition - lastCell.Position).Normal;
 			var cellToCheck = GetNeighbourInDirection( lastCell, direction );
 
 			if ( cellToCheck == null ) return false;

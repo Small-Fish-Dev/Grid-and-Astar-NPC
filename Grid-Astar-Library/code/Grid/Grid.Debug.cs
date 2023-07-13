@@ -179,14 +179,12 @@ public partial class Grid
 
 					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
 
-					foreach ( var connection in cell.CellConnections )
+					foreach ( var connection in cell.CellConnections.Select( ( value, index ) => new { index, value } ) )
 					{
-						if ( !connection.MovementTag.Contains("jump") ) continue;
+						var offset = Vector3.Up * 3f * ( connection.index + 1 );
+						DebugOverlay.Text( $"{connection.value.MovementTag}", cell.Position + offset, 1.1f, 500f );
 
-						var highest = cell.Position.z > connection.Current.Position.z ? cell : connection.Current;
-						var lowest = highest == cell ? connection.Current : cell;
-						DebugOverlay.Line( highest.Position, lowest.Position.WithZ( highest.Position.z ), 1.1f );
-						DebugOverlay.Line( lowest.Position.WithZ( cell.Position.z ), lowest.Position, 1.1f );
+						DebugOverlay.Line( cell.Position + offset, connection.value.EndPosition, 1.1f );
 					}
 				}
 
