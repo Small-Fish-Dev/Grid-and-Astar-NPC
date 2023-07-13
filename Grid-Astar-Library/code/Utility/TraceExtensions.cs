@@ -9,7 +9,9 @@ public static partial class TraceExtensions
 			.WithoutTags( settings.TagsToExclude.ToArray() );
 
 		if ( settings.WorldOnly )
-			self.StaticOnly();
+			self.WorldOnly();
+		else
+			self.WorldAndEntities();
 
 		return self;
 	}
