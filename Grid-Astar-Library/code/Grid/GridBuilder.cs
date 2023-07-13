@@ -282,13 +282,7 @@ public struct GridBuilder
 							startPosition += Vector3.Down * currentGrid.HeightClearance;
 
 						positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
-						.WithAllTags( currentGrid.Settings.TagsToInclude.ToArray() )
-						.WithoutTags( currentGrid.Settings.TagsToExclude.ToArray() );
-
-						if ( currentGrid.WorldOnly )
-							positionTrace.WorldOnly();
-						else
-							positionTrace.WorldAndEntities();
+						.WithGridSettings( currentGrid.Settings );
 
 						positionResult = positionTrace.Run();
 					}
