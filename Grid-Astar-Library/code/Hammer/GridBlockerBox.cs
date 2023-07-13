@@ -47,7 +47,7 @@ public partial class GridBlockerBox : ModelEntity
 	{
 		if ( CurrentGrid == null ) return;
 
-		foreach ( var cellStack in CurrentGrid.Cells )
+		foreach ( var cellStack in CurrentGrid.CellStacks )
 		{
 			foreach ( var cell in cellStack.Value )
 			{
@@ -66,7 +66,7 @@ public partial class GridBlockerBox : ModelEntity
 
 		OverlappingCells.Clear();
 
-		foreach ( var cellStack in CurrentGrid.Cells )
+		foreach ( var cellStack in CurrentGrid.CellStacks )
 		{
 			foreach ( var cell in cellStack.Value )
 			{

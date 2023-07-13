@@ -293,13 +293,13 @@ public partial class Grid
 				{
 					var cellsCount = 0;
 
-					foreach ( var cellStack in Cells )
+					foreach ( var cellStack in CellStacks )
 						foreach ( var cell in cellStack.Value )
 							cellsCount++;
 
 					writer.Write( cellsCount );
 
-					foreach ( var cellStack in Cells )
+					foreach ( var cellStack in CellStacks )
 					{
 						foreach ( var cell in cellStack.Value )
 						{

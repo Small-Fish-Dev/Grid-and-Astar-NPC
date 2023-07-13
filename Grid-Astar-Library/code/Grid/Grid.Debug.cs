@@ -64,6 +64,18 @@ public partial class Grid
 				DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i + 1].EndPosition, 3f );
 		}
 	}
+
+
+	[ConCmd.Server( "TestLOS" )]
+	public static void TestLOS()
+	{
+		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
+
+		var standingCell = Grid.Main.GetNearestCell( caller.Position );
+		var forwardCell = Grid.Main.GetNearestCell( caller.Position + caller.Rotation.Forward * Grid.Main.CellSize * 6f );
+
+		Log.Error( Grid.Main.LineOfSight( standingCell, forwardCell, debugShow: true ) );
+	}
 	/*
 	[ConCmd.Server( "StressPath" )]
 	public static async void StressPath( int runs = 100, int seed = 42069 )
@@ -158,7 +170,7 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.Cells )
+				foreach ( var cellStack in grid.Value.CellStacks )
 					foreach ( var cell in cellStack.Value )
 					{
 						var position = cell.Position.ToScreen();
@@ -191,7 +203,7 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.Cells )
+				foreach ( var cellStack in grid.Value.CellStacks )
 					foreach ( var cell in cellStack.Value )
 					{
 						var position = cell.Position.ToScreen();
@@ -214,7 +226,7 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.Cells )
+				foreach ( var cellStack in grid.Value.CellStacks )
 					foreach ( var cell in cellStack.Value )
 						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
 
@@ -230,7 +242,7 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.Cells )
+				foreach ( var cellStack in grid.Value.CellStacks )
 					foreach ( var cell in cellStack.Value )
 						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
 

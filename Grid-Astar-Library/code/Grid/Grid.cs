@@ -45,7 +45,7 @@ public partial class Grid : IValid
 	public GridBuilder Settings { get; internal set; }
 	public string Identifier => Settings.Identifier;
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
-	public Dictionary<IntVector2, List<Cell>> Cells { get; internal set; } = new();
+	public Dictionary<IntVector2, List<Cell>> CellStacks { get; internal set; } = new();
 	public Vector3 Position => Settings.Position;
 	public BBox Bounds => Settings.Bounds;
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
@@ -99,7 +99,7 @@ public partial class Grid : IValid
 	/// <returns></returns>
 	public Cell GetNearestCell( Vector3 position, bool onlyBelow = true, bool unoccupiedOnly = false )
 	{
-		var validCells = Cells.Values.SelectMany( x => x );
+		var validCells = CellStacks.Values.SelectMany( x => x );
 
 		if ( unoccupiedOnly )
 			validCells = validCells.Where( x => !x.Occupied );
@@ -149,7 +149,7 @@ public partial class Grid : IValid
 	/// <returns></returns>
 	public Cell GetCell( IntVector2 coordinates, float height )
 	{
-		var cellsAtCoordinates = Cells.GetValueOrDefault( coordinates );
+		var cellsAtCoordinates = CellStacks.GetValueOrDefault( coordinates );
 
 		if ( cellsAtCoordinates == null ) return null;
 
@@ -164,10 +164,10 @@ public partial class Grid : IValid
 	{
 		if ( cell == null ) return;
 		var coordinates = cell.GridPosition;
-		if ( !Cells.ContainsKey( coordinates ) )
-			Cells.Add( coordinates, new List<Cell>() { cell } );
+		if ( !CellStacks.ContainsKey( coordinates ) )
+			CellStacks.Add( coordinates, new List<Cell>() { cell } );
 		else
-			Cells[coordinates].Add( cell );
+			CellStacks[coordinates].Add( cell );
 	}
 
 	/// <summary>
@@ -194,7 +194,7 @@ public partial class Grid : IValid
 		var localCoordinates = horizontalDirection.ToIntVector2();
 		var coordinatesToCheck = cell.GridPosition + localCoordinates;
 
-		var cellsAtCoordinates = Cells.GetValueOrDefault( coordinatesToCheck );
+		var cellsAtCoordinates = CellStacks.GetValueOrDefault( coordinatesToCheck );
 
 		if ( cellsAtCoordinates == null ) return null;
 
@@ -211,8 +211,9 @@ public partial class Grid : IValid
 	/// <param name="startingCell"></param>
 	/// <param name="endingCell"></param>
 	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
+	/// <param name="debugShow"></param>
 	/// <returns></returns>
-	public bool LineOfSight( Cell startingCell, Cell endingCell, Entity pathCreator = null )
+	public bool LineOfSight( Cell startingCell, Cell endingCell, Entity pathCreator = null, bool debugShow = false )
 	{
 		var startingPosition = startingCell.Position;
 		var endingPosition = endingCell.Position;
@@ -239,6 +240,9 @@ public partial class Grid : IValid
 			if ( !cellToCheck.IsNeighbour( lastCell ) ) return false;
 
 			lastCell = cellToCheck;
+
+			if ( debugShow )
+				lastCell.Draw( 2f, false, false, false );
 		}
 
 		return true;
@@ -279,7 +283,7 @@ public partial class Grid : IValid
 	/// <returns></returns>
 	public void AssignEdgeCells()
 	{
-		foreach ( var cellStack in Cells )
+		foreach ( var cellStack in CellStacks )
 			foreach ( var cell in cellStack.Value )
 				if ( cell.GetNeighbours().Count() < 8 )
 					cell.Tags.Add( "edge" );
@@ -350,7 +354,7 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="tag"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTag( string tag ) => Cells.Values
+	public IEnumerable<Cell> CellsWithTag( string tag ) => CellStacks.Values
 			.SelectMany( stack => stack )
 			.Where( cell => cell.Tags.Has( tag ) );
 
@@ -359,7 +363,7 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="tags"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => Cells.Values
+	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => CellStacks.Values
 			.SelectMany( stack => stack )
 			.Where( cell => cell.Tags.Has( tags ) );
 
@@ -368,7 +372,7 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="tags"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => Cells.Values
+	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => CellStacks.Values
 			.SelectMany( stack => stack )
 			.Where( cell => cell.Tags.Has( tags ) );
 
@@ -378,7 +382,7 @@ public partial class Grid : IValid
 	/// <param name="tag"></param>
 	public void CheckOccupancy( string tag )
 	{
-		foreach ( var cellStack in Cells )
+		foreach ( var cellStack in CellStacks )
 			foreach ( var cell in cellStack.Value )
 				cell.Occupied = cell.TestForOccupancy( tag );
 	}

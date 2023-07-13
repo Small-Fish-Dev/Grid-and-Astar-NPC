@@ -424,7 +424,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return null;
 	}
 
-	public List<Cell> GetValidJumpables( float horizontalSpeed, float verticalSpeed, float gravity, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	public IEnumerable<Cell> GetValidJumpables( float horizontalSpeed, float verticalSpeed, float gravity, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
 	{
 		var jumpableCells = new List<Cell>();
 
