@@ -144,6 +144,32 @@ public partial class Grid
 		} );
 	}
 
+	[ConCmd.Server( "gridastar_create" )]
+	public static void CreateMain( bool save = false, bool compress = false )
+	{
+		CreateNewOnClient( To.Everyone );
+		GameTask.RunInThreadAsync( async () =>
+		{
+			var newGrid = await new GridBuilder().Create();
+
+			if ( save )
+				await newGrid.Save( compress );
+
+			Event.Run( Grid.LoadedAll );
+		} );
+	}
+
+	[ClientRpc]
+	public static void CreateNewOnClient()
+	{
+		GameTask.RunInThreadAsync( async () =>
+		{
+			var newGrid = await new GridBuilder().Create();
+
+			Event.Run( Grid.LoadedAll );
+		} );
+	}
+
 	[ClientRpc]
 	public static void RegenerateOnClient()
 	{
