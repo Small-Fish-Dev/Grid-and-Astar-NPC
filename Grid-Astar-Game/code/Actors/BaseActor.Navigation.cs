@@ -84,6 +84,7 @@ public abstract partial class BaseActor
 				if ( Math.Abs( Position.z - NextPathNode.EndPosition.z ) <= CurrentGrid.StepSize ) // Make sure it's within the stepsize
 				{
 					CurrentPath.Nodes.RemoveAt( 0 );
+					Position = CurrentPathNode.EndPosition;
 					if ( CurrentPathNode == LastPathNode )
 						HasArrivedDestination = true;
 				}
@@ -95,30 +96,36 @@ public abstract partial class BaseActor
 			{
 				if ( NextMovementTag.Contains( "jump" ) )
 				{
-					if ( Position.Distance( CurrentPathNode.EndPosition ) >= minimumDistanceUntilNext )
+					if ( Position.Distance( CurrentPathNode.EndPosition ) > minimumDistanceUntilNext && Position.Distance( CurrentPathNode.EndPosition ) < Position.Distance( NextPathNode.EndPosition ) )
 						Direction = (CurrentPathNode.EndPosition.WithZ( 0 ) - Position.WithZ( 0 )).Normal;
 					else
 					{
-						if ( NextMovementTag == "shortjump" )
+						if ( Position.Distance( CurrentPathNode.EndPosition ) < Position.Distance( NextPathNode.EndPosition ) )
 						{
-							Position = CurrentPathNode.EndPosition;
-							Velocity = (IdealDirection * 200f).WithZ( 300f );
-							SetAnimParameter( "jump", true );
-							GroundEntity = null;
-						}
-						if ( NextMovementTag == "longJump" )
-						{
-							Position = CurrentPathNode.EndPosition;
-							Velocity = (IdealDirection * 350f).WithZ( 300f );
-							SetAnimParameter( "jump", true );
-							GroundEntity = null;
-						}
-						if ( NextMovementTag == "highjump" )
-						{
-							Position = CurrentPathNode.EndPosition;
-							Velocity = (IdealDirection * 100f).WithZ( 600f );
-							SetAnimParameter( "jump", true );
-							GroundEntity = null;
+							if ( NextMovementTag == "shortjump" )
+							{
+								Position = CurrentPathNode.EndPosition;
+								Direction = IdealDirection;
+								Velocity = (IdealDirection * 200f).WithZ( 300f );
+								SetAnimParameter( "jump", true );
+								GroundEntity = null;
+							}
+							if ( NextMovementTag == "longJump" )
+							{
+								Position = CurrentPathNode.EndPosition;
+								Direction = IdealDirection;
+								Velocity = (IdealDirection * 350f).WithZ( 300f );
+								SetAnimParameter( "jump", true );
+								GroundEntity = null;
+							}
+							if ( NextMovementTag == "highjump" )
+							{
+								Position = CurrentPathNode.EndPosition;
+								Direction = IdealDirection;
+								Velocity = (IdealDirection * 100f).WithZ( 600f );
+								SetAnimParameter( "jump", true );
+								GroundEntity = null;
+							}
 						}
 					}
 				}
@@ -147,8 +154,6 @@ public abstract partial class BaseActor
 			if ( startingCell == null || targetCell == null || startingCell == targetCell ) return;
 
 			var pathBuilder = new AStarPathBuilder( CurrentGrid )
-			.WithPartialEnabled()
-			.WithMaxDistance( 1500f )
 			.WithPathCreator( this );
 
 			if ( CurrentGrid.LineOfSight( startingCell, targetCell ) ) // If there's direct line of sight, move in a straight path from A to B
