@@ -4,6 +4,7 @@ global using System.Collections.Generic;
 global using System.Diagnostics;
 global using System.Linq;
 global using System.Threading.Tasks;
+using Sandbox.Internal;
 
 namespace GridAStar;
 
@@ -320,9 +321,23 @@ public partial class Grid : IValid
 		{
 			if ( totalFraction >= 1f )
 			{
+				List<Cell> connectedCells = new();
+
 				foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight ) )
 					if ( jumpableCell != null )
+					{
 						cell.AddConnection( jumpableCell, movementTag );
+						connectedCells.Add( jumpableCell );
+					}
+
+				foreach ( var jumpableConnection in connectedCells ) // Check if you can jump back onto the cell
+				{
+					var direction = (cell.Position - jumpableConnection.Position).WithZ( 0 ).Normal;
+					var jumpbackCell = jumpableConnection.GetValidJumpable( horizontalSpeed, verticalSpeed, gravity, direction, MaxDropHeight );
+
+					if ( jumpbackCell != null )
+						jumpableConnection.AddConnection( jumpbackCell, movementTag );
+				}
 
 				totalFraction = 0f;
 			}
