@@ -228,6 +228,8 @@ public struct GridBuilder
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
+		Stopwatch cellsWatch = new Stopwatch();
+		cellsWatch.Start();
 
 		var currentGrid = new Grid( this );
 
@@ -289,6 +291,9 @@ public struct GridBuilder
 				}
 			}
 		} );
+
+		cellsWatch.Stop();
+		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} generated terrain cells in {cellsWatch.ElapsedMilliseconds}ms" );
 
 		Stopwatch edgeCells = new Stopwatch();
 		edgeCells.Start();
