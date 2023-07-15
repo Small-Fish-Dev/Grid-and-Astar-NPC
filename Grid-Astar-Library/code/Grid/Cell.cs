@@ -361,7 +361,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	}
 
 	public Cell GetClosestNeighbour( Vector3 position, int index = 0 ) => GetNeighbours().OrderBy( x => x.Position.Distance( position ) ).ElementAtOrDefault( index );
-	public Cell GetClosestNeighbourAndConnection( Vector3 position, int index = 0 ) => GetNeighbourAndConnections().OrderBy( x => x.Current.Position.Distance( position ) ).ElementAtOrDefault( index ).Current;
+	public Cell GetClosestNeighbourAndConnection( Vector3 position, int index = 0 ) => GetNeighbourAndConnections().OrderBy( x => x.Current.Position.Distance( position ) ).Where( x => !x.MovementTag.Contains("jump")).ElementAtOrDefault( index ).Current;
 
 	/// <summary>
 	/// Returns all neighbours and connected cells where you can travel to from this cell
@@ -441,9 +441,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 			if ( cell == null || cell == this ) continue;
 
-			if ( !Grid.IsDirectlyWalkable( cell, this ) )
-				if ( !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( cell, otherCell ) ) )
-					if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( cell, otherNode.Current ) ) )
+			if ( !Grid.IsDirectlyWalkable( this, cell ) && !Grid.IsDirectlyWalkable( this, cell, withConnections: false ) )
+				if ( !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell ) ) && !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: false ) ) )
+					if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell ) ) && !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) )
 						jumpableCells.Add( cell );
 
 			if ( jumpableCells.Count() >= maxPerCell )
@@ -463,8 +463,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		if ( cell == null ) return null;
 
-		if ( !Grid.IsDirectlyWalkable( cell, this ) )
-			if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( cell, otherNode.Current ) ) )
+		if ( !Grid.IsDirectlyWalkable( this, cell ) && !Grid.IsDirectlyWalkable( this, cell, withConnections: false ) )
+			if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell ) ) && !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) )
 				return cell;
 
 		return null;

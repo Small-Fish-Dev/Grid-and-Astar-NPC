@@ -4,7 +4,6 @@ global using System.Collections.Generic;
 global using System.Diagnostics;
 global using System.Linq;
 global using System.Threading.Tasks;
-using Sandbox.Internal;
 
 namespace GridAStar;
 
@@ -256,12 +255,22 @@ public partial class Grid : IValid
 	/// <param name="endingCell"></param>
 	/// <param name="maxDistanceFromDirectPath"></param>
 	/// <param name="pathCreator"></param>
+	/// <param name="withConnections"></param>
 	/// <param name="debugShow"></param>
 	/// <returns></returns>
-	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, Entity pathCreator = null, bool debugShow = false )
+	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, Entity pathCreator = null, bool withConnections = true,  bool debugShow = false )
 	{
+		if ( startingCell == null || endingCell == null ) return false;
+
 		var currentCell = startingCell;
-		var directPath = new Line( startingCell.Position, endingCell.Position );
+		var directPath = new Line( startingCell.Position.WithZ(0), endingCell.Position.WithZ(0) );
+		List<Cell> cellsChecked = new();
+
+		if ( debugShow )
+		{
+			startingCell.Draw( 3f, false, false, false );
+			endingCell.Draw( 3f, false, false, false );
+		}
 
 		if ( pathCreator == null && startingCell.Occupied ) return false;
 		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
@@ -269,18 +278,21 @@ public partial class Grid : IValid
 		if ( pathCreator == null && endingCell.Occupied ) return false;
 		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
 
-		while ( currentCell != endingCell && directPath.Distance( currentCell.Position ) <= maxDistanceFromDirectPath )
+		while ( currentCell != endingCell && directPath.Distance( currentCell.Position.WithZ(0) ) <= maxDistanceFromDirectPath )
 		{
-			var cellToCheck = currentCell.GetClosestNeighbourAndConnection( endingCell.Position );
-
-			if ( cellToCheck == null ) return false;
-			if ( cellToCheck == endingCell ) return true;
-			if ( pathCreator == null && cellToCheck.Occupied ) return false;
-			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
+			var cellToCheck = withConnections ? currentCell.GetClosestNeighbourAndConnection( endingCell.Position ) : currentCell.GetClosestNeighbour( endingCell.Position );
 
 			if ( debugShow )
 				currentCell.Draw( 2f, false, false, false );
 
+			if ( cellToCheck == null ) return false;
+			if ( cellsChecked.Contains( cellToCheck ) ) return false;
+			if ( pathCreator == null && cellToCheck.Occupied ) return false;
+			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
+
+			if ( cellToCheck == endingCell ) return true;
+
+			cellsChecked.Add( currentCell );
 			currentCell = cellToCheck;
 		}
 
