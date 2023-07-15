@@ -312,7 +312,8 @@ public partial class Grid : IValid
 	/// <param name="verticalSpeed"></param>
 	/// <param name="gravity"></param>
 	/// <param name="generateFraction">0.1 = Generate a connection only 10% of the times</param>
-	public void AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.2f )
+	/// <param name="maxPerCell">How many jump connections of this type can a cell have</param>
+	public void AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.4f, int maxPerCell = 1 )
 	{
 		var totalFraction = 0f;
 
@@ -322,7 +323,7 @@ public partial class Grid : IValid
 			{
 				List<Cell> connectedCells = new();
 
-				foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight ) )
+				foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight, maxPerCell ) )
 					if ( jumpableCell != null )
 					{
 						cell.AddConnection( jumpableCell, movementTag );

@@ -424,7 +424,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return null;
 	}
 
-	public IEnumerable<Cell> GetValidJumpables( float horizontalSpeed, float verticalSpeed, float gravity, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	public IEnumerable<Cell> GetValidJumpables( float horizontalSpeed, float verticalSpeed, float gravity, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, int maxPerCell = 3 )
 	{
 		var jumpableCells = new List<Cell>();
 
@@ -453,7 +453,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 					if ( Grid.LineOfSight( cell, otherCell ) )
 					{
 						isValid = false;
-						break;
+						continue;
 					}
 				}
 			}
@@ -465,13 +465,16 @@ public partial class Cell : IEquatable<Cell>, IValid
 					if ( Grid.LineOfSight( cell, connectedCell.Current ) )
 					{
 						isValid = false;
-						break;
+						continue;
 					}
 				}
 			}
 
 			if ( isValid )
 				jumpableCells.Add( cell );
+
+			if ( jumpableCells.Count() >= maxPerCell )
+				break;
 		}
 
 		return jumpableCells;
