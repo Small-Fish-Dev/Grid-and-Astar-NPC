@@ -360,6 +360,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 		}
 	}
 
+	public Cell GetClosestNeighbour( Vector3 position, int index = 0 ) => GetNeighbours().OrderBy( x => x.Position.Distance( position ) ).ElementAtOrDefault( index );
+	public Cell GetClosestNeighbourAndConnection( Vector3 position, int index = 0 ) => GetNeighbourAndConnections().OrderBy( x => x.Current.Position.Distance( position ) ).ElementAtOrDefault( index ).Current;
+
 	/// <summary>
 	/// Returns all neighbours and connected cells where you can travel to from this cell
 	/// </summary>
@@ -434,44 +437,14 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var horizontalVelocity = directionToCheck * horizontalSpeed;
 
 			var endPosition = Grid.TraceParabola( Position, horizontalVelocity, verticalSpeed, gravity, maxHeightDistance );
-
 			var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
 
-			if ( cell == null ) continue;
-			var isValid = true;
+			if ( cell == null || cell == this ) continue;
 
-			if ( Grid.LineOfSight( cell, this ) )
-				isValid = false;
-
-			if ( cell == this )
-				isValid = false;
-
-			if ( isValid )
-			{
-				foreach ( var otherCell in jumpableCells )
-				{
-					if ( Grid.LineOfSight( cell, otherCell ) )
-					{
-						isValid = false;
-						continue;
-					}
-				}
-			}
-
-			if ( isValid )
-			{
-				foreach ( var connectedCell in CellConnections )
-				{
-					if ( Grid.LineOfSight( cell, connectedCell.Current ) )
-					{
-						isValid = false;
-						continue;
-					}
-				}
-			}
-
-			if ( isValid )
-				jumpableCells.Add( cell );
+			if ( !Grid.IsDirectlyWalkable( cell, this ) )
+				if ( !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( cell, otherCell ) ) )
+					if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( cell, otherNode.Current ) ) )
+						jumpableCells.Add( cell );
 
 			if ( jumpableCells.Count() >= maxPerCell )
 				break;
@@ -486,16 +459,15 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var horizontalVelocity = directionToCheck * horizontalSpeed;
 
 		var endPosition = Grid.TraceParabola( Position, horizontalVelocity, verticalSpeed, gravity, maxHeightDistance );
-
 		var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
 
 		if ( cell == null ) return null;
-		if ( Grid.LineOfSight( cell, this ) ) return null;
 
-		foreach ( var connectedCell in CellConnections )
-			if ( Grid.LineOfSight( cell, connectedCell.Current ) ) return null;
+		if ( !Grid.IsDirectlyWalkable( cell, this ) )
+			if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( cell, otherNode.Current ) ) )
+				return cell;
 
-		return cell;
+		return null;
 	}
 
 	/// <summary>

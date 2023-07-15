@@ -249,6 +249,44 @@ public partial class Grid : IValid
 		return true;
 	}
 
+	/// <summary>
+	/// Can you roughly walk towards the cell without it being a direct line of sight
+	/// </summary>
+	/// <param name="startingCell"></param>
+	/// <param name="endingCell"></param>
+	/// <param name="maxDistanceFromDirectPath"></param>
+	/// <param name="pathCreator"></param>
+	/// <param name="debugShow"></param>
+	/// <returns></returns>
+	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, Entity pathCreator = null, bool debugShow = false )
+	{
+		var currentCell = startingCell;
+		var directPath = new Line( startingCell.Position, endingCell.Position );
+
+		if ( pathCreator == null && startingCell.Occupied ) return false;
+		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
+
+		if ( pathCreator == null && endingCell.Occupied ) return false;
+		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
+
+		while ( currentCell != endingCell && directPath.Distance( currentCell.Position ) <= maxDistanceFromDirectPath )
+		{
+			var cellToCheck = currentCell.GetClosestNeighbourAndConnection( endingCell.Position );
+
+			if ( cellToCheck == null ) return false;
+			if ( cellToCheck == endingCell ) return true;
+			if ( pathCreator == null && cellToCheck.Occupied ) return false;
+			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
+
+			if ( debugShow )
+				currentCell.Draw( 2f, false, false, false );
+
+			currentCell = cellToCheck;
+		}
+
+		return false;
+	}
+
 	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
 	public bool IsInsideCylinder( Vector3 point ) => Bounds.IsInsideSquishedRotatedCylinder( Position, point, Rotation );
 

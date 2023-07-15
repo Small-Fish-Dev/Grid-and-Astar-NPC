@@ -37,7 +37,7 @@ public partial class Grid
 
 			if ( currentNode.Current == targetNode.Current )
 			{
-				RetracePath( path, startingNode, currentNode );
+				RetracePath( ref path, startingNode, currentNode );
 				break;
 			}
 
@@ -46,7 +46,7 @@ public partial class Grid
 				var closestNode = closedSet.OrderBy( x => x.hCost )
 					.Where( x => x.gCost != 0f )
 					.First();
-				RetracePath( path, startingNode, closestNode );
+				RetracePath( ref path, startingNode, closestNode );
 				break;
 			}
 
@@ -88,7 +88,7 @@ public partial class Grid
 		return path;
 	}
 
-	private static void RetracePath( List<AStarNode> pathList, AStarNode startNode, AStarNode targetNode )
+	private static void RetracePath( ref List<AStarNode> pathList, AStarNode startNode, AStarNode targetNode )
 	{
 		var currentNode = targetNode;
 
@@ -99,6 +99,7 @@ public partial class Grid
 		}
 
 		pathList.Reverse();
+		pathList = pathList.Select( node => new AStarNode( node.Parent.Current, node, node.MovementTag ) ).ToList(); // Cell connections are flipped when we reverse
 	}
 }
 

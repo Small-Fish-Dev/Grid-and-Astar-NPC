@@ -76,6 +76,17 @@ public partial class Grid
 
 		Log.Error( Grid.Main.LineOfSight( standingCell, forwardCell, debugShow: true ) );
 	}
+
+	[ConCmd.Server( "TestWalkable" )]
+	public static void TestWalkable()
+	{
+		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
+
+		var standingCell = Grid.Main.GetNearestCell( caller.Position );
+		var forwardCell = Grid.Main.GetNearestCell( caller.Position + caller.Rotation.Forward * Grid.Main.CellSize * 16f );
+
+		Log.Error( Grid.Main.IsDirectlyWalkable( standingCell, forwardCell, debugShow: true ) );
+	}
 	/*
 	[ConCmd.Server( "StressPath" )]
 	public static async void StressPath( int runs = 100, int seed = 42069 )
