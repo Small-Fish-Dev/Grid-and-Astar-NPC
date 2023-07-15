@@ -443,6 +443,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( Grid.LineOfSight( cell, this ) )
 				isValid = false;
 
+			if ( cell == this )
+				isValid = false;
+
 			if ( isValid )
 			{
 				foreach ( var otherCell in jumpableCells )
