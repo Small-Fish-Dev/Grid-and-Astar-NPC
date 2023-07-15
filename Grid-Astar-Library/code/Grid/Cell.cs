@@ -444,7 +444,15 @@ public partial class Cell : IEquatable<Cell>, IValid
 			if ( !Grid.IsDirectlyWalkable( this, cell ) && !Grid.IsDirectlyWalkable( this, cell, withConnections: false ) )
 				if ( !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell ) ) && !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: false ) ) )
 					if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell ) ) && !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) )
-						jumpableCells.Add( cell );
+					{
+						var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.RealStepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+						var jumpTrace = Sandbox.Trace.Box( clearanceBBox, endPosition, cell.Position )
+							.WithGridSettings( Grid.Settings )
+							.Run();
+
+						if ( !jumpTrace.Hit )
+							jumpableCells.Add( cell );
+					}
 
 			if ( jumpableCells.Count() >= maxPerCell )
 				break;
@@ -465,7 +473,15 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		if ( !Grid.IsDirectlyWalkable( this, cell ) && !Grid.IsDirectlyWalkable( this, cell, withConnections: false ) )
 			if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell ) ) && !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) )
-				return cell;
+			{
+				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.RealStepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+				var jumpTrace = Sandbox.Trace.Box( clearanceBBox, endPosition, cell.Position )
+					.WithGridSettings( Grid.Settings )
+					.Run();
+
+				if ( !jumpTrace.Hit )
+					return cell;
+			}
 
 		return null;
 	}
