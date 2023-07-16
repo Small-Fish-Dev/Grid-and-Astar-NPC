@@ -149,7 +149,7 @@ public abstract partial class BaseActor
 				if ( computedPath.IsEmpty || computedPath.Length < 1 )
 					return;
 
-				//computedPath.Simplify();
+				computedPath.Simplify();
 
 				CurrentPath = computedPath;
 			}

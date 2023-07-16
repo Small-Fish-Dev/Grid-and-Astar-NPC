@@ -102,8 +102,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public Vector3 Bottom => Position.WithZ( Vertices.Min() );
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( (Position + Bounds.Mins).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
-	public CellTags Tags { get; set; }
-	public List<AStarNode> CellConnections { get; set; } = new();
+	public CellTags Tags { get; private set; }
+	public List<AStarNode> CellConnections { get; private set; } = new();
+	private List<AStarNode> connectedCells = new();
+
 
 	public bool Occupied
 	{
@@ -265,7 +267,12 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return (true, true);
 	}
 
-	public void AddConnection( Cell other, string tag = "" ) => CellConnections.Add( new AStarNode( other, tag == "" ? string.Empty : tag ) );
+	public void AddConnection( Cell other, string tag = "" )
+	{
+		var node = new AStarNode( other, tag == "" ? string.Empty : tag );
+		CellConnections.Add( node );
+		other.connectedCells.Add( node );
+	}
 
 	public void SetOccupant( Entity entity )
 	{
