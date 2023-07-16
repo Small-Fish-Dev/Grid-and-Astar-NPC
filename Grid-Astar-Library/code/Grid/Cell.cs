@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public struct CellTags
 {
@@ -327,6 +325,18 @@ public partial class Cell : IEquatable<Cell>, IValid
 			Tags = new CellTags();
 	}
 
+	public void Delete( bool deleteConnections = true )
+	{
+		if ( deleteConnections )
+		{
+			foreach ( var connectedCell in connectedCells )
+				connectedCell.Current.RemoveConnections( this );
+			CellConnections.Clear();
+		}
+
+		Grid.CellStacks[GridPosition].Remove( this );
+	}
+
 	// Perhaps there's a way to check these automatically, but I tried! :-)
 	internal static Dictionary<IntVector2, List<IntVector2>> CompareVertices = new()
 	{
@@ -574,6 +584,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 			DebugOverlay.Line( TopLeft, BottomRight, color, duration, depthTest );
 		}
 	}
+
+
 	public override bool Equals( object obj )
 	{
 		return Equals( obj as Cell );
