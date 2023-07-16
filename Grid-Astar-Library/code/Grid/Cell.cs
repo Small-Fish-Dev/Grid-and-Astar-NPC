@@ -1,4 +1,6 @@
-﻿namespace GridAStar;
+﻿using System.Xml;
+
+namespace GridAStar;
 
 public struct CellTags
 {
@@ -272,6 +274,17 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var node = new AStarNode( other, tag == "" ? string.Empty : tag );
 		CellConnections.Add( node );
 		other.connectedCells.Add( node );
+	}
+
+	public void RemoveConnections( Cell other )
+	{
+		var foundConnections = CellConnections.Where( x => x.Current == other );
+
+		foreach ( var connection in foundConnections )
+		{
+			CellConnections.Remove( connection );
+			other.connectedCells.Remove( connection );
+		}
 	}
 
 	public void SetOccupant( Entity entity )
