@@ -108,7 +108,7 @@ public partial class Grid : IValid
 		if ( unoccupiedOnly )
 			validCells = validCells.Where( x => !x.Occupied );
 		if ( onlyBelow )
-			validCells = validCells.Where( x => x.Vertices.Min() - StepSize <= position.z );
+			validCells = validCells.Where( x => x.Vertices.Min() - Math.Max( HeightClearance, RealStepSize ) <= position.z );
 
 		return validCells.OrderBy( x => x.Position.DistanceSquared( position ) )
 			.FirstOrDefault();
@@ -128,7 +128,7 @@ public partial class Grid : IValid
 				if ( cellFound == null ) continue;
 
 				if ( withinStepRange )
-					if ( position.z - cellFound.Position.z <= RealStepSize ) return cellFound; else continue;
+					if ( position.z - cellFound.Position.z <= Math.Max( HeightClearance, RealStepSize ) ) return cellFound; else continue;
 
 				return cellFound;
 			}
@@ -158,7 +158,7 @@ public partial class Grid : IValid
 		if ( cellsAtCoordinates == null ) return null;
 
 		foreach ( var cell in cellsAtCoordinates )
-			if ( cell.Vertices.Min() - StepSize < height )
+			if ( cell.Vertices.Min() - Math.Max( HeightClearance, RealStepSize ) < height )
 				return cell;
 
 		return null;
@@ -175,7 +175,7 @@ public partial class Grid : IValid
 		if ( !CellStacks.ContainsKey( coordinates ) )
 			CellStacks.Add( coordinates, new List<Cell>() { cell } );
 		else
-			if ( !CellStacks[coordinates].Any( x => Math.Abs( x.Position.z - cell.Position.z ) < HeightClearance ) )
+			if ( !CellStacks[coordinates].Any( x => Math.Abs( x.Position.z - cell.Position.z ) < Math.Max( HeightClearance, RealStepSize ) ) )
 				CellStacks[coordinates].Add( cell );
 	}
 
