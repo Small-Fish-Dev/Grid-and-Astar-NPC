@@ -51,6 +51,7 @@ public partial class Grid : IValid
 	public BBox Bounds => Settings.Bounds;
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
+	public BBox ToWorld( BBox bounds ) => bounds.Translate( Position );
 	public Rotation Rotation => Settings.Rotation;
 	public bool AxisAligned => Settings.AxisAligned;
 	public float StandableAngle => Settings.StandableAngle;
@@ -455,17 +456,19 @@ public partial class Grid : IValid
 			Grid.removeCellsClient( Identifier, bounds, printInfo );
 	}
 
+	/// <summary>
+	/// Create cells in that local bbox
+	/// </summary>
+	/// <param name="bounds">Local bounds</param>
+	/// <param name="printInfo"></param>
 	public void CreateCells( BBox bounds, bool printInfo = true )
 	{
-		var rotatedBounds = RotatedBounds;
-		var worldBounds = WorldBounds;
+		var worldBounds = ToWorld( bounds );
 
-		var minimumGrid = rotatedBounds.Mins.ToIntVector2( CellSize );
-		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( CellSize );
+		var minimumGrid = bounds.Mins.ToIntVector2( CellSize );
+		var maximumGrid = bounds.Maxs.ToIntVector2( CellSize );
 		var totalColumns = maximumGrid.y - minimumGrid.y;
 		var totalRows = maximumGrid.x - minimumGrid.x;
-		var minHeight = rotatedBounds.Mins.z;
-		var maxHeight = rotatedBounds.Maxs.z;
 
 		if ( printInfo )
 			Print( $"Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
@@ -478,7 +481,7 @@ public partial class Grid : IValid
 				var endPosition = worldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
 				var checkBBox = new BBox( new Vector3( -CellSize / 2f + Tolerance, -CellSize / 2f + Tolerance, 0f ), new Vector3( CellSize / 2f - Tolerance, CellSize / 2f - Tolerance, 0.001f ) );
 				var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
-						.WithGridSettings( Settings );
+					.WithGridSettings( Settings );
 
 				var positionResult = positionTrace.Run();
 
@@ -505,7 +508,7 @@ public partial class Grid : IValid
 						startPosition += Vector3.Down * HeightClearance;
 
 					positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
-					.WithGridSettings( Settings );
+						.WithGridSettings( Settings );
 
 					positionResult = positionTrace.Run();
 				}

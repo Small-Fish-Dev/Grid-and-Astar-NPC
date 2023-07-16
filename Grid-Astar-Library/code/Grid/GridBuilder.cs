@@ -234,7 +234,7 @@ public struct GridBuilder
 
 		await GameTask.RunInThreadAsync( () =>
 		{
-			currentGrid.CreateCells( new BBox(), printInfo );
+			currentGrid.CreateCells( currentGrid.RotatedBounds, printInfo );
 		} );
 
 		if ( printInfo )
@@ -260,7 +260,7 @@ public struct GridBuilder
 
 		Stopwatch jumpableCells = new Stopwatch();
 		jumpableCells.Start();
-		currentGrid.AssignJumpableCells( "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z );
+		currentGrid.AssignJumpableCells( "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z ); // TODO: Hands when translating the bounds into the void?
 		jumpableCells.Stop();
 		if ( printInfo )
 			currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
