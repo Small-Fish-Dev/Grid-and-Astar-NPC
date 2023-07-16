@@ -47,16 +47,13 @@ public partial class GridBlockerBox : ModelEntity
 	{
 		if ( CurrentGrid == null ) return;
 
-		foreach ( var cellStack in CurrentGrid.CellStacks )
+		foreach ( var cell in CurrentGrid.AllCells )
 		{
-			foreach ( var cell in cellStack.Value )
+			if ( IsInsideBounds( cell.Position ) )
 			{
-				if ( IsInsideBounds( cell.Position ) )
-				{
-					OverlappingCells.Add( cell );
-					cell.Occupied = true;
-					cell.SetOccupant( this );
-				}
+				OverlappingCells.Add( cell );
+				cell.Occupied = true;
+				cell.SetOccupant( this );
 			}
 		}
 	}
@@ -66,16 +63,13 @@ public partial class GridBlockerBox : ModelEntity
 
 		OverlappingCells.Clear();
 
-		foreach ( var cellStack in CurrentGrid.CellStacks )
+		foreach ( var cell in CurrentGrid.AllCells )
 		{
-			foreach ( var cell in cellStack.Value )
+			if ( IsInsideBounds( cell.Position ) )
 			{
-				if ( IsInsideBounds( cell.Position ) )
-				{
-					OverlappingCells.Add( cell );
-					cell.Occupied = true;
-					cell.SetOccupant( this );
-				}
+				OverlappingCells.Add( cell );
+				cell.Occupied = true;
+				cell.SetOccupant( this );
 			}
 		}
 	}

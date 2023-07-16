@@ -87,6 +87,15 @@ public partial class Grid
 
 		Log.Error( Grid.Main.IsDirectlyWalkable( standingCell, forwardCell, debugShow: true ) );
 	}
+
+	[ConCmd.Server( "DeleteCells" )]
+	public static void TestDeleteCells()
+	{
+		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
+
+		var bounds = new BBox( player.Position, 400 );
+		Grid.Main.RemoveCells( bounds );
+	}
 	/*
 	[ConCmd.Server( "StressPath" )]
 	public static async void StressPath( int runs = 100, int seed = 42069 )

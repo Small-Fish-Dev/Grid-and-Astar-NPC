@@ -435,6 +435,43 @@ public partial class Grid : IValid
 		return lastPositionChecked;
 	}
 
+	public void RemoveCells( BBox bounds )
+	{
+		List<Cell> cellsToRemove = new();
+
+		foreach ( var cell in AllCells )
+			if ( bounds.Contains( cell.Position ) )
+				cellsToRemove.Add( cell );
+
+		var count = cellsToRemove.Count();
+
+		foreach ( var cell in cellsToRemove )
+			cell.Delete();
+
+		Log.Info( $"Removed {count} cells" );
+
+		if ( Game.IsServer )
+			Grid.removeCellsClient( Identifier, bounds );
+	}
+
+	[ClientRpc]
+	internal static void removeCellsClient( string identifier, BBox bounds )
+	{
+		var grid = Grids[identifier];
+
+		if ( grid != null )
+		{
+			List<Cell> cellsToRemove = new();
+
+			foreach ( var cell in grid.AllCells )
+				if ( bounds.Contains( cell.Position ) )
+					cellsToRemove.Add( cell );
+
+			foreach ( var cell in cellsToRemove )
+				cell.Delete();
+		}
+	}
+
 	/// <summary>
 	/// Returns all cells with that tag
 	/// </summary>

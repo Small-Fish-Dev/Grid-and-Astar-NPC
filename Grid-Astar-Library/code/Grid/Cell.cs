@@ -269,14 +269,14 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 	public void AddConnection( Cell other, string tag = "" )
 	{
-		var node = new AStarNode( other, tag == "" ? string.Empty : tag );
+		var node = new AStarNode( other, new AStarNode( this ), tag == "" ? string.Empty : tag );
 		CellConnections.Add( node );
 		other.connectedCells.Add( node );
 	}
 
 	public void RemoveConnections( Cell other )
 	{
-		var foundConnections = CellConnections.Where( x => x.Current == other );
+		var foundConnections = CellConnections.Where( x => x.Current == other ).ToList();
 
 		foreach ( var connection in foundConnections )
 		{
@@ -329,8 +329,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 	{
 		if ( deleteConnections )
 		{
-			foreach ( var connectedCell in connectedCells )
-				connectedCell.Current.RemoveConnections( this );
+			var connections = connectedCells.ToList();
+			foreach ( var connectedCell in connections )
+				connectedCell.Parent.Current.RemoveConnections( this );
+			connectedCells.Clear();
 			CellConnections.Clear();
 		}
 
