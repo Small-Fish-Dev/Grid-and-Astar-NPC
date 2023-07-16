@@ -494,7 +494,7 @@ public partial class Grid : IValid
 			for ( int row = startingRow; row < endingRow; row++ )
 			{
 				var startPosition = WorldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
-				var endPosition = WorldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
+				var endPosition = WorldBounds.Mins.WithZ( worldBounds.Mins.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
 				var checkBBox = new BBox( new Vector3( -CellSize / 2f + Tolerance, -CellSize / 2f + Tolerance, 0f ), new Vector3( CellSize / 2f - Tolerance, CellSize / 2f - Tolerance, 0.001f ) );
 				var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
 					.WithGridSettings( Settings );
