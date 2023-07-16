@@ -52,8 +52,8 @@ public partial class Grid : IValid
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
 	public Transform Transform => new Transform( Position, AxisRotation );
-	public BBox ToWorld( BBox bounds ) => bounds.Transform( Transform );
-	public BBox ToLocal( BBox bounds ) => bounds.Transform( new Transform( -Position, AxisRotation.Inverse ) );
+	public BBox ToWorld( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation ).Translate( WorldBounds.Center );
+	public BBox ToLocal( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation.Inverse ).Translate( -WorldBounds.Center );
 	public Rotation Rotation => Settings.Rotation;
 	public bool AxisAligned => Settings.AxisAligned;
 	public float StandableAngle => Settings.StandableAngle;
@@ -68,6 +68,12 @@ public partial class Grid : IValid
 	public float RealStepSize => GridPerfect ? 0.1f : Math.Max( 0.1f, StepSize );
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
+	public int MinimumColumn => WorldBounds.Mins.ToIntVector2( CellSize ).y;
+	public int MaximumColumn => WorldBounds.Maxs.ToIntVector2( CellSize ).y;
+	public int Columns => MaximumColumn - MinimumColumn;
+	public int MinimumRow => WorldBounds.Mins.ToIntVector2( CellSize ).x;
+	public int MaximumRow => WorldBounds.Maxs.ToIntVector2( CellSize ).x;
+	public int Rows => MaximumRow - MinimumRow;
 	bool IValid.IsValid { get; }
 
 	public Grid()
@@ -186,10 +192,7 @@ public partial class Grid : IValid
 	/// <param name="direction"></param>
 	/// <param name="numOfCellsInDirection"></param>
 	/// <returns></returns>
-	public Cell GetCellInDirection( Cell startingCell, Vector3 direction, int numOfCellsInDirection = 1 )
-	{
-		return GetCell( startingCell.Position + direction * CellSize * numOfCellsInDirection );
-	}
+	public Cell GetCellInDirection( Cell startingCell, Vector3 direction, int numOfCellsInDirection = 1 ) => GetCell( startingCell.Position + direction * CellSize * numOfCellsInDirection );
 
 	/// <summary>
 	/// Returns the neighbour in that direction
@@ -443,7 +446,7 @@ public partial class Grid : IValid
 		return lastPositionChecked;
 	}
 
-	public void RemoveCells( BBox bounds, bool printInfo = false )
+	public void RemoveCells( BBox bounds, bool printInfo = false, bool broadcastToClients = false )
 	{
 		List<Cell> cellsToRemove = new();
 
@@ -459,8 +462,9 @@ public partial class Grid : IValid
 		if ( printInfo )
 			Print( $"Removed {count} cells" );
 
-		if ( Game.IsServer )
-			Grid.removeCellsClient( Identifier, bounds, printInfo );
+		if ( broadcastToClients )
+			if ( Game.IsServer )
+				Grid.removeCellsClient( Identifier, bounds, printInfo );
 	}
 
 	/// <summary>
@@ -468,24 +472,29 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="bounds">Local bounds</param>
 	/// <param name="printInfo"></param>
-	public void CreateCells( BBox bounds, bool printInfo = true )
+	/// <param name="broadcastToClients"></param>
+	public void CreateCells( BBox bounds, bool printInfo = true, bool broadcastToClients = false )
 	{
 		var worldBounds = ToWorld( bounds );
 
 		var minimumGrid = bounds.Mins.ToIntVector2( CellSize );
 		var maximumGrid = bounds.Maxs.ToIntVector2( CellSize );
+		var startingColumn = minimumGrid.y - MinimumColumn;
 		var totalColumns = maximumGrid.y - minimumGrid.y;
+		var endingColumn = startingColumn + totalColumns;
+		var startingRow = minimumGrid.x - MinimumRow;
 		var totalRows = maximumGrid.x - minimumGrid.x;
+		var endingRow = startingRow + totalRows;
 
 		if ( printInfo )
-			Print( $"Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
+			Print( $"Casting {totalRows * totalColumns} cells. [{totalRows}x{totalColumns}]" );
 
-		for ( int column = 0; column < totalColumns; column++ )
+		for ( int column = startingColumn; column < endingColumn; column++ )
 		{
-			for ( int row = 0; row < totalRows; row++ )
+			for ( int row = startingRow; row < endingRow; row++ )
 			{
-				var startPosition = worldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
-				var endPosition = worldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
+				var startPosition = WorldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
+				var endPosition = WorldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
 				var checkBBox = new BBox( new Vector3( -CellSize / 2f + Tolerance, -CellSize / 2f + Tolerance, 0f ), new Vector3( CellSize / 2f - Tolerance, CellSize / 2f - Tolerance, 0.001f ) );
 				var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
 					.WithGridSettings( Settings );
@@ -522,8 +531,9 @@ public partial class Grid : IValid
 			}
 		}
 
-		if ( Game.IsServer )
-			Grid.createCellsClient( Identifier, bounds, printInfo );
+		if ( broadcastToClients )
+			if ( Game.IsServer )
+				Grid.createCellsClient( Identifier, bounds, printInfo );
 	}
 
 	[ClientRpc]

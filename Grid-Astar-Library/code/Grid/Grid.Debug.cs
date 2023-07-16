@@ -96,7 +96,7 @@ public partial class Grid
 		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
 
 		var bounds = new BBox( player.Position, size );
-		Grid.Main.RemoveCells( bounds, true );
+		Grid.Main.RemoveCells( bounds, true, true );
 	}
 
 	[ConCmd.Admin( "CreateCells" )]
@@ -105,7 +105,7 @@ public partial class Grid
 		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
 
 		var bounds = new BBox( player.Position, size );
-		Grid.Main.CreateCells( Grid.Main.ToLocal( bounds ), true );
+		Grid.Main.CreateCells( Grid.Main.ToLocal( bounds ), true, true );
 	}
 	/*
 	[ConCmd.Admin( "StressPath" )]
