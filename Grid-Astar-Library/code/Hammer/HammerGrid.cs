@@ -72,7 +72,7 @@ public partial class HammerGrid : ModelEntity
 
 	public async Task<Grid> CreateFromSettings() => await GetProperties().Create();
 
-	public static void LoadAllGrids()
+	public static void LoadAllGrids( bool printInfo = true )
 	{
 		GameTask.RunInThreadAsync( async () =>
 		{
@@ -101,9 +101,12 @@ public partial class HammerGrid : ModelEntity
 					}
 					else
 					{
-						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {grid.Identifier} properties don't match. Creating new one..." );
 						Grid.DeleteSave( grid.Identifier );
 						var newGrid = await grid.CreateFromSettings();
+
+						if ( printInfo )
+							newGrid.Print( "Properties don't match. Creating new one..." );
+
 						await newGrid.Save();
 					}
 
