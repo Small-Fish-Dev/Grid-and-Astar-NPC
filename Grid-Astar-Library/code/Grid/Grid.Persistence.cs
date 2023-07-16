@@ -21,8 +21,9 @@ public partial class Grid
 	/// Return a struct containing the grid's data, without loading in the grid
 	/// </summary>
 	/// <param name="identifier"></param>
+	/// <param name="printInfo"></param>
 	/// <returns></returns>
-	public async static Task<GridBuilder> LoadProperties( string identifier = "main" )
+	public async static Task<GridBuilder> LoadProperties( string identifier = "main", bool printInfo = true )
 	{
 		var isOnMounted = false;
 		if ( !Grid.Exists( identifier ) )
@@ -44,7 +45,8 @@ public partial class Grid
 				if ( IsCompressed( dataStream ) )
 				{
 					dataStream = new GZipStream( fileStream, CompressionMode.Decompress );
-					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} is compressed, decompressing..." );
+					if ( printInfo )
+						Grid.Print( identifier, "is compressed, decompressing..." );
 				}
 
 				using ( var reader = new BinaryReader( dataStream ) )
@@ -82,7 +84,8 @@ public partial class Grid
 		}
 		catch ( Exception error )
 		{
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load properties ({error})" );
+			if ( printInfo )
+				Grid.Print( identifier, $"Failed to load properties ({error})" );
 			return new GridBuilder();
 		}
 	}
@@ -91,24 +94,29 @@ public partial class Grid
 	/// Load the grid from the save file
 	/// </summary>
 	/// <param name="identifier"></param>
+	/// <param name="printInfo"></param>
 	/// <returns></returns>
-	public async static Task<Grid> Load( string identifier = "main" )
+	public async static Task<Grid> Load( string identifier = "main", bool printInfo = true )
 	{
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Loading grid {identifier}" );
+		if ( printInfo )
+			Grid.Print( identifier, "Loading grid" );
 
 		var isOnMounted = false;
 
 		if ( !Grid.Exists( identifier ) )
 		{
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} not found on local" );
+			if ( printInfo )
+				Grid.Print( identifier, "Not found on local" );
 			if ( Grid.ExistsMounted( identifier ) )
 			{
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} found on mounted" );
+				if ( printInfo )
+					Grid.Print( identifier, "Found on mounted" );
 				isOnMounted = true;
 			}
 			else
 			{
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} not found on mounted" );
+				if ( printInfo )
+					Grid.Print( identifier, "Not found on mounted" );
 				return null;
 			}
 		}
@@ -124,7 +132,8 @@ public partial class Grid
 			if ( IsCompressed( dataStream ) )
 			{
 				dataStream = new GZipStream( fileStream, CompressionMode.Decompress );
-				Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} is compressed, decompressing..." );
+				if ( printInfo )
+					Grid.Print( identifier, "Is compressed, decompressing..." );
 			}
 
 			using ( var reader = new BinaryReader( dataStream ) )
@@ -165,7 +174,8 @@ public partial class Grid
 						currentGrid = new Grid( loadedGrid );
 
 						var cellsToRead = reader.ReadInt32();
-						Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} {cellsToRead} cells found in Grid {identifier}" );
+						if ( printInfo )
+							Grid.Print( identifier, $"{cellsToRead} cells found" );
 
 						var connectedDictionary = new Dictionary<Cell, List<(Vector3, string)>>();
 
@@ -211,14 +221,16 @@ public partial class Grid
 					} );
 
 					loadWatch.Stop();
-					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} loaded in {loadWatch.ElapsedMilliseconds}ms" );
+					if ( printInfo )
+						Grid.Print( identifier, $"Loaded in {loadWatch.ElapsedMilliseconds}ms" );
 
 					return currentGrid;
 				}
 				catch ( Exception error )
 				{
 					loadWatch.Stop();
-					Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {identifier} failed to load ({error})" );
+					if ( printInfo )
+						Grid.Print( identifier, $"Failed to load ({error})" );
 					return null;
 				}
 			}
@@ -239,9 +251,10 @@ public partial class Grid
 	/// Save the grid on a file
 	/// </summary>
 	/// <returns></returns>
-	public async Task<bool> Save( bool compress = false )
+	public async Task<bool> Save( bool compress = false, bool printInfo = true )
 	{
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Saving grid {Identifier}" );
+		if ( printInfo )
+			Print( "Saving grid" );
 
 		var saveWatch = new Stopwatch();
 		saveWatch.Start();
@@ -329,14 +342,16 @@ public partial class Grid
 				await fileStream.WriteAsync( data, 0, data.Length );
 
 			saveWatch.Stop();
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} saved in {saveWatch.ElapsedMilliseconds}ms" );
+			if ( printInfo )
+				Print( $"Saved in {saveWatch.ElapsedMilliseconds}ms" );
 
 			return true;
 		}
 		catch ( Exception error )
 		{
 			saveWatch.Stop();
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {Identifier} failed to save ({error})" );
+			if ( printInfo )
+				Print( $"Failed to save ({error})" );
 			return false;
 		}
 	}

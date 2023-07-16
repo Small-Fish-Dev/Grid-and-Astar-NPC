@@ -4,8 +4,8 @@ namespace GridAStar;
 
 public partial class Grid
 {
-
-	public void Print( string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{Identifier}': {message}" );
+	public void Print( string message ) => Grid.Print( Identifier, message );
+	public static void Print( string identifier, string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{identifier}': {message}" );
 
 	/*
 	[ConCmd.Server( "RegenerateMainGrid" )]
@@ -91,12 +91,12 @@ public partial class Grid
 	}
 
 	[ConCmd.Server( "DeleteCells" )]
-	public static void TestDeleteCells()
+	public static void TestDeleteCells( float size = 300)
 	{
 		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
 
-		var bounds = new BBox( player.Position, 400 );
-		Grid.Main.RemoveCells( bounds );
+		var bounds = new BBox( player.Position, size );
+		Grid.Main.RemoveCells( bounds, true );
 	}
 	/*
 	[ConCmd.Server( "StressPath" )]

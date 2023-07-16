@@ -435,7 +435,7 @@ public partial class Grid : IValid
 		return lastPositionChecked;
 	}
 
-	public void RemoveCells( BBox bounds )
+	public void RemoveCells( BBox bounds, bool printInfo = false )
 	{
 		List<Cell> cellsToRemove = new();
 
@@ -448,28 +448,20 @@ public partial class Grid : IValid
 		foreach ( var cell in cellsToRemove )
 			cell.Delete();
 
-		Log.Info( $"Removed {count} cells" );
+		if ( printInfo )
+			Print( $"Removed {count} cells" );
 
 		if ( Game.IsServer )
-			Grid.removeCellsClient( Identifier, bounds );
+			Grid.removeCellsClient( Identifier, bounds, printInfo );
 	}
 
 	[ClientRpc]
-	internal static void removeCellsClient( string identifier, BBox bounds )
+	internal static void removeCellsClient( string identifier, BBox bounds, bool printInfo = false )
 	{
 		var grid = Grids[identifier];
 
 		if ( grid != null )
-		{
-			List<Cell> cellsToRemove = new();
-
-			foreach ( var cell in grid.AllCells )
-				if ( bounds.Contains( cell.Position ) )
-					cellsToRemove.Add( cell );
-
-			foreach ( var cell in cellsToRemove )
-				cell.Delete();
-		}
+			grid.RemoveCells( bounds, printInfo );
 	}
 
 	/// <summary>
