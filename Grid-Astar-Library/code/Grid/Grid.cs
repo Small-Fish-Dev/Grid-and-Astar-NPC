@@ -51,7 +51,9 @@ public partial class Grid : IValid
 	public BBox Bounds => Settings.Bounds;
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
-	public BBox ToWorld( BBox bounds ) => bounds.Translate( Position );
+	public Transform Transform => new Transform( Position, AxisRotation );
+	public BBox ToWorld( BBox bounds ) => bounds.Transform( Transform );
+	public BBox ToLocal( BBox bounds ) => bounds.Transform( new Transform( -Position, AxisRotation.Inverse ) );
 	public Rotation Rotation => Settings.Rotation;
 	public bool AxisAligned => Settings.AxisAligned;
 	public float StandableAngle => Settings.StandableAngle;
@@ -162,6 +164,10 @@ public partial class Grid : IValid
 		return null;
 	}
 
+	/// <summary>
+	/// Add a cell to the grid using the cell's GridPosition, doesn't get added if there's already a cell there
+	/// </summary>
+	/// <param name="cell"></param>
 	public void AddCell( Cell cell )
 	{
 		if ( cell == null ) return;
@@ -169,7 +175,8 @@ public partial class Grid : IValid
 		if ( !CellStacks.ContainsKey( coordinates ) )
 			CellStacks.Add( coordinates, new List<Cell>() { cell } );
 		else
-			CellStacks[coordinates].Add( cell );
+			if ( !CellStacks[coordinates].Any( x => Math.Abs( x.Position.z - cell.Position.z ) < HeightClearance ) )
+				CellStacks[coordinates].Add( cell );
 	}
 
 	/// <summary>
@@ -514,6 +521,9 @@ public partial class Grid : IValid
 				}
 			}
 		}
+
+		if ( Game.IsServer )
+			Grid.createCellsClient( Identifier, bounds, printInfo );
 	}
 
 	[ClientRpc]
@@ -523,6 +533,15 @@ public partial class Grid : IValid
 
 		if ( grid != null )
 			grid.RemoveCells( bounds, printInfo );
+	}
+
+	[ClientRpc]
+	internal static void createCellsClient( string identifier, BBox bounds, bool printInfo = false )
+	{
+		var grid = Grids[identifier];
+
+		if ( grid != null )
+			grid.CreateCells( bounds, printInfo );
 	}
 
 	/// <summary>

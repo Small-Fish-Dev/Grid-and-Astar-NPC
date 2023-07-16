@@ -98,6 +98,15 @@ public partial class Grid
 		var bounds = new BBox( player.Position, size );
 		Grid.Main.RemoveCells( bounds, true );
 	}
+
+	[ConCmd.Admin( "CreateCells" )]
+	public static void TestCreateCells( float size = 300 )
+	{
+		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
+
+		var bounds = new BBox( player.Position, size );
+		Grid.Main.CreateCells( Grid.Main.ToLocal( bounds ), true );
+	}
 	/*
 	[ConCmd.Admin( "StressPath" )]
 	public static async void StressPath( int runs = 100, int seed = 42069 )
