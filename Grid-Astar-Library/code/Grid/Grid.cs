@@ -455,6 +455,64 @@ public partial class Grid : IValid
 			Grid.removeCellsClient( Identifier, bounds, printInfo );
 	}
 
+	public void CreateCells( BBox bounds, bool printInfo = true )
+	{
+		var rotatedBounds = RotatedBounds;
+		var worldBounds = WorldBounds;
+
+		var minimumGrid = rotatedBounds.Mins.ToIntVector2( CellSize );
+		var maximumGrid = rotatedBounds.Maxs.ToIntVector2( CellSize );
+		var totalColumns = maximumGrid.y - minimumGrid.y;
+		var totalRows = maximumGrid.x - minimumGrid.x;
+		var minHeight = rotatedBounds.Mins.z;
+		var maxHeight = rotatedBounds.Maxs.z;
+
+		if ( printInfo )
+			Print( $"Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
+
+		for ( int column = 0; column < totalColumns; column++ )
+		{
+			for ( int row = 0; row < totalRows; row++ )
+			{
+				var startPosition = worldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
+				var endPosition = worldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
+				var checkBBox = new BBox( new Vector3( -CellSize / 2f + Tolerance, -CellSize / 2f + Tolerance, 0f ), new Vector3( CellSize / 2f - Tolerance, CellSize / 2f - Tolerance, 0.001f ) );
+				var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
+						.WithGridSettings( Settings );
+
+				var positionResult = positionTrace.Run();
+
+				while ( positionResult.Hit && startPosition.z >= endPosition.z )
+				{
+					if ( IsInsideBounds( positionResult.HitPosition ) )
+					{
+						if ( !CylinderShaped || IsInsideCylinder( positionResult.HitPosition ) )
+						{
+							var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
+							if ( angle <= StandableAngle )
+							{
+								var newCell = Cell.TryCreate( this, positionResult.HitPosition );
+
+								if ( newCell != null )
+									AddCell( newCell );
+							}
+						}
+					}
+
+					startPosition = positionResult.HitPosition + Vector3.Down * HeightClearance;
+
+					while ( Sandbox.Trace.TestPoint( startPosition, radius: CellSize / 2f - Tolerance ) )
+						startPosition += Vector3.Down * HeightClearance;
+
+					positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
+					.WithGridSettings( Settings );
+
+					positionResult = positionTrace.Run();
+				}
+			}
+		}
+	}
+
 	[ClientRpc]
 	internal static void removeCellsClient( string identifier, BBox bounds, bool printInfo = false )
 	{
