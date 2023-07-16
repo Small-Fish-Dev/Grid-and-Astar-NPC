@@ -232,10 +232,7 @@ public struct GridBuilder
 
 		var currentGrid = new Grid( this );
 
-		await GameTask.RunInThreadAsync( () =>
-		{
-			currentGrid.CreateCells( currentGrid.RotatedBounds, printInfo );
-		} );
+		await GameTask.RunInThreadAsync( () => currentGrid.CreateCells( currentGrid.RotatedBounds, printInfo ) );
 
 		if ( printInfo )
 			currentGrid.Print( "Creating grid" );

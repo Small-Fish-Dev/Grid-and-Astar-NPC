@@ -10,10 +10,11 @@ public partial class Grid
 	/// <param name="pathBuilder">The path building settings.</param>
 	/// <param name="startingCell">The starting point of the path.</param>
 	/// <param name="targetCell">The desired destination point of the path.</param>
-	/// <param name="reversed">Whether or not to reverse the resulting path.</param>
 	/// <param name="token">A cancellation token used to cancel computing the path.</param>
+	/// <param name="reversed">Whether or not to reverse the resulting path.</param>
+	/// <param name="withCellConnections">Allow to take cellConnections into consideration</param>
 	/// <returns>An <see cref="List{AStarNode}"/> that contains the computed path.</returns>
-	internal List<AStarNode> ComputePathInternal( AStarPathBuilder pathBuilder, Cell startingCell, Cell targetCell, bool reversed, CancellationToken token )
+	internal List<AStarNode> ComputePathInternal( AStarPathBuilder pathBuilder, Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false, bool withCellConnections = true )
 	{
 		// Setup.
 		var path = new List<AStarNode>();
@@ -50,7 +51,7 @@ public partial class Grid
 				break;
 			}
 
-			foreach ( var neighbour in currentNode.Current.GetNeighbourAndConnections() )
+			foreach ( var neighbour in withCellConnections ? currentNode.Current.GetNeighbourAndConnections() : currentNode.Current.GetNeighbours().Select( x => new AStarNode( x ) ) )
 			{
 				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Occupied ) continue;
 				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Occupied && neighbour.OccupyingEntity != pathBuilder.PathCreator ) continue;
@@ -82,7 +83,7 @@ public partial class Grid
 			}
 		}
 
-		if ( reversed ) // TODO: Some cell connections can't just be reversed ex: dropping down
+		if ( reversed )
 			path.Reverse();
 
 		return path;

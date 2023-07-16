@@ -95,40 +95,40 @@ public struct AStarPathBuilder
 		return this;
 	}
 
-	public AStarPath Run( Cell startingCell, Cell targetCell, bool reversed = false )
+	public AStarPath Run( Cell startingCell, Cell targetCell, bool reversed = false, bool withCellConnections = true )
 	{
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return AStarPath.Empty();
 
-		return AStarPath.From( this, Grid.ComputePathInternal( this, startingCell, targetCell, reversed, CancellationToken.None ) );
+		return AStarPath.From( this, Grid.ComputePathInternal( this, startingCell, targetCell, CancellationToken.None, reversed, withCellConnections ) );
 	}
-	public AStarPath Run( Vector3 startingPosition, Cell targetCell, bool reversed = false ) => Run( Grid.GetCell( startingPosition ), targetCell, reversed );
-	public AStarPath Run( Cell startingCell, Vector3 targetPosition, bool reversed = false ) => Run( startingCell, Grid.GetCell( targetPosition ), reversed );
-	public AStarPath Run( Vector3 startingPosition, Vector3 targetPosition, bool reversed = false ) => Run( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), reversed );
+	public AStarPath Run( Vector3 startingPosition, Cell targetCell, bool reversed = false, bool withCellConnections = true ) => Run( Grid.GetCell( startingPosition ), targetCell, reversed, withCellConnections );
+	public AStarPath Run( Cell startingCell, Vector3 targetPosition, bool reversed = false, bool withCellConnections = true ) => Run( startingCell, Grid.GetCell( targetPosition ), reversed, withCellConnections );
+	public AStarPath Run( Vector3 startingPosition, Vector3 targetPosition, bool reversed = false, bool withCellConnections = true ) => Run( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), reversed, withCellConnections );
 
 
-	internal AStarPath Run( Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false )
+	internal AStarPath Run( Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false, bool withCellConnections = true )
 	{
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return AStarPath.Empty();
 
-		return AStarPath.From( this, Grid.ComputePathInternal( this, startingCell, targetCell, reversed, token ) );
+		return AStarPath.From( this, Grid.ComputePathInternal( this, startingCell, targetCell, token, reversed, withCellConnections ) );
 	}
 
-	public async Task<AStarPath> RunAsync( Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false )
+	public async Task<AStarPath> RunAsync( Cell startingCell, Cell targetCell, CancellationToken token, bool reversed = false, bool withCellConnections = true )
 	{
 		var builder = this;
 
-		return await GameTask.RunInThreadAsync( () => builder.Run( startingCell, targetCell, token, reversed ) );
+		return await GameTask.RunInThreadAsync( () => builder.Run( startingCell, targetCell, token, reversed, withCellConnections ) );
 	}
-	public async Task<AStarPath> RunAsync( Vector3 startingPosition, Cell targetCell, CancellationToken token, bool reversed = false ) => await RunAsync( Grid.GetCell( startingPosition ), targetCell, token, reversed );
-	public async Task<AStarPath> RunAsync( Cell startingCell, Vector3 targetPosition, CancellationToken token, bool reversed = false ) => await RunAsync( startingCell, Grid.GetCell( targetPosition ), token, reversed );
-	public async Task<AStarPath> RunAsync( Vector3 startingPosition, Vector3 targetPosition, CancellationToken token, bool reversed = false ) => await RunAsync( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), token, reversed );
+	public async Task<AStarPath> RunAsync( Vector3 startingPosition, Cell targetCell, CancellationToken token, bool reversed = false, bool withCellConnections = true ) => await RunAsync( Grid.GetCell( startingPosition ), targetCell, token, reversed, withCellConnections );
+	public async Task<AStarPath> RunAsync( Cell startingCell, Vector3 targetPosition, CancellationToken token, bool reversed = false, bool withCellConnections = true ) => await RunAsync( startingCell, Grid.GetCell( targetPosition ), token, reversed, withCellConnections );
+	public async Task<AStarPath> RunAsync( Vector3 startingPosition, Vector3 targetPosition, CancellationToken token, bool reversed = false, bool withCellConnections = true ) => await RunAsync( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), token, reversed, withCellConnections );
 
-	public async Task<AStarPath> RunInParallel( Cell startingCell, Cell targetCell, CancellationTokenSource tokenSource )
+	public async Task<AStarPath> RunInParallel( Cell startingCell, Cell targetCell, CancellationTokenSource tokenSource, bool withCellConnections = true )
 	{
 		if ( startingCell is null || targetCell is null || startingCell == targetCell ) return AStarPath.Empty();
 
-		var fromTo = RunAsync( startingCell, targetCell, tokenSource.Token );
-		var toFrom = RunAsync( targetCell, startingCell, tokenSource.Token, true );
+		var fromTo = RunAsync( startingCell, targetCell, tokenSource.Token, false, withCellConnections );
+		var toFrom = RunAsync( targetCell, startingCell, tokenSource.Token, true, false ); // You can't reverse some cell connections, like dropping down
 
 		var pathResult = await GameTask.WhenAny( fromTo, toFrom ).Result;
 
@@ -137,7 +137,7 @@ public struct AStarPathBuilder
 
 		return pathResult;
 	}
-	public async Task<AStarPath> RunInParallel( Vector3 startingPosition, Cell targetCell, CancellationTokenSource tokenSource ) => await RunInParallel( Grid.GetCell( startingPosition ), targetCell, tokenSource );
-	public async Task<AStarPath> RunInParallel( Cell startingCell, Vector3 targetPosition, CancellationTokenSource tokenSource ) => await RunInParallel( startingCell, Grid.GetCell( targetPosition ), tokenSource );
-	public async Task<AStarPath> RunInParallel( Vector3 startingPosition, Vector3 targetPosition, CancellationTokenSource tokenSource ) => await RunInParallel( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), tokenSource );
+	public async Task<AStarPath> RunInParallel( Vector3 startingPosition, Cell targetCell, CancellationTokenSource tokenSource, bool withCellConnections = true ) => await RunInParallel( Grid.GetCell( startingPosition ), targetCell, tokenSource, withCellConnections );
+	public async Task<AStarPath> RunInParallel( Cell startingCell, Vector3 targetPosition, CancellationTokenSource tokenSource, bool withCellConnections = true ) => await RunInParallel( startingCell, Grid.GetCell( targetPosition ), tokenSource, withCellConnections );
+	public async Task<AStarPath> RunInParallel( Vector3 startingPosition, Vector3 targetPosition, CancellationTokenSource tokenSource, bool withCellConnections = true ) => await RunInParallel( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), tokenSource, withCellConnections );
 }
