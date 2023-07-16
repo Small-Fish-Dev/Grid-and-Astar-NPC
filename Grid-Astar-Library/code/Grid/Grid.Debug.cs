@@ -5,6 +5,8 @@ namespace GridAStar;
 public partial class Grid
 {
 
+	public void Print( string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{Identifier}': {message}" );
+
 	/*
 	[ConCmd.Server( "RegenerateMainGrid" )]
 	public async static void RegenerateMainGrid()

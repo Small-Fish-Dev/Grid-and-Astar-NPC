@@ -290,6 +290,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		OccupyingEntity = entity;
 		currentOccupyingTransform = entity.Transform;
 	}
+
 	public void RemoveOccupant()
 	{
 		OccupyingEntity = null;

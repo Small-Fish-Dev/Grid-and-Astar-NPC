@@ -224,7 +224,7 @@ public struct GridBuilder
 	/// <summary>
 	/// Creates a new grid with the settings given
 	/// <returns></returns>
-	public async Task<Grid> Create()
+	public async Task<Grid> Create( bool printInfo = true )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -233,7 +233,8 @@ public struct GridBuilder
 
 		var currentGrid = new Grid( this );
 
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Creating grid {currentGrid.Identifier}" );
+		if ( printInfo )
+			currentGrid.Print( "Creating grid" );
 
 		var rotatedBounds = currentGrid.RotatedBounds;
 		var worldBounds = currentGrid.WorldBounds;
@@ -247,7 +248,8 @@ public struct GridBuilder
 
 		await GameTask.RunInThreadAsync( () =>
 		{
-			Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}]" );
+			if ( printInfo )
+				currentGrid.Print( $"Casting {(maximumGrid.y - minimumGrid.y) * (maximumGrid.x - minimumGrid.x)} cells. [{maximumGrid.x - minimumGrid.x}x{maximumGrid.y - minimumGrid.y}" );
 
 			for ( int column = 0; column < totalColumns; column++ )
 			{
@@ -293,28 +295,33 @@ public struct GridBuilder
 		} );
 
 		cellsWatch.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} generated terrain cells in {cellsWatch.ElapsedMilliseconds}ms" );
+		if ( printInfo )
+			currentGrid.Print( $"Generated terrain cells in {cellsWatch.ElapsedMilliseconds}ms" );
 
 		Stopwatch edgeCells = new Stopwatch();
 		edgeCells.Start();
 		currentGrid.AssignEdgeCells();
 		edgeCells.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
+		if ( printInfo )
+			currentGrid.Print( $"Assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
 
 		Stopwatch droppableCells = new Stopwatch();
 		droppableCells.Start();
 		currentGrid.AssignDroppableCells();
 		droppableCells.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
+		if ( printInfo )
+			currentGrid.Print( $"Assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
 
 		Stopwatch jumpableCells = new Stopwatch();
 		jumpableCells.Start();
 		currentGrid.AssignJumpableCells( "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z );
 		jumpableCells.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
+		if ( printInfo )
+			currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
 
 		totalWatch.Stop();
-		Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid {currentGrid.Identifier} created in {totalWatch.ElapsedMilliseconds}ms" );
+		if ( printInfo )
+			currentGrid.Print( $"Finished in {totalWatch.ElapsedMilliseconds}ms" );
 
 		currentGrid.Initialize();
 
