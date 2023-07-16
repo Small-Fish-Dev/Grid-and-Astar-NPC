@@ -8,7 +8,7 @@ public partial class Grid
 	public static void Print( string identifier, string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{identifier}': {message}" );
 
 	/*
-	[ConCmd.Server( "RegenerateMainGrid" )]
+	[ConCmd.Admin( "RegenerateMainGrid" )]
 	public async static void RegenerateMainGrid()
 	{
 		BroadcastMainGrid();
@@ -21,33 +21,33 @@ public partial class Grid
 		await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
 	}
 
-	[ConCmd.Server( "CreateGrid" )]
+	[ConCmd.Admin( "CreateGrid" )]
 	public async static void CreateGrid( string identifier )
 	{
 		var caller = ConsoleSystem.Caller;
 		await Grid.Create( caller.Position, new BBox( -200f, 200f ), new Rotation(), identifier );
 	}
 
-	[ConCmd.Server( "LoadGrid" )]
+	[ConCmd.Admin( "LoadGrid" )]
 	public async static void LoadGrid( string identifier = "main" )
 	{
 		await Grid.Load( identifier );
 	}
 
-	[ConCmd.Server( "DeleteGrid" )]
+	[ConCmd.Admin( "DeleteGrid" )]
 	public static void DeleteGrid( string identifier = "main" )
 	{
 		DeleteSave( identifier );
 	}
 
-	[ConCmd.Server( "TestOccupancy" )]
+	[ConCmd.Admin( "TestOccupancy" )]
 	public static void OccupancyTest()
 	{
 		foreach ( var grid in Grid.Grids )
 			grid.Value.CheckOccupancy( "BlockGrid" );
 	}*/
 
-	[ConCmd.Server( "TestPath" )]
+	[ConCmd.Admin( "TestPath" )]
 	public async static void TestPath()
 	{
 		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
@@ -68,7 +68,7 @@ public partial class Grid
 	}
 
 
-	[ConCmd.Server( "TestLOS" )]
+	[ConCmd.Admin( "TestLOS" )]
 	public static void TestLOS()
 	{
 		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
@@ -79,7 +79,7 @@ public partial class Grid
 		Log.Error( Grid.Main.LineOfSight( standingCell, forwardCell, debugShow: true ) );
 	}
 
-	[ConCmd.Server( "TestWalkable" )]
+	[ConCmd.Admin( "TestWalkable" )]
 	public static void TestWalkable()
 	{
 		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
@@ -90,7 +90,7 @@ public partial class Grid
 		Log.Error( Grid.Main.IsDirectlyWalkable( standingCell, forwardCell, debugShow: true ) );
 	}
 
-	[ConCmd.Server( "DeleteCells" )]
+	[ConCmd.Admin( "DeleteCells" )]
 	public static void TestDeleteCells( float size = 300)
 	{
 		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
@@ -99,7 +99,7 @@ public partial class Grid
 		Grid.Main.RemoveCells( bounds, true );
 	}
 	/*
-	[ConCmd.Server( "StressPath" )]
+	[ConCmd.Admin( "StressPath" )]
 	public static async void StressPath( int runs = 100, int seed = 42069 )
 	{
 		var firstPlayer = Game.Clients.FirstOrDefault();
@@ -146,7 +146,7 @@ public partial class Grid
 		}
 	}*/
 
-	[ConCmd.Server( "gridastar_regenerate" )]
+	[ConCmd.Admin( "gridastar_regenerate" )]
 	public static void RegenerateGrids( bool save = false, bool compress = false )
 	{
 		RegenerateOnClient( To.Everyone );
@@ -166,7 +166,7 @@ public partial class Grid
 		} );
 	}
 
-	[ConCmd.Server( "gridastar_create" )]
+	[ConCmd.Admin( "gridastar_create" )]
 	public static void CreateMain( bool save = false, bool compress = false )
 	{
 		CreateNewOnClient( To.Everyone );
