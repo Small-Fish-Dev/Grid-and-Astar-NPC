@@ -51,7 +51,7 @@ public partial class Grid : IValid
 	public BBox Bounds => Settings.Bounds;
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
-	public Transform Transform => new Transform( Position, AxisRotation );
+	public Transform Transform => new Transform( WorldBounds.Center, AxisRotation );
 	public BBox ToWorld( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation ).Translate( WorldBounds.Center );
 	public BBox ToLocal( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation.Inverse ).Translate( -WorldBounds.Center );
 	public Rotation Rotation => Settings.Rotation;
@@ -473,7 +473,7 @@ public partial class Grid : IValid
 	/// <param name="bounds">Local bounds</param>
 	/// <param name="printInfo"></param>
 	/// <param name="broadcastToClients"></param>
-	public void CreateCells( BBox bounds, bool printInfo = true, bool broadcastToClients = false )
+	public IEnumerable<Cell> CreateCells( BBox bounds, bool printInfo = true, bool broadcastToClients = false )
 	{
 		var worldBounds = ToWorld( bounds );
 
@@ -513,7 +513,7 @@ public partial class Grid : IValid
 								var newCell = Cell.TryCreate( this, positionResult.HitPosition );
 
 								if ( newCell != null )
-									AddCell( newCell );
+									yield return newCell;
 							}
 						}
 					}
@@ -530,6 +530,8 @@ public partial class Grid : IValid
 				}
 			}
 		}
+
+		Print( "Done" );
 
 		if ( broadcastToClients )
 			if ( Game.IsServer )

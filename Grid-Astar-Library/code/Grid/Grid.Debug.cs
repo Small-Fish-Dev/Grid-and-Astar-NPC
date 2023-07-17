@@ -160,7 +160,25 @@ public partial class Grid
 	{
 		RegenerateOnClient( To.Everyone );
 
-		GameTask.RunInThreadAsync( async () =>
+		/*GameTask.RunInThreadAsync( () =>
+		{
+			Log.Info( ThreadSafe.IsMainThread );
+			for ( int i = 0; i < 10; i++ )
+			{
+				var task = i;
+				GameTask.RunInThreadAsync( async () =>
+				{
+					for ( int x = 0; x < 10; x++ )
+					{
+						Log.Info( $"Hello from Task #{task}" );
+						await GameTask.Delay( 100 );
+					}
+				} );
+			}
+		} );*/
+		
+
+		/*GameTask.RunInThreadAsync( async () =>
 		{
 			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
 
@@ -172,7 +190,7 @@ public partial class Grid
 			}
 
 			Event.Run( Grid.LoadedAll );
-		} );
+		} );*/
 	}
 
 	[ConCmd.Admin( "gridastar_create" )]
