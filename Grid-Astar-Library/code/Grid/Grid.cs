@@ -374,37 +374,56 @@ public partial class Grid : IValid
 	/// <param name="gravity"></param>
 	/// <param name="generateFraction">0.1 = Generate a connection only 10% of the times</param>
 	/// <param name="maxPerCell">How many jump connections of this type can a cell have</param>
-	public void AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.4f, int maxPerCell = 1 )
+	/// <param name="threadsToUse"></param>
+	public async Task AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 )
 	{
-		var totalFraction = 0f;
+		var allCells = CellsWithTag( "edge" );
+		var cellsCount = allCells.Count();
+		var cellsEachThread = (int)(cellsCount / threadsToUse);
+		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
+		List<Task> tasks = new();
 
-		foreach ( var cell in CellsWithTag( "edge" ) )
+		for ( int i = 0; i < threadsToUse; i++ )
 		{
-			if ( totalFraction >= 1f )
-			{
-				List<Cell> connectedCells = new();
+			var curentThread = i;
 
-				foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight, maxPerCell ) )
-					if ( jumpableCell != null )
+			tasks.Add( GameTask.RunInThreadAsync( () =>
+			{
+				var totalFraction = 0f;
+				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
+				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
+
+				foreach ( var cell in cellsToCheck )
+				{
+					if ( totalFraction >= 1f )
 					{
-						cell.AddConnection( jumpableCell, movementTag );
-						connectedCells.Add( jumpableCell );
+						List<Cell> connectedCells = new();
+
+						foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight, maxPerCell ) )
+							if ( jumpableCell != null )
+							{
+								cell.AddConnection( jumpableCell, movementTag );
+								connectedCells.Add( jumpableCell );
+							}
+
+						foreach ( var jumpableConnection in connectedCells ) // Check if you can jump back onto the cell
+						{
+							var direction = (cell.Position - jumpableConnection.Position).WithZ( 0 ).Normal;
+							var jumpbackCell = jumpableConnection.GetValidJumpable( horizontalSpeed, verticalSpeed, gravity, direction, MaxDropHeight );
+
+							if ( jumpbackCell != null )
+								jumpableConnection.AddConnection( jumpbackCell, movementTag );
+						}
+
+						totalFraction = 0f;
 					}
 
-				foreach ( var jumpableConnection in connectedCells ) // Check if you can jump back onto the cell
-				{
-					var direction = (cell.Position - jumpableConnection.Position).WithZ( 0 ).Normal;
-					var jumpbackCell = jumpableConnection.GetValidJumpable( horizontalSpeed, verticalSpeed, gravity, direction, MaxDropHeight );
-
-					if ( jumpbackCell != null )
-						jumpableConnection.AddConnection( jumpbackCell, movementTag );
+					totalFraction += generateFraction;
 				}
-
-				totalFraction = 0f;
-			}
-
-			totalFraction += generateFraction;
+			} ));
 		}
+
+		await GameTask.WhenAll( tasks );
 	}
 
 	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )
@@ -473,9 +492,10 @@ public partial class Grid : IValid
 	/// <param name="bounds">Local bounds</param>
 	/// <param name="printInfo"></param>
 	/// <param name="broadcastToClients"></param>
-	public IEnumerable<Cell> CreateCells( BBox bounds, bool printInfo = true, bool broadcastToClients = false )
+	public List<Cell> CreateCells( BBox bounds, bool printInfo = true, bool broadcastToClients = false )
 	{
 		var worldBounds = ToWorld( bounds );
+		var generatedCells = new List<Cell>();
 
 		var minimumGrid = bounds.Mins.ToIntVector2( CellSize );
 		var maximumGrid = bounds.Maxs.ToIntVector2( CellSize );
@@ -513,7 +533,7 @@ public partial class Grid : IValid
 								var newCell = Cell.TryCreate( this, positionResult.HitPosition );
 
 								if ( newCell != null )
-									yield return newCell;
+									generatedCells.Add( newCell );
 							}
 						}
 					}
@@ -531,11 +551,14 @@ public partial class Grid : IValid
 			}
 		}
 
-		Print( "Done" );
-
 		if ( broadcastToClients )
 			if ( Game.IsServer )
 				Grid.createCellsClient( Identifier, bounds, printInfo );
+
+		if ( printInfo )
+			Print( $"Generated {generatedCells.Count()} valid cells" );
+
+		return generatedCells;
 	}
 
 	[ClientRpc]

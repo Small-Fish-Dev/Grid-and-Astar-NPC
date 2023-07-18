@@ -225,8 +225,11 @@ public struct GridBuilder
 
 	/// <summary>
 	/// Creates a new grid with the settings given
+	/// </summary>
+	/// <param name="threadedChunkSides">How many sides the grid will be split to generate each chunk into a different thread. 1 = 1 thread, 2 = 4 threads, 3 = 9 threads etc...</param>
+	/// <param name="printInfo">Print information about the grid's generation state</param>
 	/// <returns></returns>
-	public async Task<Grid> Create( bool printInfo = true )
+	public async Task<Grid> Create( int threadedChunkSides = 4, bool printInfo = true )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
@@ -235,26 +238,25 @@ public struct GridBuilder
 
 		var currentGrid = new Grid( this );
 
-		var sides = 4;
 		List<Task<List<Cell>>> tasks = new();
 		var totalBounds = currentGrid.RotatedBounds;
 		var totalMins = totalBounds.Mins;
 		var totalMaxs = totalBounds.Maxs;
 		var totalSize = totalBounds.Size;
 
-		for ( int x = 1; x <= sides; x++ )
+		for ( int x = 1; x <= threadedChunkSides; x++ )
 		{
-			for ( int y = 1; y <= sides; y++ )
+			for ( int y = 1; y <= threadedChunkSides; y++ )
 			{
-				var xOffset = totalSize.x / sides * x - totalSize.x / sides / 2;
-				var yOffset = totalSize.y / sides * y - totalSize.y / sides / 2;
+				var xOffset = totalSize.x / threadedChunkSides * x - totalSize.x / threadedChunkSides / 2;
+				var yOffset = totalSize.y / threadedChunkSides * y - totalSize.y / threadedChunkSides / 2;
 				var offset = new Vector3( xOffset, yOffset );
-				var chunkSize = totalSize / sides;
+				var chunkSize = totalSize / threadedChunkSides;
 				var chunkMins = totalMins + offset - chunkSize / 2;
 				var chunkMaxs = totalMins + offset + chunkSize / 2;
 				var dividedBounds = new BBox( chunkMins.WithZ( totalMins.z ), chunkMaxs.WithZ( totalMaxs.z ) );
 
-				tasks.Add( GameTask.RunInThreadAsync( () => currentGrid.CreateCells( dividedBounds, true ).ToList() ) ); // I gotta cast it into a list or else it doesn't get called??
+				tasks.Add( GameTask.RunInThreadAsync( () => currentGrid.CreateCells( dividedBounds, printInfo ) ) );
 			}
 		}
 
@@ -289,7 +291,7 @@ public struct GridBuilder
 
 		Stopwatch jumpableCells = new Stopwatch();
 		jumpableCells.Start();
-		currentGrid.AssignJumpableCells( "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z ); // TODO: Hands when translating the bounds into the void?
+		await currentGrid.AssignJumpableCells( "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z, threadsToUse: threadedChunkSides * threadedChunkSides ); // TODO: Hangs when translating the bounds into the void?
 		jumpableCells.Stop();
 		if ( printInfo )
 			currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
