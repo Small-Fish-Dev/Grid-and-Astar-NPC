@@ -277,14 +277,14 @@ public struct GridBuilder
 
 		Stopwatch edgeCells = new Stopwatch();
 		edgeCells.Start();
-		currentGrid.AssignEdgeCells();
+		await currentGrid.AssignEdgeCells( threadsToUse: threadedChunkSides * threadedChunkSides );
 		edgeCells.Stop();
 		if ( printInfo )
 			currentGrid.Print( $"Assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
 
 		Stopwatch droppableCells = new Stopwatch();
 		droppableCells.Start();
-		currentGrid.AssignDroppableCells();
+		await currentGrid.AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
 		droppableCells.Stop();
 		if ( printInfo )
 			currentGrid.Print( $"Assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );

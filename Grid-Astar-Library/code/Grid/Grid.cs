@@ -343,26 +343,66 @@ public partial class Grid : IValid
 	/// Gives the edge tag to all cells with less than 8 neighbours
 	/// </summary>
 	/// <param name="maxNeighourCount">How many neighbours a cell needs to have to not be considered an edge</param>
+	/// <param name="threadsToUse"></param>
 	/// <returns></returns>
-	public void AssignEdgeCells( int maxNeighourCount = 8 )
+	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1 )
 	{
-		foreach ( var cell in AllCells )
-			if ( cell.GetNeighbours().Count() < maxNeighourCount )
-				cell.Tags.Add( "edge" );
+		var allCells = AllCells;
+		var cellsCount = allCells.Count();
+		var cellsEachThread = (int)(cellsCount / threadsToUse);
+		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
+		List<Task> tasks = new();
+
+		for ( int i = 0; i < threadsToUse; i++ )
+		{
+			var curentThread = i;
+
+			tasks.Add( GameTask.RunInThreadAsync( () =>
+			{
+				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
+				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
+
+				foreach ( var cell in cellsToCheck )
+					if ( cell.GetNeighbours().Count() < maxNeighourCount )
+						cell.Tags.Add( "edge" );
+			} ) );
+		}
+
+		await GameTask.WhenAll( tasks );
 	}
 
 	/// <summary>
 	/// Adds the droppable connection to cells you can drop from
 	/// </summary>
 	/// <returns></returns>
-	public void AssignDroppableCells()
+	public async Task AssignDroppableCells( int threadsToUse = 1 )
 	{
-		foreach ( var cell in CellsWithTag( "edge" ) )
+		var allCells = CellsWithTag( "edge" );
+		var cellsCount = allCells.Count();
+		var cellsEachThread = (int)(cellsCount / threadsToUse);
+		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
+		List<Task> tasks = new();
+
+		for ( int i = 0; i < threadsToUse; i++ )
 		{
-			var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight );
-			if ( droppableCell != null )
-				cell.AddConnection( droppableCell, "drop" );
+			var curentThread = i;
+
+			tasks.Add( GameTask.RunInThreadAsync( () =>
+			{
+				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
+				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
+
+				foreach ( var cell in cellsToCheck )
+				{
+
+					var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight );
+					if ( droppableCell != null )
+						cell.AddConnection( droppableCell, "drop" );
+				}
+			} ) );
 		}
+
+		await GameTask.WhenAll( tasks );
 	}
 
 	/// <summary>
