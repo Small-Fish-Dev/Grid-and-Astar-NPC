@@ -576,6 +576,26 @@ public partial class Grid : IValid
 				AddCell( cell );
 	}
 
+	public async Task GenerateConnections( BBox bounds, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
+	{
+		await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
+		await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
+		await AssignJumpableCells( bounds, "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z, threadsToUse: threadedChunkSides * threadedChunkSides );
+
+		if ( broadcastToClients )
+			if ( Game.IsServer )
+				Grid.regenerateConnectionsClient( Identifier, bounds, threadedChunkSides, printInfo );
+	}
+
+	[ClientRpc]
+	internal async static void regenerateConnectionsClient( string identifier, BBox bounds, int threadedChunkSides = 4, bool printInfo = true )
+	{
+		var grid = Grids[identifier];
+
+		if ( grid != null )
+			await grid.GenerateConnections( bounds, threadedChunkSides, printInfo );
+	}
+
 	/// <summary>
 	/// Create cells in that local bbox (Doesn't add them)
 	/// </summary>

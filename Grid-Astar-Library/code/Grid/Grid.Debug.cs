@@ -101,12 +101,13 @@ public partial class Grid
 	}
 
 	[ConCmd.Admin( "CreateCells" )]
-	public static void TestCreateCells( float size = 300 )
+	public async static void TestCreateCells( float size = 300 )
 	{
 		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
 
 		var bounds = new BBox( player.Position, size );
-		var cells = Grid.Main.GenerateCells( Grid.Main.ToLocal( bounds ), 4, true, true );
+		await Grid.Main.GenerateCells( Grid.Main.ToLocal( bounds ), 4, true, true );
+		await Grid.Main.GenerateConnections( Grid.Main.ToLocal( bounds * 2 ), 4, true, true );
 	}
 	/*
 	[ConCmd.Admin( "StressPath" )]
