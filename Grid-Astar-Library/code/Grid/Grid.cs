@@ -356,10 +356,13 @@ public partial class Grid : IValid
 	/// <param name="maxNeighourCount">How many neighbours a cell needs to have to not be considered an edge</param>
 	/// <param name="threadsToUse"></param>
 	/// <returns></returns>
-	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1 )
+	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1 ) => await assignEdgeCellsInternal( AllCells.ToList(), maxNeighourCount, threadsToUse );
+
+	public async Task AssignEdgeCells( BBox bounds, int maxNeighourCount = 8, int threadsToUse = 1 ) => await assignEdgeCellsInternal( GetCellsInBBox( bounds ), maxNeighourCount, threadsToUse );
+
+	internal async Task assignEdgeCellsInternal( List<Cell> cells, int maxNeighourCount = 8, int threadsToUse = 1 )
 	{
-		var allCells = AllCells;
-		var cellsCount = allCells.Count();
+		var cellsCount = cells.Count();
 		var cellsEachThread = (int)(cellsCount / threadsToUse);
 		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
 		List<Task> tasks = new();
@@ -371,32 +374,7 @@ public partial class Grid : IValid
 			tasks.Add( GameTask.RunInThreadAsync( () =>
 			{
 				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
-				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
-
-				foreach ( var cell in cellsToCheck )
-					if ( cell.GetNeighbours().Count() < maxNeighourCount )
-						cell.Tags.Add( "edge" );
-			} ) );
-		}
-
-		await GameTask.WhenAll( tasks );
-	}
-	public async Task AssignEdgeCells( BBox bbox, int maxNeighourCount = 8, int threadsToUse = 1 )
-	{
-		var allCells = AllCells;
-		var cellsCount = allCells.Count();
-		var cellsEachThread = (int)(cellsCount / threadsToUse);
-		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
-		List<Task> tasks = new();
-
-		for ( int i = 0; i < threadsToUse; i++ )
-		{
-			var curentThread = i;
-
-			tasks.Add( GameTask.RunInThreadAsync( () =>
-			{
-				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
-				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
+				var cellsToCheck = cells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
 
 				foreach ( var cell in cellsToCheck )
 					if ( cell.GetNeighbours().Count() < maxNeighourCount )
@@ -411,9 +389,13 @@ public partial class Grid : IValid
 	/// Adds the droppable connection to cells you can drop from
 	/// </summary>
 	/// <returns></returns>
-	public async Task AssignDroppableCells( int threadsToUse = 1 )
+	public async Task AssignDroppableCells( int threadsToUse = 1 ) => await internalAssignDroppableCells( CellsWithTag( "edge" ).ToList(), threadsToUse );
+
+	public async Task AssignDroppableCells( BBox bounds, int threadsToUse = 1 ) => await internalAssignDroppableCells( CellsWithTag( bounds, "edge" ).ToList(), threadsToUse );
+
+	internal async Task internalAssignDroppableCells( List<Cell> cells, int threadsToUse = 1 )
 	{
-		var allCells = CellsWithTag( "edge" );
+		var allCells = cells;
 		var cellsCount = allCells.Count();
 		var cellsEachThread = (int)(cellsCount / threadsToUse);
 		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
@@ -451,9 +433,12 @@ public partial class Grid : IValid
 	/// <param name="generateFraction">0.1 = Generate a connection only 10% of the times</param>
 	/// <param name="maxPerCell">How many jump connections of this type can a cell have</param>
 	/// <param name="threadsToUse"></param>
-	public async Task AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 )
+	public async Task AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), movementTag, horizontalSpeed, verticalSpeed, gravity, generateFraction, maxPerCell, threadsToUse );
+	public async Task AssignJumpableCells( BBox bounds, string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), movementTag, horizontalSpeed, verticalSpeed, gravity, generateFraction, maxPerCell, threadsToUse );
+
+	internal async Task internalAssignJumpableCells( List<Cell> cells, string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 )
 	{
-		var allCells = CellsWithTag( "edge" );
+		var allCells = cells;
 		var cellsCount = allCells.Count();
 		var cellsEachThread = (int)(cellsCount / threadsToUse);
 		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
@@ -496,7 +481,7 @@ public partial class Grid : IValid
 
 					totalFraction += generateFraction;
 				}
-			} ));
+			} ) );
 		}
 
 		await GameTask.WhenAll( tasks );
@@ -699,6 +684,30 @@ public partial class Grid : IValid
 	/// <param name="tags"></param>
 	/// <returns></returns>
 	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => AllCells.Where( cell => cell.Tags.Has( tags ) );
+
+	/// <summary>
+	/// Returns all cells with that tag
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="tag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTag( BBox bounds, string tag ) => GetCellsInBBox(bounds).Where( cell => cell.Tags.Has( tag ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( BBox bounds, params string[] tags ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tags ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( BBox bounds, List<string> tags ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tags ) );
 
 	/// <summary>
 	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone
