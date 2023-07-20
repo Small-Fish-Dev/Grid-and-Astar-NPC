@@ -526,13 +526,46 @@ public partial class Grid : IValid
 				Grid.removeCellsClient( Identifier, bounds, printInfo );
 	}
 
+	public async Task GenerateCells( BBox bounds, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
+	{
+		List<Task<List<Cell>>> tasks = new();
+		var totalMins = bounds.Mins;
+		var totalMaxs = bounds.Maxs;
+		var totalSize = bounds.Size;
+
+		if ( broadcastToClients )
+			if ( Game.IsServer )
+				Grid.generateCellsClient( Identifier, threadedChunkSides, bounds, printInfo );
+
+		for ( int x = 1; x <= threadedChunkSides; x++ )
+		{
+			for ( int y = 1; y <= threadedChunkSides; y++ )
+			{
+				var xOffset = totalSize.x / threadedChunkSides * x - totalSize.x / threadedChunkSides / 2;
+				var yOffset = totalSize.y / threadedChunkSides * y - totalSize.y / threadedChunkSides / 2;
+				var offset = new Vector3( xOffset, yOffset );
+				var chunkSize = totalSize / threadedChunkSides;
+				var chunkMins = totalMins + offset - chunkSize / 2;
+				var chunkMaxs = totalMins + offset + chunkSize / 2;
+				var dividedBounds = new BBox( chunkMins.WithZ( totalMins.z ), chunkMaxs.WithZ( totalMaxs.z ) );
+
+				tasks.Add( GameTask.RunInThreadAsync( () => createCells( dividedBounds, printInfo ) ) );
+			}
+		}
+
+		await GameTask.WhenAll( tasks );
+
+		foreach ( var task in tasks )
+			foreach ( var cell in task.Result )
+				AddCell( cell );
+	}
+
 	/// <summary>
-	/// Create cells in that local bbox
+	/// Create cells in that local bbox (Doesn't add them)
 	/// </summary>
 	/// <param name="bounds">Local bounds</param>
 	/// <param name="printInfo"></param>
-	/// <param name="broadcastToClients"></param>
-	public List<Cell> CreateCells( BBox bounds, bool printInfo = true, bool broadcastToClients = false )
+	private List<Cell> createCells( BBox bounds, bool printInfo = true )
 	{
 		var worldBounds = ToWorld( bounds );
 		var generatedCells = new List<Cell>();
@@ -591,10 +624,6 @@ public partial class Grid : IValid
 			}
 		}
 
-		if ( broadcastToClients )
-			if ( Game.IsServer )
-				Grid.createCellsClient( Identifier, bounds, printInfo );
-
 		if ( printInfo )
 			Print( $"Generated {generatedCells.Count()} valid cells" );
 
@@ -611,12 +640,12 @@ public partial class Grid : IValid
 	}
 
 	[ClientRpc]
-	internal static void createCellsClient( string identifier, BBox bounds, bool printInfo = false )
+	internal async static void generateCellsClient( string identifier, int threadedChunkSides, BBox bounds, bool printInfo = false )
 	{
 		var grid = Grids[identifier];
 
 		if ( grid != null )
-			grid.CreateCells( bounds, printInfo );
+			await grid.GenerateCells( bounds, threadedChunkSides, printInfo );
 	}
 
 	/// <summary>

@@ -238,33 +238,7 @@ public struct GridBuilder
 
 		var currentGrid = new Grid( this );
 
-		List<Task<List<Cell>>> tasks = new();
-		var totalBounds = currentGrid.RotatedBounds;
-		var totalMins = totalBounds.Mins;
-		var totalMaxs = totalBounds.Maxs;
-		var totalSize = totalBounds.Size;
-
-		for ( int x = 1; x <= threadedChunkSides; x++ )
-		{
-			for ( int y = 1; y <= threadedChunkSides; y++ )
-			{
-				var xOffset = totalSize.x / threadedChunkSides * x - totalSize.x / threadedChunkSides / 2;
-				var yOffset = totalSize.y / threadedChunkSides * y - totalSize.y / threadedChunkSides / 2;
-				var offset = new Vector3( xOffset, yOffset );
-				var chunkSize = totalSize / threadedChunkSides;
-				var chunkMins = totalMins + offset - chunkSize / 2;
-				var chunkMaxs = totalMins + offset + chunkSize / 2;
-				var dividedBounds = new BBox( chunkMins.WithZ( totalMins.z ), chunkMaxs.WithZ( totalMaxs.z ) );
-
-				tasks.Add( GameTask.RunInThreadAsync( () => currentGrid.CreateCells( dividedBounds, printInfo ) ) );
-			}
-		}
-
-		await GameTask.WhenAll( tasks );
-		
-		foreach ( var task in tasks )
-			foreach ( var cell in task.Result )
-				currentGrid.AddCell( cell );
+		await currentGrid.GenerateCells( currentGrid.RotatedBounds, threadedChunkSides, printInfo, false );
 		
 		//await GameTask.RunInThreadAsync( () => currentGrid.CreateCells( currentGrid.RotatedBounds, printInfo ) );
 

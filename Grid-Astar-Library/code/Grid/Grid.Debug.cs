@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace GridAStar;
 
@@ -105,7 +106,7 @@ public partial class Grid
 		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
 
 		var bounds = new BBox( player.Position, size );
-		Grid.Main.CreateCells( Grid.Main.ToLocal( bounds ), true, true );
+		var cells = Grid.Main.GenerateCells( Grid.Main.ToLocal( bounds ), 4, true, true );
 	}
 	/*
 	[ConCmd.Admin( "StressPath" )]
