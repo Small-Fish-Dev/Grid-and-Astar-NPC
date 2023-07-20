@@ -337,6 +337,17 @@ public partial class Grid : IValid
 			DeleteSave();
 	}
 
+	public List<Cell> GetCellsInBBox( BBox bbox )
+	{
+		var cells = new List<Cell>();
+
+		foreach ( var cell in AllCells )
+			if ( bbox.Contains( cell.Position ) )
+				cells.Add( cell );
+
+		return cells;
+	}
+
 	public override int GetHashCode() => Settings.GetHashCode();
 
 	/// <summary>
@@ -346,6 +357,31 @@ public partial class Grid : IValid
 	/// <param name="threadsToUse"></param>
 	/// <returns></returns>
 	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1 )
+	{
+		var allCells = AllCells;
+		var cellsCount = allCells.Count();
+		var cellsEachThread = (int)(cellsCount / threadsToUse);
+		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
+		List<Task> tasks = new();
+
+		for ( int i = 0; i < threadsToUse; i++ )
+		{
+			var curentThread = i;
+
+			tasks.Add( GameTask.RunInThreadAsync( () =>
+			{
+				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
+				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
+
+				foreach ( var cell in cellsToCheck )
+					if ( cell.GetNeighbours().Count() < maxNeighourCount )
+						cell.Tags.Add( "edge" );
+			} ) );
+		}
+
+		await GameTask.WhenAll( tasks );
+	}
+	public async Task AssignEdgeCells( BBox bbox, int maxNeighourCount = 8, int threadsToUse = 1 )
 	{
 		var allCells = AllCells;
 		var cellsCount = allCells.Count();
@@ -507,12 +543,7 @@ public partial class Grid : IValid
 
 	public void RemoveCells( BBox bounds, bool printInfo = false, bool broadcastToClients = false )
 	{
-		List<Cell> cellsToRemove = new();
-
-		foreach ( var cell in AllCells )
-			if ( bounds.Contains( cell.Position ) )
-				cellsToRemove.Add( cell );
-
+		var cellsToRemove = GetCellsInBBox( bounds );
 		var count = cellsToRemove.Count();
 
 		foreach ( var cell in cellsToRemove )
