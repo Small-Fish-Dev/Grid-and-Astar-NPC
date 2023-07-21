@@ -25,7 +25,7 @@ public partial class HammerGrid : ModelEntity
 	[Net, Property, Description( "For grid-perfect terrain, this disables Steps so make sure to use ramps instead" )]
 	public bool GridPerfect { get; set; } = GridSettings.DEFAULT_GRID_PERFECT;
 	[Net, Property, Description( "Ignore entities while creating the grid (Static props placed in hammer count as the world, otherwise they don't)" )]
-	public bool WorldOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	public bool StaticOnly { get; set; } = GridSettings.DEFAULT_WORLD_ONLY;
 	[Net, Property, Description( "How high up you can drop down" )]
 	public float MaxDropHeight { get; set; } = GridSettings.DEFAULT_DROP_HEIGHT;
 	[Net, Property, Description( "Cells will be generated in the shape of a squished circle instead of rectangle" )]
@@ -61,7 +61,7 @@ public partial class HammerGrid : ModelEntity
 			.WithHeightClearance( HeightClearance )
 			.WithWidthClearance( WidthClearance )
 			.WithGridPerfect( GridPerfect )
-			.WithWorldOnly( WorldOnly )
+			.WithStaticOnly( StaticOnly )
 			.WithMaxDropHeight( MaxDropHeight )
 			.WithCylinderShaped( CylinderShaped )
 			.WithTags( TagsToInclude.Replace( " ", string.Empty ).Split( "," ) )

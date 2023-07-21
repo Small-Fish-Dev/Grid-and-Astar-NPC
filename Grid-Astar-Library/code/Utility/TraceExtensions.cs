@@ -8,7 +8,7 @@ public static partial class TraceExtensions
 		self.WithAllTags( settings.TagsToInclude.ToArray() )
 			.WithoutTags( settings.TagsToExclude.ToArray() );
 
-		if ( settings.WorldOnly )
+		if ( settings.StaticOnly )
 			self.StaticOnly();
 
 		return self;

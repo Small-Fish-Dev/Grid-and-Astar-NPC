@@ -12,7 +12,7 @@ public struct GridBuilder
 	public float HeightClearance { get; private set; } = GridSettings.DEFAULT_HEIGHT_CLEARANCE;
 	public float WidthClearance { get; private set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
 	public bool GridPerfect { get; private set; } = GridSettings.DEFAULT_GRID_PERFECT;
-	public bool WorldOnly { get; private set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	public bool StaticOnly { get; private set; } = GridSettings.DEFAULT_WORLD_ONLY;
 	public float MaxDropHeight { get; private set; } = GridSettings.DEFAULT_DROP_HEIGHT;
 	public bool AxisAligned { get; private set; } = false;
 	public bool CylinderShaped { get; private set; } = false;
@@ -111,11 +111,11 @@ public struct GridBuilder
 	/// <summary>
 	/// Ignore entities, only hit create cells on the world
 	/// </summary>
-	/// <param name="worldOnly"></param>
+	/// <param name="staticOnly"></param>
 	/// <returns></returns>
-	public GridBuilder WithWorldOnly( bool worldOnly )
+	public GridBuilder WithStaticOnly( bool staticOnly )
 	{
-		WorldOnly = worldOnly;
+		StaticOnly = staticOnly;
 		return this;
 	}
 
@@ -292,14 +292,14 @@ public struct GridBuilder
 		var heightClearanceHashCode = HeightClearance.GetHashCode();
 		var widthClearanceHashCode = WidthClearance.GetHashCode();
 		var gridPerfectHashCode = GridPerfect.GetHashCode();
-		var worldOnlyHashCode = WorldOnly.GetHashCode();
+		var staticOnlyHashCode = StaticOnly.GetHashCode();
 		var maxDropHeightHashCode = MaxDropHeight.GetHashCode();
 		var cylinderShapedHashCode = CylinderShaped.GetHashCode();
 		var tagsToIncludeHashCode = string.Join( string.Empty, TagsToInclude ).GetHashCode();
 		var tagsToExcludeHashCode = string.Join( string.Empty, TagsToExclude ).GetHashCode();
 
 		var hashCodeFirst = HashCode.Combine( identifierHashCode, positionHashCode, boundsHashCode, rotationHashCode, axisAlignedHashCode, standableAngleHashCode, stepSizeHashCode, cellSizeHashCode );
-		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, worldOnlyHashCode, maxDropHeightHashCode, cylinderShapedHashCode, tagsToIncludeHashCode );
+		var hashCodeSecond = HashCode.Combine( cellSizeHashCode, heightClearanceHashCode, widthClearanceHashCode, gridPerfectHashCode, staticOnlyHashCode, maxDropHeightHashCode, cylinderShapedHashCode, tagsToIncludeHashCode );
 		var hashCodeThird = HashCode.Combine( tagsToExcludeHashCode );
 
 		return HashCode.Combine( hashCodeFirst, hashCodeSecond, hashCodeThird );

@@ -62,7 +62,7 @@ public partial class Grid : IValid
 	public float HeightClearance => Settings.HeightClearance;
 	public float WidthClearance => Settings.WidthClearance;
 	public bool GridPerfect => Settings.GridPerfect;
-	public bool WorldOnly => Settings.WorldOnly;
+	public bool StaticOnly => Settings.StaticOnly;
 	public float MaxDropHeight => Settings.MaxDropHeight;
 	public bool CylinderShaped => Settings.CylinderShaped;
 	public float Tolerance => GridPerfect ? 0.001f : 0f;

@@ -63,7 +63,7 @@ public partial class Grid
 						.WithHeightClearance( reader.ReadSingle() )
 						.WithWidthClearance( reader.ReadSingle() )
 						.WithGridPerfect( reader.ReadBoolean() )
-						.WithWorldOnly( reader.ReadBoolean() )
+						.WithStaticOnly( reader.ReadBoolean() )
 						.WithMaxDropHeight( reader.ReadSingle() )
 						.WithCylinderShaped( reader.ReadBoolean() );
 
@@ -156,7 +156,7 @@ public partial class Grid
 							.WithHeightClearance( reader.ReadSingle() )
 							.WithWidthClearance( reader.ReadSingle() )
 							.WithGridPerfect( reader.ReadBoolean() )
-							.WithWorldOnly( reader.ReadBoolean() )
+							.WithStaticOnly( reader.ReadBoolean() )
 							.WithMaxDropHeight( reader.ReadSingle() )
 							.WithCylinderShaped( reader.ReadBoolean() );
 
@@ -278,7 +278,7 @@ public partial class Grid
 				writer.Write( HeightClearance );
 				writer.Write( WidthClearance );
 				writer.Write( GridPerfect );
-				writer.Write( WorldOnly );
+				writer.Write( StaticOnly );
 				writer.Write( MaxDropHeight );
 				writer.Write( CylinderShaped );
 
