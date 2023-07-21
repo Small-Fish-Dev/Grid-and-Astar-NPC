@@ -157,7 +157,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			new Vector3( grid.CellSize / 2, grid.CellSize / 2 ) * grid.AxisRotation
 		};
 
-		var maxHeight = Math.Max( grid.CellSize * MathF.Tan( MathX.DegreeToRadian( grid.StandableAngle ) ), grid.RealStepSize );
+		var maxHeight = Math.Max( grid.CellSize * MathF.Tan( MathX.DegreeToRadian( grid.StandableAngle ) ), grid.StepSize );
 
 		for ( int i = 0; i < 4; i++ )
 		{
@@ -189,14 +189,14 @@ public partial class Cell : IEquatable<Cell>, IValid
 		var clearanceResult = clearanceTrace.Run();
 		var heightDifference = clearanceResult.EndPosition.z - (position.z - height);
 
-		return heightDifference <= grid.RealStepSize + height;
+		return heightDifference <= grid.StepSize + height;
 	}
 
 
 	//(IsWalkable, IsSteps)
 	private static (bool, bool) TestForSteps( Grid grid, Vector3 position, Vector3[] testCoordinates )
 	{
-		if ( grid.RealStepSize <= 0.1f ) // At this point why bother
+		if ( grid.StepSize <= 0.1f ) // At this point why bother
 			return (true, true);
 
 		var lowestToHighest = testCoordinates
@@ -220,7 +220,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	private static (bool, bool) TestForStep( Grid grid, Vector3 startPosition, Vector3 endPosition, Vector3 highestPosition, Vector3 lowestPosition )
 	{
 		var stepsTried = 0;
-		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / (grid.RealStepSize / 2f)) + 1, 3 );
+		var maxSteps = (int)Math.Max( (Math.Abs( highestPosition.z - lowestPosition.z ) / (grid.StepSize / 2f)) + 1, 3 );
 		var stepDistances = new float[maxSteps];
 
 		if ( highestPosition.z - lowestPosition.z <= grid.StepSize / 2 ) // No stairs here
@@ -229,12 +229,12 @@ public partial class Cell : IEquatable<Cell>, IValid
 		while ( stepsTried < maxSteps )
 		{
 			var tolerance = 0.01f;
-			var stepPositionStart = startPosition + Vector3.Up * (grid.RealStepSize / 4f + grid.RealStepSize / 2f * stepsTried + tolerance);
+			var stepPositionStart = startPosition + Vector3.Up * (grid.StepSize / 4f + grid.StepSize / 2f * stepsTried + tolerance);
 			var stepPositionEnd = endPosition.WithZ( stepPositionStart.z );
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
 			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * (stepDistance + tolerance * 2f) )
-				.Size( grid.RealStepSize / 2f )
+				.Size( grid.StepSize / 2f )
 				.WithGridSettings( grid.Settings );
 
 			var stepResult = stepTrace.Run();
@@ -368,7 +368,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		foreach ( var comparePair in verticesToCompare )
 		{
 			var heightDifference = Math.Abs( Vertices[comparePair[0]] - cell.Vertices[comparePair[1]] );
-			if ( heightDifference >= 0.1f ) return false;
+			if ( heightDifference > ( Grid.GridPerfect ? Grid.StepSize : Grid.Tolerance ) ) return false;
 		}
 
 		return true;
@@ -441,19 +441,19 @@ public partial class Cell : IEquatable<Cell>, IValid
 				if ( verticalDistance > maxHeightDistance ) continue; // Ignore if it's too high
 
 				var horizontalDistance = new Vector2( spiralX, spiralY ).Length - 1f;
-				if ( verticalDistance < Grid.RealStepSize * horizontalDistance ) continue; // It's probably a step already here
+				if ( verticalDistance < Grid.StepSize * horizontalDistance ) continue; // It's probably a step already here
 
 				if ( Grid.LineOfSight( this, cellFound ) ) continue; // Ignore if the cell cal be walked to
 
 				// Check if you can walk off the edge
-				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance - Grid.RealStepSize ) );
-				var horizontalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.RealStepSize, cellFound.Position.WithZ( Position.z + Grid.RealStepSize ) )
+				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance - Grid.StepSize ) );
+				var horizontalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.StepSize, cellFound.Position.WithZ( Position.z + Grid.StepSize ) )
 					.WithGridSettings( Grid.Settings )
 					.Run();
 				if ( horizontalClearanceTrace.Hit ) continue; // Ignore if you can't walk off the edge
 
 				// Check if you can drop down
-				var verticalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, cellFound.Position.WithZ( Position.z + Grid.RealStepSize ), cellFound.Position + Vector3.Up * Grid.RealStepSize )
+				var verticalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, cellFound.Position.WithZ( Position.z + Grid.StepSize ), cellFound.Position + Vector3.Up * Grid.StepSize )
 					.WithGridSettings( Grid.Settings )
 					.Run();
 				if ( verticalClearanceTrace.Hit ) continue; // Ignore if you can't drop down
@@ -483,7 +483,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 				if ( !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell ) ) && !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: false ) ) )
 					if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell ) ) && !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) )
 					{
-						var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.RealStepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+						var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
 						var jumpTrace = Sandbox.Trace.Box( clearanceBBox, endPosition, cell.Position )
 							.WithGridSettings( Grid.Settings )
 							.Run();
@@ -512,7 +512,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		if ( !Grid.IsDirectlyWalkable( this, cell ) && !Grid.IsDirectlyWalkable( this, cell, withConnections: false ) )
 			if ( !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell ) ) && !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) )
 			{
-				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.RealStepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
 				var jumpTrace = Sandbox.Trace.Box( clearanceBBox, endPosition, cell.Position )
 					.WithGridSettings( Grid.Settings )
 					.Run();

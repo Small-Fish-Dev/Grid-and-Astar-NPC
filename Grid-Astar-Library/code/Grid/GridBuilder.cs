@@ -96,7 +96,7 @@ public struct GridBuilder
 	}
 
 	/// <summary>
-	/// Cells will be generated with some clearance for grid-perfect terrain (Think of voxels), this isn't compatible with stairs so use sloped geometry instead.
+	/// Cells will be generated with some clearance for grid-perfect terrain (Think of voxels)
 	/// </summary>
 	/// <param name="gridPerfect"></param>
 	/// <returns></returns>

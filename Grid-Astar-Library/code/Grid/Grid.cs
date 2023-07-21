@@ -65,7 +65,6 @@ public partial class Grid : IValid
 	public bool WorldOnly => Settings.WorldOnly;
 	public float MaxDropHeight => Settings.MaxDropHeight;
 	public bool CylinderShaped => Settings.CylinderShaped;
-	public float RealStepSize => GridPerfect ? 0.1f : Math.Max( 0.1f, StepSize );
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
 	public int MinimumColumn => WorldBounds.Mins.ToIntVector2( CellSize ).y;
@@ -114,7 +113,7 @@ public partial class Grid : IValid
 		if ( unoccupiedOnly )
 			validCells = validCells.Where( x => !x.Occupied );
 		if ( onlyBelow )
-			validCells = validCells.Where( x => x.Vertices.Min() - Math.Max( HeightClearance, RealStepSize ) <= position.z );
+			validCells = validCells.Where( x => x.Vertices.Min() - Math.Max( HeightClearance, StepSize ) <= position.z );
 
 		return validCells.OrderBy( x => x.Position.DistanceSquared( position ) )
 			.FirstOrDefault();
@@ -129,12 +128,12 @@ public partial class Grid : IValid
 			for ( int x = 0; x <= cellsToCheck; x++ )
 			{
 				var spiralX = MathAStar.SpiralPattern( x );
-				var cellFound = GetCell( position + AxisRotation.Forward * spiralX * CellSize + AxisRotation.Right * spiralY * CellSize + Vector3.Up * RealStepSize, onlyBelow );
+				var cellFound = GetCell( position + AxisRotation.Forward * spiralX * CellSize + AxisRotation.Right * spiralY * CellSize + Vector3.Up * StepSize, onlyBelow );
 
 				if ( cellFound == null ) continue;
 
 				if ( withinStepRange )
-					if ( position.z - cellFound.Position.z <= Math.Max( HeightClearance, RealStepSize ) ) return cellFound; else continue;
+					if ( position.z - cellFound.Position.z <= Math.Max( HeightClearance, StepSize ) ) return cellFound; else continue;
 
 				return cellFound;
 			}
@@ -164,7 +163,7 @@ public partial class Grid : IValid
 		if ( cellsAtCoordinates == null ) return null;
 
 		foreach ( var cell in cellsAtCoordinates )
-			if ( cell.Vertices.Min() - Math.Max( HeightClearance, RealStepSize ) < height )
+			if ( cell.Vertices.Min() - Math.Max( HeightClearance, StepSize ) < height )
 				return cell;
 
 		return null;
@@ -181,7 +180,7 @@ public partial class Grid : IValid
 		if ( !CellStacks.ContainsKey( coordinates ) )
 			CellStacks.Add( coordinates, new List<Cell>() { cell } );
 		else
-			if ( !CellStacks[coordinates].Any( x => Math.Abs( x.Position.z - cell.Position.z ) < Math.Max( HeightClearance, RealStepSize ) ) )
+			if ( !CellStacks[coordinates].Any( x => Math.Abs( x.Position.z - cell.Position.z ) < Math.Max( HeightClearance, StepSize ) ) )
 				CellStacks[coordinates].Add( cell );
 	}
 
@@ -502,7 +501,7 @@ public partial class Grid : IValid
 			var verticalOffset = MathAStar.ParabolaHeight( horizontalOffset, horizontalSpeed, verticalSpeed, gravity );
 			var nextPositionToCheck = startingPosition + horizontalDirection * horizontalOffset + Vector3.Up * verticalOffset;
 
-			var clearanceBBox = new BBox( new Vector3( -WidthClearance / 2f, -WidthClearance / 2f, RealStepSize ), new Vector3( WidthClearance / 2f, WidthClearance / 2f, HeightClearance ) );
+			var clearanceBBox = new BBox( new Vector3( -WidthClearance / 2f, -WidthClearance / 2f, StepSize ), new Vector3( WidthClearance / 2f, WidthClearance / 2f, HeightClearance ) );
 			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
 				.WithGridSettings( Settings )
 				.Run();
@@ -578,7 +577,7 @@ public partial class Grid : IValid
 
 	public async Task GenerateConnections( BBox bounds, float expandBoundsCheck = GridSettings.DEFAULT_DROP_HEIGHT, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
 	{
-		bounds = new BBox( bounds.Mins - expandBoundsCheck - RealStepSize, bounds.Maxs + expandBoundsCheck + RealStepSize );
+		bounds = new BBox( bounds.Mins - expandBoundsCheck - StepSize, bounds.Maxs + expandBoundsCheck + StepSize );
 
 		await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
 		await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
