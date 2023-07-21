@@ -576,24 +576,26 @@ public partial class Grid : IValid
 				AddCell( cell );
 	}
 
-	public async Task GenerateConnections( BBox bounds, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
+	public async Task GenerateConnections( BBox bounds, float expandBoundsCheck = GridSettings.DEFAULT_DROP_HEIGHT, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
 	{
+		bounds = new BBox( bounds.Mins - expandBoundsCheck - RealStepSize, bounds.Maxs + expandBoundsCheck + RealStepSize );
+
 		await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
 		await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
 		await AssignJumpableCells( bounds, "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z, threadsToUse: threadedChunkSides * threadedChunkSides );
 
 		if ( broadcastToClients )
 			if ( Game.IsServer )
-				Grid.regenerateConnectionsClient( Identifier, bounds, threadedChunkSides, printInfo );
+				Grid.regenerateConnectionsClient( Identifier, bounds, expandBoundsCheck, threadedChunkSides, printInfo );
 	}
 
 	[ClientRpc]
-	internal async static void regenerateConnectionsClient( string identifier, BBox bounds, int threadedChunkSides = 4, bool printInfo = true )
+	internal async static void regenerateConnectionsClient( string identifier, BBox bounds, float expandBoundsCheck = GridSettings.DEFAULT_DROP_HEIGHT, int threadedChunkSides = 4, bool printInfo = true )
 	{
 		var grid = Grids[identifier];
 
 		if ( grid != null )
-			await grid.GenerateConnections( bounds, threadedChunkSides, printInfo );
+			await grid.GenerateConnections( bounds, expandBoundsCheck, threadedChunkSides, printInfo );
 	}
 
 	/// <summary>
