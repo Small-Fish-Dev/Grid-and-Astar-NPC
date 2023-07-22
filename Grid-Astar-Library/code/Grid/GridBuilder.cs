@@ -313,7 +313,6 @@ public struct GridBuilder
 				currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
 		}
 
-
 		totalWatch.Stop();
 		if ( printInfo )
 			currentGrid.Print( $"Finished in {totalWatch.ElapsedMilliseconds}ms" );
