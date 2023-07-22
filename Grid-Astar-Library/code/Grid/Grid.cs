@@ -426,17 +426,14 @@ public partial class Grid : IValid
 	/// <summary>
 	/// Create a new definition for connections between jumpable cells. This method is slow right now on bigger maps, use <paramref name="generateFraction"/> for better performance
 	/// </summary>
-	/// <param name="movementTag"></param>
-	/// <param name="horizontalSpeed"></param>
-	/// <param name="verticalSpeed"></param>
-	/// <param name="gravity"></param>
+	/// <param name="definition"></param>
 	/// <param name="generateFraction">0.1 = Generate a connection only 10% of the times</param>
 	/// <param name="maxPerCell">How many jump connections of this type can a cell have</param>
 	/// <param name="threadsToUse"></param>
-	public async Task AssignJumpableCells( string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), movementTag, horizontalSpeed, verticalSpeed, gravity, generateFraction, maxPerCell, threadsToUse );
-	public async Task AssignJumpableCells( BBox bounds, string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), movementTag, horizontalSpeed, verticalSpeed, gravity, generateFraction, maxPerCell, threadsToUse );
+	public async Task AssignJumpableCells( JumpDefinition definition, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
+	public async Task AssignJumpableCells( BBox bounds, JumpDefinition definition, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
 
-	internal async Task internalAssignJumpableCells( List<Cell> cells, string movementTag, float horizontalSpeed, float verticalSpeed, float gravity, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 )
+	internal async Task internalAssignJumpableCells( List<Cell> cells, JumpDefinition definition, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 )
 	{
 		var allCells = cells;
 		var cellsCount = allCells.Count();
@@ -460,20 +457,20 @@ public partial class Grid : IValid
 					{
 						List<Cell> connectedCells = new();
 
-						foreach ( var jumpableCell in cell.GetValidJumpables( horizontalSpeed, verticalSpeed, gravity, 8, MaxDropHeight, maxPerCell ) )
+						foreach ( var jumpableCell in cell.GetValidJumpables( definition, 8, MaxDropHeight, maxPerCell ) )
 							if ( jumpableCell != null )
 							{
-								cell.AddConnection( jumpableCell, movementTag );
+								cell.AddConnection( jumpableCell, definition.Name );
 								connectedCells.Add( jumpableCell );
 							}
 
 						foreach ( var jumpableConnection in connectedCells ) // Check if you can jump back onto the cell
 						{
 							var direction = (cell.Position - jumpableConnection.Position).WithZ( 0 ).Normal;
-							var jumpbackCell = jumpableConnection.GetValidJumpable( horizontalSpeed, verticalSpeed, gravity, direction, MaxDropHeight );
+							var jumpbackCell = jumpableConnection.GetValidJumpable( definition, direction, MaxDropHeight );
 
 							if ( jumpbackCell != null )
-								jumpableConnection.AddConnection( jumpbackCell, movementTag );
+								jumpableConnection.AddConnection( jumpbackCell, definition.Name );
 						}
 
 						totalFraction = 0f;
@@ -580,9 +577,10 @@ public partial class Grid : IValid
 	{
 		bounds = new BBox( bounds.Mins - expandBoundsCheck - StepSize, bounds.Maxs + expandBoundsCheck + StepSize );
 
-		await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
-		await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
-		await AssignJumpableCells( bounds, "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z, threadsToUse: threadedChunkSides * threadedChunkSides );
+		//TODO USE GRIDSETTINGS FOR THESE
+		//await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
+		//await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
+		//await AssignJumpableCells( bounds, "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z, threadsToUse: threadedChunkSides * threadedChunkSides );
 
 		if ( broadcastToClients )
 			if ( Game.IsServer )

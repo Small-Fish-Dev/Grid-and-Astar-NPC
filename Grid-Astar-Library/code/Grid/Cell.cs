@@ -465,16 +465,16 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return null;
 	}
 
-	public IEnumerable<Cell> GetValidJumpables( float horizontalSpeed, float verticalSpeed, float gravity, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, int maxPerCell = 3 )
+	public IEnumerable<Cell> GetValidJumpables( JumpDefinition definition, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, int maxPerCell = 3 )
 	{
 		var jumpableCells = new List<Cell>();
 
 		for ( int side = 0; side < sidesToCheck; side++ )
 		{
 			var directionToCheck = Rotation.FromYaw( 360 / sidesToCheck * side ).Forward;
-			var horizontalVelocity = directionToCheck * horizontalSpeed;
+			var horizontalVelocity = directionToCheck * definition.HorizontalSpeed;
 
-			var endPosition = Grid.TraceParabola( Position, horizontalVelocity, verticalSpeed, gravity, maxHeightDistance );
+			var endPosition = Grid.TraceParabola( Position, horizontalVelocity, definition.VerticalSpeed, definition.Gravity, maxHeightDistance );
 			var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
 
 			if ( cell == null || cell == this ) continue;
@@ -500,11 +500,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 	}
 
 
-	public Cell GetValidJumpable( float horizontalSpeed, float verticalSpeed, float gravity, Vector3 directionToCheck, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
+	public Cell GetValidJumpable( JumpDefinition definition, Vector3 directionToCheck, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
 	{
-		var horizontalVelocity = directionToCheck * horizontalSpeed;
+		var horizontalVelocity = directionToCheck * definition.HorizontalSpeed;
 
-		var endPosition = Grid.TraceParabola( Position, horizontalVelocity, verticalSpeed, gravity, maxHeightDistance );
+		var endPosition = Grid.TraceParabola( Position, horizontalVelocity, definition.VerticalSpeed, definition.Gravity, maxHeightDistance );
 		var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
 
 		if ( cell == null ) return null;

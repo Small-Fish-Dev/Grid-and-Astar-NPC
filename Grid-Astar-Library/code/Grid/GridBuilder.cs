@@ -3,6 +3,30 @@ using System.ComponentModel.Design;
 
 namespace GridAStar;
 
+public struct JumpDefinition
+{
+	public string Name { get; private set; } = "shortjump";
+	public float HorizontalSpeed { get; private set; } = 200f;
+	public float VerticalSpeed { get; private set; } = 300f;
+	public float Gravity { get; private set; } = -800f;
+
+	public JumpDefinition( string name, float horizontalSpeed, float verticalSpeed, float gravity )
+	{
+		Name = name;
+		HorizontalSpeed = horizontalSpeed;
+		VerticalSpeed = verticalSpeed;
+		Gravity = gravity;
+	}
+
+	public JumpDefinition( string name, float horizontalSpeed, float verticalSpeed )
+	{
+		Name = name;
+		HorizontalSpeed = horizontalSpeed;
+		VerticalSpeed = verticalSpeed;
+		Gravity = Game.PhysicsWorld.Gravity.z;
+	}
+}
+
 public struct GridBuilder
 {
 	public string Identifier { get; private set; } = "main";
@@ -18,6 +42,7 @@ public struct GridBuilder
 	public bool CylinderShaped { get; private set; } = false;
 	public List<string> TagsToInclude { get; private set; } = new() { "solid" };
 	public List<string> TagsToExclude { get; private set; } = new() { "player" };
+	public List<JumpDefinition> JumpDefinitions { get; private set; } = new();
 	public Vector3 Position { get; private set; } = new();
 	public BBox Bounds { get; private set; } = new();
 	public Rotation Rotation { get; set; } = new();
@@ -213,13 +238,24 @@ public struct GridBuilder
 	}
 
 	/// <summary>
-	/// Maximum dropping height, you can select any dropping height in the pathbuilder
+	/// Maximum dropping height, you can select any dropping height in the pathbuilder, Set to 0 to disable
 	/// </summary>
 	/// <param name="maxDropHeight"></param>
 	/// <returns></returns>
 	public GridBuilder WithMaxDropHeight( float maxDropHeight )
 	{
 		MaxDropHeight = maxDropHeight;
+		return this;
+	}
+
+	/// <summary>
+	/// Add a jump definition to generate
+	/// </summary>
+	/// <param name="jumpDefinition"></param>
+	/// <returns></returns>
+	public GridBuilder AddJumpDefinition( JumpDefinition jumpDefinition )
+	{
+		JumpDefinitions.Add( jumpDefinition );
 		return this;
 	}
 
@@ -256,19 +292,27 @@ public struct GridBuilder
 		if ( printInfo )
 			currentGrid.Print( $"Assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
 
-		Stopwatch droppableCells = new Stopwatch();
-		droppableCells.Start();
-		await currentGrid.AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
-		droppableCells.Stop();
-		if ( printInfo )
-			currentGrid.Print( $"Assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
+		if ( MaxDropHeight > 0 )
+		{
+			Stopwatch droppableCells = new Stopwatch();
+			droppableCells.Start();
+			await currentGrid.AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+			droppableCells.Stop();
+			if ( printInfo )
+				currentGrid.Print( $"Assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
+		}
 
-		Stopwatch jumpableCells = new Stopwatch();
-		jumpableCells.Start();
-		await currentGrid.AssignJumpableCells( "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z, threadsToUse: threadedChunkSides * threadedChunkSides ); // TODO: Hangs when translating the bounds into the void?
-		jumpableCells.Stop();
-		if ( printInfo )
-			currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
+		if ( JumpDefinitions.Count() > 0 )
+		{
+			Stopwatch jumpableCells = new Stopwatch();
+			jumpableCells.Start();
+			foreach ( var definition in JumpDefinitions )
+				await currentGrid.AssignJumpableCells( definition, threadsToUse: threadedChunkSides * threadedChunkSides ); // TODO: Hangs when translating the bounds into the void?
+			jumpableCells.Stop();
+			if ( printInfo )
+				currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
+		}
+
 
 		totalWatch.Stop();
 		if ( printInfo )
