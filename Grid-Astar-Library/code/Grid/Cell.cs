@@ -398,8 +398,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 		}
 	}
 
-	public Cell GetClosestNeighbour( Vector3 position, int index = 0 ) => GetNeighbours().OrderBy( x => x.Position.Distance( position ) ).ElementAtOrDefault( index );
-	public Cell GetClosestNeighbourAndConnection( Vector3 position, int index = 0 ) => GetNeighbourAndConnections().OrderBy( x => x.Current.Position.Distance( position ) ).Where( x => !x.MovementTag.Contains("jump")).ElementAtOrDefault( index ).Current;
+	public Cell GetClosestNeighbour( Vector3 position ) => GetNeighbours().OrderBy( x => x.Position.Distance( position ) ).FirstOrDefault();
+	public Cell GetClosestNeighbourAndConnection( Vector3 position ) => GetNeighbourAndConnections().OrderBy( x => x.Current.Position.Distance( position ) ).FirstOrDefault()?.Current ?? null;
 
 	/// <summary>
 	/// Returns all neighbours and connected cells where you can travel to from this cell

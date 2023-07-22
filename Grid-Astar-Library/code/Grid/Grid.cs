@@ -62,6 +62,7 @@ public partial class Grid : IValid
 	public bool GridPerfect => Settings.GridPerfect;
 	public bool StaticOnly => Settings.StaticOnly;
 	public float MaxDropHeight => Settings.MaxDropHeight;
+	public List<JumpDefinition> JumpDefinitions => Settings.JumpDefinitions;
 	public bool CylinderShaped => Settings.CylinderShaped;
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
@@ -577,10 +578,14 @@ public partial class Grid : IValid
 	{
 		bounds = new BBox( bounds.Mins - expandBoundsCheck - StepSize, bounds.Maxs + expandBoundsCheck + StepSize );
 
-		//TODO USE GRIDSETTINGS FOR THESE
-		//await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
-		//await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
-		//await AssignJumpableCells( bounds, "shortjump", 200f, 300f, Game.PhysicsWorld.Gravity.z, threadsToUse: threadedChunkSides * threadedChunkSides );
+		await AssignEdgeCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+
+		if ( MaxDropHeight > 0 )
+			await AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+
+		if ( JumpDefinitions.Count() > 0 )
+			foreach ( var definition in JumpDefinitions )
+				await AssignJumpableCells( definition, threadsToUse: threadedChunkSides * threadedChunkSides );
 
 		if ( broadcastToClients )
 			if ( Game.IsServer )
