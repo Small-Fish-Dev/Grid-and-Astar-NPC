@@ -12,7 +12,7 @@ public struct GridBuilder
 	public float HeightClearance { get; private set; } = GridSettings.DEFAULT_HEIGHT_CLEARANCE;
 	public float WidthClearance { get; private set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
 	public bool GridPerfect { get; private set; } = GridSettings.DEFAULT_GRID_PERFECT;
-	public bool StaticOnly { get; private set; } = GridSettings.DEFAULT_WORLD_ONLY;
+	public bool StaticOnly { get; private set; } = GridSettings.DEFAULT_STATIC_ONLY;
 	public float MaxDropHeight { get; private set; } = GridSettings.DEFAULT_DROP_HEIGHT;
 	public bool AxisAligned { get; private set; } = false;
 	public bool CylinderShaped { get; private set; } = false;

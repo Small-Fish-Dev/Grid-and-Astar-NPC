@@ -17,7 +17,7 @@ public static partial class GridSettings
 	public const float DEFAULT_WIDTH_CLEARANCE = 24f;   // How much horizontal space there should be
 	public const float DEFAULT_DROP_HEIGHT = 400f;      // How high you can drop down from
 	public const bool DEFAULT_GRID_PERFECT = false;     // For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
-	public const bool DEFAULT_WORLD_ONLY = true;        // Will it only hit the world or also static entities
+	public const bool DEFAULT_STATIC_ONLY = true;        // Will it only hit world and static or also dynamic
 }
 
 public partial class Grid : IValid
