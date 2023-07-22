@@ -52,8 +52,6 @@ public partial class Grid : IValid
 	public BBox RotatedBounds => Bounds.GetRotatedBounds( Rotation );
 	public BBox WorldBounds => RotatedBounds.Translate( Position );
 	public Transform Transform => new Transform( WorldBounds.Center, AxisRotation );
-	public BBox ToWorld( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation ).Translate( WorldBounds.Center );
-	public BBox ToLocal( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation.Inverse ).Translate( -WorldBounds.Center );
 	public Rotation Rotation => Settings.Rotation;
 	public bool AxisAligned => Settings.AxisAligned;
 	public float StandableAngle => Settings.StandableAngle;
@@ -91,6 +89,9 @@ public partial class Grid : IValid
 	{
 		Event.Unregister( this );
 	}
+
+	public BBox ToWorld( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation ).Translate( WorldBounds.Center );
+	public BBox ToLocal( BBox bounds ) => bounds.GetRotatedBounds( AxisRotation.Inverse ).Translate( -WorldBounds.Center );
 
 	/// <summary>
 	/// Get the local coordinate in a grid from a 3D world position
