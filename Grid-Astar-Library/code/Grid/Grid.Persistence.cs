@@ -17,6 +17,38 @@ public partial class Grid
 	public static bool ExistsMounted( string identifier = "main" ) => FileSystem.Mounted.FileExists( Grid.GetMountedPath( identifier ) );
 	public bool Exists() => FileSystem.Data.FileExists( SavePath );
 
+	internal async static Task<GridBuilder> internalLoadProperties( BinaryReader reader )
+	{
+		var loadedGrid = new GridBuilder( reader.ReadString() );
+
+		await GameTask.RunInThreadAsync( () =>
+		{
+			loadedGrid.WithBounds( reader.ReadVector3(), new BBox( reader.ReadVector3(), reader.ReadVector3() ), reader.ReadRotation() )
+			.WithAxisAligned( reader.ReadBoolean() )
+			.WithStandableAngle( reader.ReadSingle() )
+			.WithStepSize( reader.ReadSingle() )
+			.WithCellSize( reader.ReadSingle() )
+			.WithHeightClearance( reader.ReadSingle() )
+			.WithWidthClearance( reader.ReadSingle() )
+			.WithGridPerfect( reader.ReadBoolean() )
+			.WithStaticOnly( reader.ReadBoolean() )
+			.WithMaxDropHeight( reader.ReadSingle() )
+			.WithCylinderShaped( reader.ReadBoolean() );
+
+			var tagsToIncludeCount = reader.ReadInt32();
+
+			for ( int i = 0; i < tagsToIncludeCount; i++ )
+				loadedGrid.WithTags( reader.ReadString() );
+
+			var tagsToExcludeCount = reader.ReadInt32();
+
+			for ( int i = 0; i < tagsToExcludeCount; i++ )
+				loadedGrid.WithoutTags( reader.ReadString() );
+		} );
+
+		return loadedGrid;
+	}
+
 	/// <summary>
 	/// Return a struct containing the grid's data, without loading in the grid
 	/// </summary>
@@ -50,36 +82,7 @@ public partial class Grid
 				}
 
 				using ( var reader = new BinaryReader( dataStream ) )
-				{
-					var loadedGrid = new GridBuilder( reader.ReadString() );
-
-					await GameTask.RunInThreadAsync( () =>
-					{
-						loadedGrid.WithBounds( reader.ReadVector3(), new BBox( reader.ReadVector3(), reader.ReadVector3() ), reader.ReadRotation() )
-						.WithAxisAligned( reader.ReadBoolean() )
-						.WithStandableAngle( reader.ReadSingle() )
-						.WithStepSize( reader.ReadSingle() )
-						.WithCellSize( reader.ReadSingle() )
-						.WithHeightClearance( reader.ReadSingle() )
-						.WithWidthClearance( reader.ReadSingle() )
-						.WithGridPerfect( reader.ReadBoolean() )
-						.WithStaticOnly( reader.ReadBoolean() )
-						.WithMaxDropHeight( reader.ReadSingle() )
-						.WithCylinderShaped( reader.ReadBoolean() );
-
-						var tagsToIncludeCount = reader.ReadInt32();
-
-						for ( int i = 0; i < tagsToIncludeCount; i++ )
-							loadedGrid.WithTags( reader.ReadString() );
-
-						var tagsToExcludeCount = reader.ReadInt32();
-
-						for ( int i = 0; i < tagsToExcludeCount; i++ )
-							loadedGrid.WithoutTags( reader.ReadString() );
-					} );
-
-					return loadedGrid;
-				}
+					return internalLoadProperties( reader ).Result;
 			}
 		}
 		catch ( Exception error )
@@ -144,32 +147,7 @@ public partial class Grid
 
 					await GameTask.RunInThreadAsync( async () =>
 					{
-						var loadedGrid = new GridBuilder( reader.ReadString() );
-
-						await GameTask.RunInThreadAsync( () =>
-						{
-							loadedGrid.WithBounds( reader.ReadVector3(), new BBox( reader.ReadVector3(), reader.ReadVector3() ), reader.ReadRotation() )
-							.WithAxisAligned( reader.ReadBoolean() )
-							.WithStandableAngle( reader.ReadSingle() )
-							.WithStepSize( reader.ReadSingle() )
-							.WithCellSize( reader.ReadSingle() )
-							.WithHeightClearance( reader.ReadSingle() )
-							.WithWidthClearance( reader.ReadSingle() )
-							.WithGridPerfect( reader.ReadBoolean() )
-							.WithStaticOnly( reader.ReadBoolean() )
-							.WithMaxDropHeight( reader.ReadSingle() )
-							.WithCylinderShaped( reader.ReadBoolean() );
-
-							var tagsToIncludeCount = reader.ReadInt32();
-
-							for ( int i = 0; i < tagsToIncludeCount; i++ )
-								loadedGrid.WithTags( reader.ReadString() );
-
-							var tagsToExcludeCount = reader.ReadInt32();
-
-							for ( int i = 0; i < tagsToExcludeCount; i++ )
-								loadedGrid.WithoutTags( reader.ReadString() );
-						} );
+						var loadedGrid = await internalLoadProperties( reader );
 
 						currentGrid = new Grid( loadedGrid );
 
