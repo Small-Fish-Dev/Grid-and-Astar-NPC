@@ -268,7 +268,7 @@ public partial class Grid
 			nextDraw = 1f;
 		}
 	}
-	/*
+	
 	[Event.Debug.Overlay( "displaygridclientnodepth", "[Client] Display Grid (No depth)", "grid_on" )]
 	public static void GridOverlayClientNoDepth()
 	{
@@ -277,16 +277,23 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.CellStacks )
-					foreach ( var cell in cellStack.Value )
-					{
-						var position = cell.Position.ToScreen();
-						if ( position.z < 0f ) continue;
-						if ( position.x < 0f || position.x > 1f ) continue;
-						if ( position.y < 0f || position.y > 1f ) continue;
+				foreach ( var cell in grid.Value.AllCells )
+				{
+					var position = cell.Position.ToScreen();
+					if ( position.z < 0f ) continue;
+					if ( position.x < 0f || position.x > 1f ) continue;
+					if ( position.y < 0f || position.y > 1f ) continue;
 
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
+					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
+
+					foreach ( var connection in cell.CellConnections.Select( ( value, index ) => new { index, value } ) )
+					{
+						var offset = Vector3.Up * 3f * (connection.index + 1);
+						DebugOverlay.Text( $"{connection.value.MovementTag}", cell.Position + offset, 1.1f, 500f );
+
+						DebugOverlay.Line( cell.Position + offset, connection.value.EndPosition, 1.1f );
 					}
+				}
 
 			nextDraw = 1f;
 		}
@@ -300,9 +307,18 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.CellStacks )
-					foreach ( var cell in cellStack.Value )
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
+				foreach ( var cell in grid.Value.AllCells )
+				{
+					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
+
+					foreach ( var connection in cell.CellConnections.Select( ( value, index ) => new { index, value } ) )
+					{
+						var offset = Vector3.Up * 3f * (connection.index + 1);
+						DebugOverlay.Text( $"{connection.value.MovementTag}", cell.Position + offset, 1.1f, 500f );
+
+						DebugOverlay.Line( cell.Position + offset, connection.value.EndPosition, 1.1f );
+					}
+				}
 
 			nextDraw = 1f;
 		}
@@ -316,13 +332,22 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
-				foreach ( var cellStack in grid.Value.CellStacks )
-					foreach ( var cell in cellStack.Value )
-						cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
+				foreach ( var cell in grid.Value.AllCells )
+				{
+					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
+
+					foreach ( var connection in cell.CellConnections.Select( ( value, index ) => new { index, value } ) )
+					{
+						var offset = Vector3.Up * 3f * (connection.index + 1);
+						DebugOverlay.Text( $"{connection.value.MovementTag}", cell.Position + offset, 1.1f, 500f );
+
+						DebugOverlay.Line( cell.Position + offset, connection.value.EndPosition, 1.1f );
+					}
+				}
 
 			nextDraw = 1f;
 		}
-	}*/
+	}
 }
 
 
