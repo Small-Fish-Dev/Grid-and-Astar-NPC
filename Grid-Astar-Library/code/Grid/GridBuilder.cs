@@ -307,7 +307,7 @@ public struct GridBuilder
 			Stopwatch jumpableCells = new Stopwatch();
 			jumpableCells.Start();
 			foreach ( var definition in JumpDefinitions )
-				await currentGrid.AssignJumpableCells( definition, threadsToUse: threadedChunkSides * threadedChunkSides ); // TODO: Hangs when translating the bounds into the void?
+				await currentGrid.AssignJumpableCells( definition, threadsToUse: threadedChunkSides * threadedChunkSides );
 			jumpableCells.Stop();
 			if ( printInfo )
 				currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );

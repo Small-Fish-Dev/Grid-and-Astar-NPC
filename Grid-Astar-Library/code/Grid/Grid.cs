@@ -500,6 +500,8 @@ public partial class Grid : IValid
 			var verticalOffset = MathAStar.ParabolaHeight( horizontalOffset, horizontalSpeed, verticalSpeed, gravity );
 			var nextPositionToCheck = startingPosition + horizontalDirection * horizontalOffset + Vector3.Up * verticalOffset;
 
+			//Log.Info( $"Offset is: {horizontalOffset} and currentDistance: {currentDistance} Last position height was: {lastPositionChecked.z} and min height is: {minHeight} and the current offset is: {verticalOffset} so next position to check is: {nextPositionToCheck}" );
+
 			var clearanceBBox = new BBox( new Vector3( -WidthClearance / 2f, -WidthClearance / 2f, StepSize ), new Vector3( WidthClearance / 2f, WidthClearance / 2f, HeightClearance ) );
 			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
 				.WithGridSettings( Settings )
@@ -578,14 +580,14 @@ public partial class Grid : IValid
 	{
 		bounds = new BBox( bounds.Mins - expandBoundsCheck - StepSize, bounds.Maxs + expandBoundsCheck + StepSize );
 
-		await AssignEdgeCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+		await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
 
 		if ( MaxDropHeight > 0 )
-			await AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+			await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
 
 		if ( JumpDefinitions.Count() > 0 )
 			foreach ( var definition in JumpDefinitions )
-				await AssignJumpableCells( definition, threadsToUse: threadedChunkSides * threadedChunkSides );
+				await AssignJumpableCells( bounds, definition, threadsToUse: threadedChunkSides * threadedChunkSides );
 
 		if ( broadcastToClients )
 			if ( Game.IsServer )
