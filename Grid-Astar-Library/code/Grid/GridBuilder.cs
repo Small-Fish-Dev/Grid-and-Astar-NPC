@@ -15,7 +15,7 @@ public struct JumpDefinition
 		Name = name;
 		HorizontalSpeed = horizontalSpeed;
 		VerticalSpeed = verticalSpeed;
-		Gravity = gravity;
+		Gravity = gravity > 0 ? -gravity : gravity;
 	}
 
 	public JumpDefinition( string name, float horizontalSpeed, float verticalSpeed )
@@ -23,7 +23,7 @@ public struct JumpDefinition
 		Name = name;
 		HorizontalSpeed = horizontalSpeed;
 		VerticalSpeed = verticalSpeed;
-		Gravity = Game.PhysicsWorld.Gravity.z;
+		Gravity = Game.PhysicsWorld.Gravity.z > 0 ? -Game.PhysicsWorld.Gravity.z : Game.PhysicsWorld.Gravity.z;
 	}
 }
 
