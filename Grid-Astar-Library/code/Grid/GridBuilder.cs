@@ -42,8 +42,8 @@ public struct GridBuilder
 	public bool CylinderShaped { get; private set; } = false;
 	public List<string> TagsToInclude { get; private set; } = new() { "solid" };
 	public List<string> TagsToExclude { get; private set; } = new() { "player" };
-	public List<JumpDefinition> JumpDefinitions { get; private set; } = new();
-	public int MinNeighbourCount { get; private set; } = 8;
+	public List<JumpDefinition> JumpDefinitions { get; private set; } = new(); // TODO: Add to persistance
+	public int MinNeighbourCount { get; private set; } = 8; // TODO: Add to persistance
 	public Vector3 Position { get; private set; } = new();
 	public BBox Bounds { get; private set; } = new();
 	public Rotation Rotation { get; set; } = new();
@@ -140,8 +140,6 @@ public struct GridBuilder
 	public GridBuilder WithGridPerfect( bool gridPerfect )
 	{
 		GridPerfect = gridPerfect;
-		if ( GridPerfect )
-			StepSize = 0f;
 		return this;
 	}
 
