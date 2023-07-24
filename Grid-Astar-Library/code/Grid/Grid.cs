@@ -63,6 +63,7 @@ public partial class Grid : IValid
 	public bool StaticOnly => Settings.StaticOnly;
 	public float MaxDropHeight => Settings.MaxDropHeight;
 	public List<JumpDefinition> JumpDefinitions => Settings.JumpDefinitions;
+	public int MinNeighbourCount => Settings.MinNeighbourCount;
 	public bool CylinderShaped => Settings.CylinderShaped;
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;

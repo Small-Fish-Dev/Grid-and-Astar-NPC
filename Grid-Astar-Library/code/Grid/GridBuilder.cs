@@ -43,6 +43,7 @@ public struct GridBuilder
 	public List<string> TagsToInclude { get; private set; } = new() { "solid" };
 	public List<string> TagsToExclude { get; private set; } = new() { "player" };
 	public List<JumpDefinition> JumpDefinitions { get; private set; } = new();
+	public int MinNeighbourCount { get; private set; } = 8;
 	public Vector3 Position { get; private set; } = new();
 	public BBox Bounds { get; private set; } = new();
 	public Rotation Rotation { get; set; } = new();
@@ -117,6 +118,17 @@ public struct GridBuilder
 	public GridBuilder WithWidthClearance( float widthClearance )
 	{
 		WidthClearance = widthClearance;
+		return this;
+	}
+
+	/// <summary>
+	/// Minimum amount of neighbours for a cell to be considered not an edge 
+	/// </summary>
+	/// <param name="minNeighbourCount"></param>
+	/// <returns></returns>
+	public GridBuilder WithEdgeNeighbourCount( int minNeighbourCount = 8 )
+	{
+		MinNeighbourCount = minNeighbourCount;
 		return this;
 	}
 
@@ -287,7 +299,7 @@ public struct GridBuilder
 
 		Stopwatch edgeCells = new Stopwatch();
 		edgeCells.Start();
-		await currentGrid.AssignEdgeCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+		await currentGrid.AssignEdgeCells( MinNeighbourCount, threadsToUse: threadedChunkSides * threadedChunkSides );
 		edgeCells.Stop();
 		if ( printInfo )
 			currentGrid.Print( $"Assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
