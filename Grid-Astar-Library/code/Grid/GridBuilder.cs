@@ -49,8 +49,8 @@ public struct GridBuilder
 
 	public GridBuilder()
 	{
-		var map = Game.PhysicsWorld.IsValid() ? Game.PhysicsWorld : null;
-		var mapBounds = map == null ? new BBox( 0 ) : Game.PhysicsWorld.Body.GetBounds();
+		var map = ( Game.PhysicsWorld != null && Game.PhysicsWorld.IsValid() && Game.PhysicsWorld.Body != null && Game.PhysicsWorld.Body.IsValid() ) ? Game.PhysicsWorld.Body : null;
+		var mapBounds = map == null ? new BBox( 0 ) : map.GetBounds();
 		Position = mapBounds.Center;
 		Bounds = mapBounds;
 	}
