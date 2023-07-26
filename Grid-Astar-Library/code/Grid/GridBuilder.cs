@@ -106,7 +106,7 @@ public struct GridBuilder
 	/// <returns></returns>
 	public GridBuilder WithHeightClearance( float heightClearance )
 	{
-		HeightClearance = heightClearance;
+		HeightClearance = Math.Max( CellSize / 2, heightClearance );
 		return this;
 	}
 
@@ -117,7 +117,7 @@ public struct GridBuilder
 	/// <returns></returns>
 	public GridBuilder WithWidthClearance( float widthClearance )
 	{
-		WidthClearance = widthClearance;
+		WidthClearance = Math.Max( CellSize / 2, widthClearance );
 		return this;
 	}
 
