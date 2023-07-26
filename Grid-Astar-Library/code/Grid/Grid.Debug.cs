@@ -247,6 +247,7 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
+			{
 				foreach ( var cell in grid.Value.AllCells )
 				{
 					var position = cell.Position.ToScreen();
@@ -258,12 +259,16 @@ public partial class Grid
 
 					foreach ( var connection in cell.CellConnections.Select( ( value, index ) => new { index, value } ) )
 					{
-						var offset = Vector3.Up * 3f * ( connection.index + 1 );
+						var offset = Vector3.Up * 3f * (connection.index + 1);
 						DebugOverlay.Text( $"{connection.value.MovementTag}", cell.Position + offset, 1.1f, 500f );
 
 						DebugOverlay.Line( cell.Position + offset, connection.value.EndPosition, 1.1f );
 					}
 				}
+
+				DebugOverlay.Box( grid.Value.WorldBounds, Color.Red, 1.1f );
+				DebugOverlay.Text( grid.Value.Identifier, grid.Value.WorldBounds.Center.WithZ( grid.Value.WorldBounds.Maxs.z ), 1.1f, 3000f );
+			}
 
 			nextDraw = 1f;
 		}
@@ -277,6 +282,7 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
+			{
 				foreach ( var cell in grid.Value.AllCells )
 				{
 					var position = cell.Position.ToScreen();
@@ -295,6 +301,10 @@ public partial class Grid
 					}
 				}
 
+				DebugOverlay.Box( grid.Value.WorldBounds, Color.Red, 1.1f );
+				DebugOverlay.Text( grid.Value.Identifier, grid.Value.WorldBounds.Center.WithZ( grid.Value.WorldBounds.Maxs.z ), 1.1f, 3000f );
+			}
+
 			nextDraw = 1f;
 		}
 	}
@@ -307,6 +317,7 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
+			{
 				foreach ( var cell in grid.Value.AllCells )
 				{
 					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, true, false, cell.Occupied );
@@ -320,6 +331,10 @@ public partial class Grid
 					}
 				}
 
+				DebugOverlay.Box( grid.Value.WorldBounds, Color.Red, 1.1f );
+				DebugOverlay.Text( grid.Value.Identifier, grid.Value.WorldBounds.Center.WithZ( grid.Value.WorldBounds.Maxs.z ), 1.1f, 3000f );
+			}
+
 			nextDraw = 1f;
 		}
 	}
@@ -332,9 +347,10 @@ public partial class Grid
 		if ( nextDraw )
 		{
 			foreach ( var grid in Grids )
+			{
 				foreach ( var cell in grid.Value.AllCells )
 				{
-					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, false, cell.Occupied );
+					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, true, cell.Occupied );
 
 					foreach ( var connection in cell.CellConnections.Select( ( value, index ) => new { index, value } ) )
 					{
@@ -344,6 +360,10 @@ public partial class Grid
 						DebugOverlay.Line( cell.Position + offset, connection.value.EndPosition, 1.1f );
 					}
 				}
+
+				DebugOverlay.Box( grid.Value.WorldBounds, Color.Red, 1.1f );
+				DebugOverlay.Text( grid.Value.Identifier, grid.Value.WorldBounds.Center.WithZ( grid.Value.WorldBounds.Maxs.z ), 1.1f, 3000f );
+			}
 
 			nextDraw = 1f;
 		}
