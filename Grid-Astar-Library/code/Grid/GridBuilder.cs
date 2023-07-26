@@ -285,8 +285,6 @@ public struct GridBuilder
 		var currentGrid = new Grid( this );
 
 		await currentGrid.GenerateCells( currentGrid.RotatedBounds, threadedChunkSides, printInfo, false );
-		
-		//await GameTask.RunInThreadAsync( () => currentGrid.CreateCells( currentGrid.RotatedBounds, printInfo ) );
 
 		if ( printInfo )
 			currentGrid.Print( "Creating grid" );

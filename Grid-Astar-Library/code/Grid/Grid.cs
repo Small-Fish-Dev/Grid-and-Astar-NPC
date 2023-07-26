@@ -414,7 +414,6 @@ public partial class Grid : IValid
 
 				foreach ( var cell in cellsToCheck )
 				{
-
 					var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight );
 					if ( droppableCell != null )
 						cell.AddConnection( droppableCell, "drop" );
@@ -432,10 +431,10 @@ public partial class Grid : IValid
 	/// <param name="generateFraction">0.1 = Generate a connection only 10% of the times</param>
 	/// <param name="maxPerCell">How many jump connections of this type can a cell have</param>
 	/// <param name="threadsToUse"></param>
-	public async Task AssignJumpableCells( JumpDefinition definition, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
-	public async Task AssignJumpableCells( BBox bounds, JumpDefinition definition, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
+	public async Task AssignJumpableCells( JumpDefinition definition, float generateFraction = 1f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
+	public async Task AssignJumpableCells( BBox bounds, JumpDefinition definition, float generateFraction = 1f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
 
-	internal async Task internalAssignJumpableCells( List<Cell> cells, JumpDefinition definition, float generateFraction = 0.3f, int maxPerCell = 2, int threadsToUse = 16 )
+	internal async Task internalAssignJumpableCells( List<Cell> cells, JumpDefinition definition, float generateFraction = 1f, int maxPerCell = 2, int threadsToUse = 16 )
 	{
 		var allCells = cells;
 		var cellsCount = allCells.Count();
@@ -611,7 +610,6 @@ public partial class Grid : IValid
 	/// <param name="printInfo"></param>
 	private List<Cell> createCells( BBox bounds, bool printInfo = true )
 	{
-		var worldBounds = ToWorld( bounds );
 		var generatedCells = new List<Cell>();
 
 		var minimumGrid = bounds.Mins.ToIntVector2( CellSize );
@@ -630,8 +628,8 @@ public partial class Grid : IValid
 		{
 			for ( int row = startingRow; row < endingRow; row++ )
 			{
-				var startPosition = WorldBounds.Mins.WithZ( worldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
-				var endPosition = WorldBounds.Mins.WithZ( worldBounds.Mins.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
+				var startPosition = WorldBounds.Mins.WithZ( WorldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
+				var endPosition = WorldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
 				var checkBBox = new BBox( new Vector3( -CellSize / 2f + Tolerance, -CellSize / 2f + Tolerance, 0f ), new Vector3( CellSize / 2f - Tolerance, CellSize / 2f - Tolerance, 0.001f ) );
 				var positionTrace = Sandbox.Trace.Box( checkBBox, startPosition, endPosition )
 					.WithGridSettings( Settings );
