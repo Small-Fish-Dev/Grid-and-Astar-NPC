@@ -166,7 +166,6 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * grid.Tolerance;
 			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos )
 				.WithGridSettings( grid.Settings );
-
 			var testResult = testTrace.Run();
 
 			if ( testResult.StartedSolid ) return (false, false);
@@ -176,7 +175,27 @@ public partial class Cell : IEquatable<Cell>, IValid
 			testCoordinates[i] = testResult.HitPosition;
 		}
 
+		var orderedByHeight = testCoordinates.OrderBy( x => x.z );
+		var lowest = orderedByHeight.First();
+		var highest = orderedByHeight.Last();
+
+		if ( IsCliff( grid, lowest, highest ) || IsCliff( grid, lowest, position ) )
+			return (false, false); // Oops we traced over a hill but thought it was valid before
+
 		return TestForSteps( grid, position, testCoordinates );
+	}
+
+	private static bool IsCliff( Grid grid, Vector3 from, Vector3 to )
+	{
+		var trace = Sandbox.Trace.Ray( from, to )
+			.WithGridSettings( grid.Settings );
+		var result = trace.Run();
+
+		if ( result.Hit )
+			if ( Vector3.GetAngle( Vector3.Up, result.Normal ) > 90 )
+				return true;
+
+		return false;
 	}
 
 	private static bool TestForClearance( Grid grid, Vector3 position, float height )
