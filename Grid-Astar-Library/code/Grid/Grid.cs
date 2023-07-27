@@ -428,13 +428,11 @@ public partial class Grid : IValid
 	/// Create a new definition for connections between jumpable cells. This method is slow right now on bigger maps, use <paramref name="generateFraction"/> for better performance
 	/// </summary>
 	/// <param name="definition"></param>
-	/// <param name="generateFraction">0.1 = Generate a connection only 10% of the times</param>
-	/// <param name="maxPerCell">How many jump connections of this type can a cell have</param>
 	/// <param name="threadsToUse"></param>
-	public async Task AssignJumpableCells( JumpDefinition definition, float generateFraction = 1f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
-	public async Task AssignJumpableCells( BBox bounds, JumpDefinition definition, float generateFraction = 1f, int maxPerCell = 2, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), definition, generateFraction, maxPerCell, threadsToUse );
+	public async Task AssignJumpableCells( JumpDefinition definition, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), definition, threadsToUse );
+	public async Task AssignJumpableCells( BBox bounds, JumpDefinition definition, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), definition, threadsToUse );
 
-	internal async Task internalAssignJumpableCells( List<Cell> cells, JumpDefinition definition, float generateFraction = 1f, int maxPerCell = 2, int threadsToUse = 16 )
+	internal async Task internalAssignJumpableCells( List<Cell> cells, JumpDefinition definition, int threadsToUse = 16 )
 	{
 		var allCells = cells;
 		var cellsCount = allCells.Count();
@@ -448,7 +446,7 @@ public partial class Grid : IValid
 
 			tasks.Add( GameTask.RunInThreadAsync( () =>
 			{
-				var totalFraction = 0f;
+				var totalFraction = 1f;
 				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
 				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
 
@@ -458,7 +456,7 @@ public partial class Grid : IValid
 					{
 						List<Cell> connectedCells = new();
 
-						foreach ( var jumpableCell in cell.GetValidJumpables( definition, 8, MaxDropHeight, maxPerCell ) )
+						foreach ( var jumpableCell in cell.GetValidJumpables( definition, MaxDropHeight ) )
 							if ( jumpableCell != null )
 							{
 								cell.AddConnection( jumpableCell, definition.Name );
@@ -477,7 +475,7 @@ public partial class Grid : IValid
 						totalFraction = 0f;
 					}
 
-					totalFraction += generateFraction;
+					totalFraction += definition.GenerateFraction;
 				}
 			} ) );
 		}
@@ -506,9 +504,9 @@ public partial class Grid : IValid
 			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
 				.WithGridSettings( Settings )
 				.Run();
-			//DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 5f );
-			//DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
-			//DebugOverlay.TraceResult( jumpTrace, 5f );
+			DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 5f );
+			DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
+			DebugOverlay.TraceResult( jumpTrace, 5f );
 
 			if ( jumpTrace.Hit )
 			{

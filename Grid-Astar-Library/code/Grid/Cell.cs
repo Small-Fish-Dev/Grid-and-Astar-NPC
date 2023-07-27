@@ -485,13 +485,13 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return null;
 	}
 
-	public IEnumerable<Cell> GetValidJumpables( JumpDefinition definition, int sidesToCheck = 8, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, int maxPerCell = 3 )
+	public IEnumerable<Cell> GetValidJumpables( JumpDefinition definition, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT )
 	{
 		var jumpableCells = new List<Cell>();
 
-		for ( int side = 0; side < sidesToCheck; side++ )
+		for ( int side = 0; side < definition.SidesToCheck; side++ )
 		{
-			var directionToCheck = Rotation.FromYaw( 360 / sidesToCheck * side ).Forward;
+			var directionToCheck = Rotation.FromYaw( definition.AngleOffset + 360 / definition.SidesToCheck * side ).Forward;
 			var horizontalVelocity = directionToCheck * definition.HorizontalSpeed;
 
 			var endPosition = Grid.TraceParabola( Position, horizontalVelocity, definition.VerticalSpeed, definition.Gravity, maxHeightDistance );
@@ -512,7 +512,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 							jumpableCells.Add( cell );
 					}
 
-			if ( jumpableCells.Count() >= maxPerCell )
+			if ( jumpableCells.Count() >= definition.MaxPerCell )
 				break;
 		}
 

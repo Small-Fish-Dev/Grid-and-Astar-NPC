@@ -9,21 +9,33 @@ public struct JumpDefinition
 	public float HorizontalSpeed { get; private set; } = 200f;
 	public float VerticalSpeed { get; private set; } = 300f;
 	public float Gravity { get; private set; } = -800f;
+	public int SidesToCheck { get; private set;} = 8;
+	public float AngleOffset { get; private set; } = 0f;
+	public float GenerateFraction { get; private set; } = 1f;
+	public int MaxPerCell { get; private set; } = 2;
 
-	public JumpDefinition( string name, float horizontalSpeed, float verticalSpeed, float gravity )
+	public JumpDefinition( string name, float horizontalSpeed, float verticalSpeed, float gravity, int sidesToCheck = 8, float angleOffset = 0f, float generateFraction = 1f, int maxPerCell = 2 )
 	{
 		Name = name;
 		HorizontalSpeed = horizontalSpeed;
 		VerticalSpeed = verticalSpeed;
 		Gravity = gravity > 0 ? -gravity : gravity;
+		SidesToCheck = sidesToCheck;
+		AngleOffset = angleOffset;
+		GenerateFraction = generateFraction;
+		MaxPerCell = maxPerCell;
 	}
 
-	public JumpDefinition( string name, float horizontalSpeed, float verticalSpeed )
+	public JumpDefinition( string name, float horizontalSpeed, float verticalSpeed, int sidesToCheck = 8, float angleOffset = 0f, float generateFraction = 1f, int maxPerCell = 2 )
 	{
 		Name = name;
 		HorizontalSpeed = horizontalSpeed;
 		VerticalSpeed = verticalSpeed;
 		Gravity = Game.PhysicsWorld.Gravity.z > 0 ? -Game.PhysicsWorld.Gravity.z : Game.PhysicsWorld.Gravity.z;
+		SidesToCheck = sidesToCheck;
+		AngleOffset = angleOffset;
+		GenerateFraction = generateFraction;
+		MaxPerCell = maxPerCell;
 	}
 }
 
