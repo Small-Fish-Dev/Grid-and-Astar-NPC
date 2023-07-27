@@ -170,6 +170,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 			if ( testResult.StartedSolid ) return (false, false);
 			if ( !testResult.Hit ) return (false, false);
+			if ( testResult.HitPosition.z > position.z + grid.Tolerance ) return (false, false); // How did it generate higher than the initial wide cast?
 
 			validCoordinates[i] = testResult.HitPosition.z;
 			testCoordinates[i] = testResult.HitPosition;
