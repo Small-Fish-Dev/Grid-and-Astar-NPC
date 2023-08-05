@@ -305,6 +305,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 		}
 	}
 
+	public IEnumerable<AStarNode> GetConnections( string movementTag ) => CellConnections.Where( x => x.MovementTag == movementTag );
+
 	public void SetOccupant( Entity entity )
 	{
 		OccupyingEntity = entity;

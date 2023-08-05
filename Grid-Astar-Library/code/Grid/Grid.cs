@@ -738,6 +738,21 @@ public partial class Grid : IValid
 	public IEnumerable<Cell> CellsWithTags( BBox bounds, List<string> tags ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tags ) );
 
 	/// <summary>
+	/// Returns all connections with the movementTag
+	/// </summary>
+	/// <param name="movementTag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> GetAllConnections( string movementTag ) => AllCells.Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
+
+	/// <summary>
+	/// Returns all connections with the movementTag
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="movementTag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithConnection( BBox bounds, string movementTag ) => GetCellsInBBox( bounds ).Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
+
+	/// <summary>
 	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone
 	/// </summary>
 	/// <param name="tag"></param>
