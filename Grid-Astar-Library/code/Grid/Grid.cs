@@ -424,14 +424,25 @@ public partial class Grid : IValid
 
 		await GameTask.WhenAll( tasks );
 	}
+	public IEnumerable<Cell> JumpableCandidates()
+	{
+		var droppedCells = CellsWithConnection( "drop" ).SelectMany( cell => cell.GetConnections( "drop" ).Select( connection => connection.Current ) );
+		return CellsWithTag( "edge" ).Concat( droppedCells );
+	}
+
+	public IEnumerable<Cell> JumpableCandidates( BBox bounds )
+	{
+		var droppedCells = CellsWithConnection( bounds, "drop" ).SelectMany( cell => cell.GetConnections( "drop" ).Select( connection => connection.Current ) );
+		return CellsWithTag( bounds, "edge" ).Concat( droppedCells );
+	}
 
 	/// <summary>
 	/// Create a new definition for connections between jumpable cells. This method is slow right now on bigger maps
 	/// </summary>
 	/// <param name="definition"></param>
 	/// <param name="threadsToUse"></param>
-	public async Task AssignJumpableCells( JumpDefinition definition, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( "edge" ).ToList(), definition, threadsToUse );
-	public async Task AssignJumpableCells( BBox bounds, JumpDefinition definition, int threadsToUse = 16 ) => await internalAssignJumpableCells( CellsWithTag( bounds, "edge" ).ToList(), definition, threadsToUse );
+	public async Task AssignJumpableCells( JumpDefinition definition, int threadsToUse = 16 ) => await internalAssignJumpableCells( JumpableCandidates().ToList(), definition, threadsToUse );
+	public async Task AssignJumpableCells( BBox bounds, JumpDefinition definition, int threadsToUse = 16 ) => await internalAssignJumpableCells( JumpableCandidates( bounds ).ToList(), definition, threadsToUse );
 
 	internal async Task internalAssignJumpableCells( List<Cell> cells, JumpDefinition definition, int threadsToUse = 16 )
 	{
@@ -742,7 +753,7 @@ public partial class Grid : IValid
 	/// </summary>
 	/// <param name="movementTag"></param>
 	/// <returns></returns>
-	public IEnumerable<Cell> GetAllConnections( string movementTag ) => AllCells.Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
+	public IEnumerable<Cell> CellsWithConnection( string movementTag ) => AllCells.Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
 
 	/// <summary>
 	/// Returns all connections with the movementTag
