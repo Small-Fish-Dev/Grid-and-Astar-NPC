@@ -56,6 +56,7 @@ public struct GridBuilder
 	public List<string> TagsToExclude { get; private set; } = new() { "player" };
 	public List<JumpDefinition> JumpDefinitions { get; private set; } = new(); // TODO: Add to persistance
 	public int MinNeighbourCount { get; private set; } = 8; // TODO: Add to persistance
+	public bool IgnoreConnectionsForJumps { get; private set; } = false; // TODO: Add to persistance
 	public Vector3 Position { get; private set; } = new();
 	public BBox Bounds { get; private set; } = new();
 	public Rotation Rotation { get; set; } = new();
@@ -278,6 +279,17 @@ public struct GridBuilder
 	public GridBuilder AddJumpDefinition( JumpDefinition jumpDefinition )
 	{
 		JumpDefinitions.Add( jumpDefinition );
+		return this;
+	}
+
+	/// <summary>
+	/// When you still want to generate jumps when something is reachable with other connections like Dropping down, useful for dodgy terrain
+	/// </summary>
+	/// <param name="ignore"></param>
+	/// <returns></returns>
+	public GridBuilder JumpsIgnoreConnections( bool ignore )
+	{
+		IgnoreConnectionsForJumps = ignore;
 		return this;
 	}
 

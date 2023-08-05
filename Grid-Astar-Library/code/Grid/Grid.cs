@@ -64,6 +64,7 @@ public partial class Grid : IValid
 	public float MaxDropHeight => Settings.MaxDropHeight;
 	public List<JumpDefinition> JumpDefinitions => Settings.JumpDefinitions;
 	public int MinNeighbourCount => Settings.MinNeighbourCount;
+	public bool IgnoreConnectionsForJumps => Settings.IgnoreConnectionsForJumps;
 	public bool CylinderShaped => Settings.CylinderShaped;
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
@@ -425,7 +426,7 @@ public partial class Grid : IValid
 	}
 
 	/// <summary>
-	/// Create a new definition for connections between jumpable cells. This method is slow right now on bigger maps, use <paramref name="generateFraction"/> for better performance
+	/// Create a new definition for connections between jumpable cells. This method is slow right now on bigger maps
 	/// </summary>
 	/// <param name="definition"></param>
 	/// <param name="threadsToUse"></param>
@@ -456,7 +457,7 @@ public partial class Grid : IValid
 					{
 						List<Cell> connectedCells = new();
 
-						foreach ( var jumpableCell in cell.GetValidJumpables( definition, MaxDropHeight ) )
+						foreach ( var jumpableCell in cell.GetValidJumpables( definition, MaxDropHeight, IgnoreConnectionsForJumps ) )
 							if ( jumpableCell != null )
 							{
 								cell.AddConnection( jumpableCell, definition.Name );
@@ -466,7 +467,7 @@ public partial class Grid : IValid
 						foreach ( var jumpableConnection in connectedCells ) // Check if you can jump back onto the cell
 						{
 							var direction = (cell.Position - jumpableConnection.Position).WithZ( 0 ).Normal;
-							var jumpbackCell = jumpableConnection.GetValidJumpable( definition, direction, MaxDropHeight );
+							var jumpbackCell = jumpableConnection.GetValidJumpable( definition, direction, MaxDropHeight, IgnoreConnectionsForJumps );
 
 							if ( jumpbackCell != null )
 								jumpableConnection.AddConnection( jumpbackCell, definition.Name );
