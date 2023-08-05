@@ -388,7 +388,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		foreach ( var comparePair in verticesToCompare )
 		{
 			var heightDifference = Math.Abs( Vertices[comparePair[0]] - cell.Vertices[comparePair[1]] );
-			if ( heightDifference > ( Grid.GridPerfect ? Grid.StepSize : Grid.Tolerance ) ) return false;
+			if ( heightDifference > Grid.StepSize ) return false;
 		}
 
 		return true;

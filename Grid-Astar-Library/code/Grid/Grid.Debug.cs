@@ -351,6 +351,7 @@ public partial class Grid
 				foreach ( var cell in grid.Value.AllCells )
 				{
 					cell.Draw( cell.Occupied ? Color.Red : Color.White, 1.1f, false, true, cell.Occupied );
+					DebugOverlay.Text( $"{cell.GetNeighbours().Count()}", cell.Position - Vector3.Up * 10f, 1.1f, 500f );
 
 					foreach ( var connection in cell.CellConnections.Select( ( value, index ) => new { index, value } ) )
 					{
