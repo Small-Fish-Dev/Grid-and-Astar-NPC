@@ -380,8 +380,12 @@ public partial class Grid : IValid
 				var cellsToCheck = cells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
 
 				foreach ( var cell in cellsToCheck )
+				{
+					cell.Tags.Remove( "edge" );
+
 					if ( cell.GetNeighbours().Count() < maxNeighourCount )
 						cell.Tags.Add( "edge" );
+				}
 			} ) );
 		}
 
