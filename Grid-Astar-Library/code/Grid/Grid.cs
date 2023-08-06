@@ -520,9 +520,9 @@ public partial class Grid : IValid
 			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
 				.WithGridSettings( Settings )
 				.Run();
-			DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 5f );
-			DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
-			DebugOverlay.TraceResult( jumpTrace, 5f );
+			//DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 5f );
+			//DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
+			//DebugOverlay.TraceResult( jumpTrace, 5f );
 
 			if ( jumpTrace.Hit )
 			{
