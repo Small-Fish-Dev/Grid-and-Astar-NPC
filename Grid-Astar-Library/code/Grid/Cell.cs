@@ -162,7 +162,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 		for ( int i = 0; i < 4; i++ )
 		{
 			var centerDir = testCoordinates[i].Normal; // Test a little closer to the center, for grid-perfect terrain
-			var startTestPos = position + testCoordinates[i].WithZ( maxHeight * 2f ) - centerDir * grid.Tolerance;
+			var startTestPos = position + testCoordinates[i] - centerDir * grid.Tolerance;
 			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * grid.Tolerance;
 			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos )
 				.WithGridSettings( grid.Settings );

@@ -85,7 +85,7 @@ public struct GridBuilder
 	/// <returns></returns>
 	public GridBuilder WithStandableAngle( float standableAngle )
 	{
-		StandableAngle = standableAngle;
+		StandableAngle = Math.Min( standableAngle, 89 ); // How am I going to cast a vertical ray down a 90° wall??
 		return this;
 	}
 
