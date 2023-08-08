@@ -659,7 +659,7 @@ public partial class Grid : IValid
 							var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
 							if ( angle <= StandableAngle )
 							{
-								if ( !positionResult.Tags.Any( x => Settings.TagsToExclude.Contains( x ) ) && positionResult.Tags.All( x => Settings.TagsToInclude.Contains( x ) ) )
+								if ( !positionResult.Tags.Any( x => Settings.TagsToExclude.Contains( x ) ) && positionResult.Tags.Any( x => Settings.TagsToInclude.Contains( x ) ) )
 								{
 									var newCell = Cell.TryCreate( this, positionResult.HitPosition );
 
