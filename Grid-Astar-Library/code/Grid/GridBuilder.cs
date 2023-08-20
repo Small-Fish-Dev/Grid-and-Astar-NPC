@@ -57,6 +57,7 @@ public struct GridBuilder
 	public List<JumpDefinition> JumpDefinitions { get; private set; } = new(); // TODO: Add to persistance
 	public int MinNeighbourCount { get; private set; } = 8; // TODO: Add to persistance
 	public bool IgnoreConnectionsForJumps { get; private set; } = false; // TODO: Add to persistance
+	public bool IgnoreLOSForJumps { get; private set; } = false; // TODO: Add to persistance
 	public Vector3 Position { get; private set; } = new();
 	public BBox Bounds { get; private set; } = new();
 	public Rotation Rotation { get; set; } = new();
@@ -290,6 +291,17 @@ public struct GridBuilder
 	public GridBuilder JumpsIgnoreConnections( bool ignore )
 	{
 		IgnoreConnectionsForJumps = ignore;
+		return this;
+	}
+	
+	/// <summary>
+	/// Overcharges the jump generation, more expensive
+	/// </summary>
+	/// <param name="ignore"></param>
+	/// <returns></returns>
+	public GridBuilder JumpsIgnoreLOS( bool ignore )
+	{
+		IgnoreLOSForJumps = ignore;
 		return this;
 	}
 

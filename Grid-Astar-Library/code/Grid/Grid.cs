@@ -65,6 +65,7 @@ public partial class Grid : IValid
 	public List<JumpDefinition> JumpDefinitions => Settings.JumpDefinitions;
 	public int MinNeighbourCount => Settings.MinNeighbourCount;
 	public bool IgnoreConnectionsForJumps => Settings.IgnoreConnectionsForJumps;
+	public bool IgnoreLOSForJumps => Settings.IgnoreLOSForJumps;
 	public bool CylinderShaped => Settings.CylinderShaped;
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
 	public Rotation AxisRotation => AxisAligned ? new Rotation() : Rotation;
@@ -472,7 +473,7 @@ public partial class Grid : IValid
 					{
 						List<Cell> connectedCells = new();
 
-						foreach ( var jumpableCell in cell.GetValidJumpables( definition, MaxDropHeight, IgnoreConnectionsForJumps ) )
+						foreach ( var jumpableCell in cell.GetValidJumpables( definition, MaxDropHeight, IgnoreConnectionsForJumps, IgnoreLOSForJumps ) )
 							if ( jumpableCell != null )
 							{
 								cell.AddConnection( jumpableCell, definition.Name );
@@ -482,7 +483,7 @@ public partial class Grid : IValid
 						foreach ( var jumpableConnection in connectedCells ) // Check if you can jump back onto the cell
 						{
 							var direction = (cell.Position - jumpableConnection.Position).WithZ( 0 ).Normal;
-							var jumpbackCell = jumpableConnection.GetValidJumpable( definition, direction, MaxDropHeight, IgnoreConnectionsForJumps );
+							var jumpbackCell = jumpableConnection.GetValidJumpable( definition, direction, MaxDropHeight, IgnoreConnectionsForJumps, IgnoreLOSForJumps );
 
 							if ( jumpbackCell != null )
 								jumpableConnection.AddConnection( jumpbackCell, definition.Name );
@@ -529,7 +530,7 @@ public partial class Grid : IValid
 				//DebugOverlay.Box( clearanceBBox.Translate( jumpTrace.EndPosition ), Color.Blue, 5f );
 				//var cell = Grid.Main.GetCellInArea( jumpTrace.EndPosition, WidthClearance );
 				//if ( cell != null )
-					//cell.Draw( Color.Blue, 3f, false, false, true );
+				//	cell.Draw( Color.Blue, 3f, false, false, true );
 				return jumpTrace.EndPosition;
 			}
 
