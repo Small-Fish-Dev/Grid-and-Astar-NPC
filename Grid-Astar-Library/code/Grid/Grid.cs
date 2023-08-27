@@ -271,21 +271,14 @@ public partial class Grid : IValid
 	/// <param name="maxDistanceFromDirectPath"></param>
 	/// <param name="pathCreator"></param>
 	/// <param name="withConnections"></param>
-	/// <param name="debugShow"></param>
 	/// <returns></returns>
-	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, Entity pathCreator = null, bool withConnections = true,  bool debugShow = false )
+	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, Entity pathCreator = null, bool withConnections = true )
 	{
 		if ( startingCell == null || endingCell == null ) return false;
 
 		var currentCell = startingCell;
 		var directPath = new Line( startingCell.Position.WithZ(0), endingCell.Position.WithZ(0) );
 		List<Cell> cellsChecked = new();
-
-		if ( debugShow )
-		{
-			startingCell.Draw( 3f, false, false, false );
-			endingCell.Draw( 3f, false, false, false );
-		}
 
 		if ( pathCreator == null && startingCell.Occupied ) return false;
 		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
@@ -297,13 +290,39 @@ public partial class Grid : IValid
 		{
 			var cellToCheck = withConnections ? currentCell.GetClosestNeighbourAndConnection( endingCell.Position ) : currentCell.GetClosestNeighbour( endingCell.Position );
 
-			if ( debugShow )
-				currentCell.Draw( 2f, false, false, false );
-
 			if ( cellToCheck == null ) return false;
 			if ( cellsChecked.Contains( cellToCheck ) ) return false;
 			if ( pathCreator == null && cellToCheck.Occupied ) return false;
 			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
+
+			if ( cellToCheck == endingCell ) return true;
+
+			cellsChecked.Add( currentCell );
+			currentCell = cellToCheck;
+		}
+
+		return false;
+	}
+
+	public bool IsConnectionRedundant( AStarNode connection, float maxDistanceFromDirectPath = 150f )
+	{
+		var startingCell = connection.Parent.Current;
+		var endingCell = connection.Current;
+
+		if ( startingCell == null || endingCell == null ) return false;
+
+		var currentCell = startingCell;
+		var directPath = new Line( startingCell.Position.WithZ( 0 ), endingCell.Position.WithZ( 0 ) );
+		List<Cell> cellsChecked = new();
+
+		while ( currentCell != endingCell && directPath.Distance( currentCell.Position.WithZ( 0 ) ) <= maxDistanceFromDirectPath )
+		{
+			var cellToCheck = currentCell.GetNeighbourAndConnections().Where( x => x != connection )
+				.OrderBy( x => x.Current.Position.Distance( endingCell.Position ) )
+				.FirstOrDefault()?.Current ?? null;
+
+			if ( cellToCheck == null ) return false;
+			if ( cellsChecked.Contains( cellToCheck ) ) return false;
 
 			if ( cellToCheck == endingCell ) return true;
 
@@ -472,11 +491,12 @@ public partial class Grid : IValid
 					if ( totalFraction >= 1f )
 					{
 						List<Cell> connectedCells = new();
+						List<AStarNode> jumpConnections = new();
 
 						foreach ( var jumpableCell in cell.GetValidJumpables( definition, MaxDropHeight, IgnoreConnectionsForJumps, IgnoreLOSForJumps ) )
 							if ( jumpableCell != null )
 							{
-								cell.AddConnection( jumpableCell, definition.Name );
+								jumpConnections.Add( cell.AddConnection( jumpableCell, definition.Name ) );
 								connectedCells.Add( jumpableCell );
 							}
 
@@ -486,8 +506,13 @@ public partial class Grid : IValid
 							var jumpbackCell = jumpableConnection.GetValidJumpable( definition, direction, MaxDropHeight, IgnoreConnectionsForJumps, IgnoreLOSForJumps );
 
 							if ( jumpbackCell != null )
-								jumpableConnection.AddConnection( jumpbackCell, definition.Name );
+								if ( !IsDirectlyWalkable( jumpbackCell, cell ) )
+									jumpConnections.Add( jumpableConnection.AddConnection( jumpbackCell, definition.Name ) );
 						}
+
+						foreach ( var connection in jumpConnections )
+							if ( IsConnectionRedundant( connection ) )
+								cell.RemoveConnection( connection );
 
 						totalFraction = 0f;
 					}

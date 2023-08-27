@@ -88,7 +88,7 @@ public partial class Grid
 		var standingCell = Grid.Main.GetNearestCell( caller.Position );
 		var forwardCell = Grid.Main.GetNearestCell( caller.Position + caller.Rotation.Forward * Grid.Main.CellSize * 16f );
 
-		Log.Error( Grid.Main.IsDirectlyWalkable( standingCell, forwardCell, debugShow: true ) );
+		Log.Error( Grid.Main.IsDirectlyWalkable( standingCell, forwardCell ) );
 	}
 
 	[ConCmd.Admin( "DeleteCells" )]
