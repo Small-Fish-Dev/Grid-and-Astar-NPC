@@ -54,7 +54,7 @@ public partial class AStarNode : IHeapItem<AStarNode>, IEquatable<AStarNode>
 	public static bool operator ==( AStarNode a, AStarNode b ) => a.Equals( b );
 	public static bool operator !=( AStarNode a, AStarNode b ) => !a.Equals( b );
 
-	public override bool Equals( object obj ) => (obj as AStarNode)?.Current == Current;
-	public bool Equals( AStarNode other ) => other.Current == Current;
+	public override bool Equals( object obj ) => (obj as AStarNode)?.Current == Current && (obj as AStarNode)?.MovementTag == MovementTag && (obj as AStarNode)?.Parent?.Current == Parent?.Current;
+	public bool Equals( AStarNode other ) => other.Current == Current && other.MovementTag == MovementTag && other.Parent?.Current == Parent?.Current;
 
 }

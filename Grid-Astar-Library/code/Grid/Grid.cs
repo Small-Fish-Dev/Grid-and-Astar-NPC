@@ -304,35 +304,6 @@ public partial class Grid : IValid
 		return false;
 	}
 
-	public bool IsConnectionRedundant( AStarNode connection, float maxDistanceFromDirectPath = 150f )
-	{
-		var startingCell = connection.Parent.Current;
-		var endingCell = connection.Current;
-
-		if ( startingCell == null || endingCell == null ) return false;
-
-		var currentCell = startingCell;
-		var directPath = new Line( startingCell.Position.WithZ( 0 ), endingCell.Position.WithZ( 0 ) );
-		List<Cell> cellsChecked = new();
-
-		while ( currentCell != endingCell && directPath.Distance( currentCell.Position.WithZ( 0 ) ) <= maxDistanceFromDirectPath )
-		{
-			var cellToCheck = currentCell.GetNeighbourAndConnections().Where( x => x != connection )
-				.OrderBy( x => x.Current.Position.Distance( endingCell.Position ) )
-				.FirstOrDefault()?.Current ?? null;
-
-			if ( cellToCheck == null ) return false;
-			if ( cellsChecked.Contains( cellToCheck ) ) return false;
-
-			if ( cellToCheck == endingCell ) return true;
-
-			cellsChecked.Add( currentCell );
-			currentCell = cellToCheck;
-		}
-
-		return false;
-	}
-
 	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
 	public bool IsInsideCylinder( Vector3 point ) => Bounds.IsInsideSquishedRotatedCylinder( Position, point, Rotation );
 
@@ -511,7 +482,7 @@ public partial class Grid : IValid
 						}
 
 						foreach ( var connection in jumpConnections )
-							if ( IsConnectionRedundant( connection ) )
+							if ( LineOfSight( connection.Parent.Current, connection.Current ) )
 								cell.RemoveConnection( connection );
 
 						totalFraction = 0f;
