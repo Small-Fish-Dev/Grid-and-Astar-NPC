@@ -2,8 +2,8 @@
 
 public partial class AStarNode : IHeapItem<AStarNode>, IEquatable<AStarNode>
 {
-	public Cell Current { get; internal set; }
-	public AStarNode Parent { get; internal set; }
+	public Cell Current { get; internal set; } = null;
+	public AStarNode Parent { get; internal set; } = null;
 	public string MovementTag { get; private set; } = string.Empty;
 	public Vector3 StartPosition => Parent.Current.Position;
 	public Vector3 EndPosition => Current.Position;
@@ -50,11 +50,28 @@ public partial class AStarNode : IHeapItem<AStarNode>, IEquatable<AStarNode>
 
 	public override int GetHashCode() => Current.GetHashCode();
 
-	// Alex Instagib from Facepunch Ltd. code VVV
 	public static bool operator ==( AStarNode a, AStarNode b ) => a.Equals( b );
 	public static bool operator !=( AStarNode a, AStarNode b ) => !a.Equals( b );
 
-	public override bool Equals( object obj ) => (obj as AStarNode)?.Current == Current && (obj as AStarNode)?.MovementTag == MovementTag && (obj as AStarNode)?.Parent?.Current == Parent?.Current;
-	public bool Equals( AStarNode other ) => other.Current == Current && other.MovementTag == MovementTag && other.Parent?.Current == Parent?.Current;
+	public override bool Equals( object obj )
+	{
+		if ( obj is not AStarNode node ) return false;
 
+		if ( node?.Current != Current ) return false;
+		if ( node?.Parent?.Current != Parent?.Current ) return false;
+		if ( node?.MovementTag != MovementTag ) return false;
+
+		return true;
+	}
+
+	public bool Equals( AStarNode other )
+	{
+		if ( other is not AStarNode ) return false;
+
+		if ( other?.Current != Current ) return false;
+		if ( other?.Parent?.Current != Parent?.Current ) return false;
+		if ( other?.MovementTag != MovementTag ) return false;
+
+		return true;
+	}
 }
