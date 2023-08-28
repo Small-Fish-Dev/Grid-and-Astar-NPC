@@ -44,11 +44,14 @@ public partial class Grid
 
 			if ( openSet.Count == 1 && pathBuilder.AcceptsPartial )
 			{
-				var closestNode = closedSet.OrderBy( x => x.hCost )
-					.Where( x => x.gCost != 0f )
-					.First();
-				RetracePath( ref path, startingNode, closestNode );
-				break;
+				if ( !withCellConnections || withCellConnections && currentNode.Current.GetNeighbourAndConnections().Count() <= currentNode.Current.GetNeighbours().Count() )
+				{
+					var closestNode = closedSet.OrderBy( x => x.hCost )
+						.Where( x => x.gCost != 0f )
+						.First();
+					RetracePath( ref path, startingNode, closestNode );
+					break;
+				}
 			}
 
 			foreach ( var neighbour in withCellConnections ? currentNode.Current.GetNeighbourAndConnections() : currentNode.Current.GetNeighbours().Select( x => new AStarNode( x ) ) )
