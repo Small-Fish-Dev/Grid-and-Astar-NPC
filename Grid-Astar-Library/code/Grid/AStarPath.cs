@@ -3,9 +3,9 @@
 public struct AStarPath
 {
 	public AStarPathBuilder Settings { get; internal set; }
-	public List<AStarNode> Nodes { get; set; }
+	public List<AStarNode> Nodes { get; set; } = new();
 	public Grid Grid => Settings.Grid;
-	public int Count => Nodes.Count();
+	public int Count => Nodes?.Count() ?? 0;
 	public bool IsEmpty => Nodes == null || Count == 0;
 	public float Length { get; set; } = 0f;
 
