@@ -478,12 +478,19 @@ public partial class Grid : IValid
 
 							if ( jumpbackCell != null )
 								if ( !IsDirectlyWalkable( jumpbackCell, cell ) )
-									jumpConnections.Add( jumpableConnection.AddConnection( jumpbackCell, definition.Name ) );
+								{
+									var duplicate = false;
+									foreach ( var connection in jumpConnections )
+										if ( connection.Parent.Current == jumpbackCell && connection.MovementTag == definition.Name )
+											duplicate = true;
+									if ( !duplicate )
+										jumpConnections.Add( jumpableConnection.AddConnection( jumpbackCell, definition.Name ) );
+								}
 						}
 
 						foreach ( var connection in jumpConnections )
 							if ( LineOfSight( connection.Parent.Current, connection.Current ) )
-								cell.RemoveConnection( connection );
+								connection.Parent.Current.RemoveConnection( connection );
 
 						totalFraction = 0f;
 					}
