@@ -348,13 +348,14 @@ public partial class Grid : IValid
 	/// Gives the edge tag to all cells with less than 8 neighbours
 	/// </summary>
 	/// <param name="maxNeighourCount">How many neighbours a cell needs to have to not be considered an edge</param>
-	/// <param name="threadsToUse"></param>
+	/// <param name="threadsToUse">How many threads to use</param>
+	/// <param name="clearTags">Clear previous edge tags, for regenerating terrain and not first creating</param>
 	/// <returns></returns>
-	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1 ) => await assignEdgeCellsInternal( AllCells.ToList(), maxNeighourCount, threadsToUse );
+	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false ) => await assignEdgeCellsInternal( AllCells.ToList(), maxNeighourCount, threadsToUse, clearTags );
 
-	public async Task AssignEdgeCells( BBox bounds, int maxNeighourCount = 8, int threadsToUse = 1 ) => await assignEdgeCellsInternal( GetCellsInBBox( bounds ), maxNeighourCount, threadsToUse );
+	public async Task AssignEdgeCells( BBox bounds, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false ) => await assignEdgeCellsInternal( GetCellsInBBox( bounds ), maxNeighourCount, threadsToUse, clearTags );
 
-	internal async Task assignEdgeCellsInternal( List<Cell> cells, int maxNeighourCount = 8, int threadsToUse = 1 )
+	internal async Task assignEdgeCellsInternal( List<Cell> cells, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false )
 	{
 		var cellsCount = cells.Count();
 		var cellsEachThread = (int)(cellsCount / threadsToUse);
@@ -372,7 +373,8 @@ public partial class Grid : IValid
 
 				foreach ( var cell in cellsToCheck )
 				{
-					cell.Tags.Remove( "edge" );
+					if ( clearTags )
+						cell.Tags.Remove( "edge" );
 
 					if ( cell.GetNeighbours().Count() < maxNeighourCount )
 						cell.Tags.Add( "edge" );
@@ -560,7 +562,7 @@ public partial class Grid : IValid
 				Grid.removeCellsClient( Identifier, bounds, printInfo );
 	}
 
-	public async Task GenerateCells( BBox bounds, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
+	public async Task GenerateCells( BBox bounds, int threadedChunkSides = 1, bool printInfo = true, bool broadcastToClients = false )
 	{
 		List<Task<List<Cell>>> tasks = new();
 		var totalMins = bounds.Mins;
