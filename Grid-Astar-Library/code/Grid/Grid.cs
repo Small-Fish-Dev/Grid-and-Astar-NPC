@@ -325,7 +325,10 @@ public partial class Grid : IValid
 		Event.Unregister( this );
 
 		if ( Grids.ContainsKey( Identifier ) )
+		{
 			Grids[Identifier] = null;
+			Grids.Remove( Identifier );
+		}
 
 		if ( deleteSave )
 			DeleteSave();
