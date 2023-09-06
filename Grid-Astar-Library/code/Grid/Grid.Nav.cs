@@ -31,8 +31,21 @@ public partial class Grid
 		openSet.Add( startingNode );
 		openSetReference.Add( startingNode.GetHashCode(), startingNode );
 
-		while ( openSet.Count > 0 && !token.IsCancellationRequested )
+		while ( openSet.Count >= 0 && !token.IsCancellationRequested )
 		{
+			if ( openSet.Count == 0 )
+			{
+				if ( pathBuilder.AcceptsPartial )
+				{
+					var closestNode = closedSet.OrderBy( x => x.hCost )
+						.Where( x => x.gCost != 0f )
+						.First();
+
+					RetracePath( ref path, startingNode, closestNode );
+					break;
+				}
+			}
+
 			var currentNode = openSet.RemoveFirst();
 			closedSet.Add( currentNode );
 
@@ -42,17 +55,6 @@ public partial class Grid
 				break;
 			}
 
-			if ( openSet.Count == 1 && pathBuilder.AcceptsPartial )
-			{
-				if ( !withCellConnections || withCellConnections && currentNode.Current.GetNeighbourAndConnections().Count() <= currentNode.Current.GetNeighbours().Count() )
-				{
-					var closestNode = closedSet.OrderBy( x => x.hCost )
-						.Where( x => x.gCost != 0f )
-						.First();
-					RetracePath( ref path, startingNode, closestNode );
-					break;
-				}
-			}
 
 			foreach ( var neighbour in withCellConnections ? currentNode.Current.GetNeighbourAndConnections() : currentNode.Current.GetNeighbours().Select( x => new AStarNode( x ) ) )
 			{
@@ -101,7 +103,6 @@ public partial class Grid
 			pathList.Add( currentNode );
 			currentNode = currentNode.Parent;
 		}
-
 		pathList.Reverse();
 		pathList = pathList.Select( node => new AStarNode( node.Parent.Current, node, node.MovementTag ) ).ToList(); // Cell connections are flipped when we reverse
 	}
