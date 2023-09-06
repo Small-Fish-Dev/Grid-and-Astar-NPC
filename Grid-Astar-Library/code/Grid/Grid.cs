@@ -508,7 +508,7 @@ public partial class Grid : IValid
 		await GameTask.WhenAll( tasks );
 	}
 
-	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2 )
+	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2, bool draw = false )
 	{
 		var horizontalDirection = horizontalVelocity.WithZ( 0 ).Normal;
 		var horizontalSpeed = horizontalVelocity.WithZ( 0 ).Length;
@@ -529,9 +529,12 @@ public partial class Grid : IValid
 			var jumpTrace = Sandbox.Trace.Box( clearanceBBox, lastPositionChecked, nextPositionToCheck )
 				.WithGridSettings( Settings )
 				.Run();
-			//DebugOverlay.Sphere( nextPositionToCheck, CellSize / 2f, Color.Red, 5f );
-			//DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
-			//DebugOverlay.TraceResult( jumpTrace, 5f );
+
+			if ( draw )
+			{
+				DebugOverlay.Box( clearanceBBox.Translate( lastPositionChecked ), Color.Red, 5f );
+				DebugOverlay.TraceResult( jumpTrace, 5f );
+			}
 
 			if ( jumpTrace.Hit )
 			{
