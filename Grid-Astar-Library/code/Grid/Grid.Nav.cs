@@ -22,7 +22,8 @@ public partial class Grid
 		var startingNode = new AStarNode( startingCell );
 		var targetNode = new AStarNode( targetCell );
 
-		var openSet = new Heap<AStarNode>( AllCells.Count() );
+		var maxCells = AllCells.Count();
+		var openSet = new Heap<AStarNode>( maxCells );
 		var closedSet = new HashSet<AStarNode>();
 		var openSetReference = new Dictionary<int, AStarNode>(); // We need this because we create AStarNode down the line for each neighbour and we need a way to reference these
 		var initialDistance = startingNode.Distance( targetNode );
@@ -31,6 +32,7 @@ public partial class Grid
 		openSet.Add( startingNode );
 		openSetReference.Add( startingNode.GetHashCode(), startingNode );
 
+		var counted = 0;
 		while ( openSet.Count > 0 && !token.IsCancellationRequested )
 		{
 			var currentNode = openSet.RemoveFirst();
@@ -42,7 +44,7 @@ public partial class Grid
 				break;
 			}
 
-			foreach ( var neighbour in withCellConnections ? currentNode.Current.GetNeighbourAndConnections() : currentNode.Current.GetNeighbours().Select( x => new AStarNode( x ) ) )
+			foreach ( var neighbour in withCellConnections ? currentNode.Current.GetNeighbourAndConnections() : currentNode.Current.GetNeighbourConnections() )
 			{
 				if ( pathBuilder.HasOccupiedTagToExclude && !pathBuilder.HasPathCreator && neighbour.Occupied ) continue;
 				if ( pathBuilder.HasOccupiedTagToExclude && pathBuilder.HasPathCreator && neighbour.Occupied && neighbour.OccupyingEntity != pathBuilder.PathCreator ) continue;
@@ -72,7 +74,18 @@ public partial class Grid
 					}
 				}
 			}
+
+			counted++;
+
+			if ( counted > maxCells )
+			{
+				Log.Warning( "TOO MANY CELLS, SOME WERE COUNTED TWICE, BREAKING OUT" );
+				break;
+			}
 		}
+
+		if ( token.IsCancellationRequested )
+			return path;
 
 		if ( path.Count == 0 && pathBuilder.AcceptsPartial )
 		{
@@ -83,7 +96,7 @@ public partial class Grid
 			RetracePath( ref path, startingNode, closestNode );
 		}
 
-			if ( reversed )
+		if ( reversed )
 			path.Reverse();
 
 		return path;
@@ -100,7 +113,19 @@ public partial class Grid
 		}
 		pathList.Reverse();
 
-		pathList = pathList.Select( node => new AStarNode( node.Parent.Current, node, node.MovementTag ) ).ToList(); // Cell connections are flipped when we reversed earlier
+		var fixedList = new List<AStarNode>();
+
+		foreach ( var node in pathList )
+		{
+			if ( node.Parent?.Current == null )
+				continue;
+
+			var newNode = new AStarNode( node.Parent.Current, node, node.MovementTag );
+			fixedList.Add( newNode );
+		}
+		
+		pathList = fixedList;
+		//pathList = pathList.Select( node => new AStarNode( node.Parent.Current, node, node.MovementTag ) ).ToList(); // Cell connections are flipped when we reversed earlier
 	}
 }
 

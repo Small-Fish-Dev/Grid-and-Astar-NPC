@@ -48,7 +48,7 @@ public partial class AStarNode : IHeapItem<AStarNode>, IEquatable<AStarNode>
 		return -compare;
 	}
 
-	public override int GetHashCode() => HashCode.Combine( Current.GetHashCode(), MovementTag.GetHashCode() );
+	public override int GetHashCode() => Current.GetHashCode();
 
 	public static bool operator ==( AStarNode a, AStarNode b ) =>  a?.Equals( b ) ?? false;
 	public static bool operator !=( AStarNode a, AStarNode b ) => !a?.Equals( b ) ?? false;

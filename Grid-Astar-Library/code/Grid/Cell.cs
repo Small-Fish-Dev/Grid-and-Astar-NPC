@@ -439,6 +439,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 			.Concat( CellConnections );
 	}
 
+	public IEnumerable<AStarNode> GetNeighbourConnections( bool ignoreHeight = false ) => GetNeighbours().Select( x => new AStarNode( x ) );
+
 	/// <summary>
 	/// Return the first cell below spaces where a neighbour is missing
 	/// </summary>
