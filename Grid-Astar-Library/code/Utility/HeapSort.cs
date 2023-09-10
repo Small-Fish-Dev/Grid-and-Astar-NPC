@@ -38,15 +38,9 @@ public class Heap<T> where T : IHeapItem<T>
 		return firstItem;
 	}
 
-	public void UpdateItem( T item )
-	{
-		SortUp( item );
-	}
+	public void UpdateItem( T item ) => SortUp( item );
 
-	public bool Contains( T item )
-	{
-		return Equals( items[item.HeapIndex], item );
-	}
+	public bool Contains( T item ) => Equals( items[item.HeapIndex], item );
 
 	private void SortDown( T item )
 	{
@@ -61,27 +55,17 @@ public class Heap<T> where T : IHeapItem<T>
 				swapIndex = childIndexLeft;
 
 				if ( childIndexRight < currentItemCount )
-				{
 					if ( items[childIndexLeft].CompareTo( items[childIndexRight] ) < 0 )
-					{
 						swapIndex = childIndexRight;
-					}
-				}
 
 				if ( item.CompareTo( items[swapIndex] ) < 0 )
-				{
 					Swap( item, items[swapIndex] );
-				}
 				else
-				{
 					return;
-				}
 
 			}
 			else
-			{
 				return;
-			}
 
 		}
 	}
@@ -94,13 +78,9 @@ public class Heap<T> where T : IHeapItem<T>
 		{
 			T parentItem = items[parentIndex];
 			if ( item.CompareTo( parentItem ) > 0 )
-			{
 				Swap( item, parentItem );
-			}
 			else
-			{
 				break;
-			}
 
 			parentIndex = (item.HeapIndex - 1) / 2;
 		}

@@ -24,28 +24,15 @@ public partial class Grid
 
 		var openSet = new Heap<AStarNode>( AllCells.Count() );
 		var closedSet = new HashSet<AStarNode>();
-		var openSetReference = new Dictionary<int, AStarNode>(); // .NET Still doesn't let you get an item inside of a HashSet by HashCode
+		var openSetReference = new Dictionary<int, AStarNode>(); // We need this because we create AStarNode down the line for each neighbour and we need a way to reference these
 		var initialDistance = startingNode.Distance( targetNode );
 		var maxDistance = Math.Max( initialDistance, initialDistance + pathBuilder.MaxCheckDistance ) + CellSize;
 
 		openSet.Add( startingNode );
 		openSetReference.Add( startingNode.GetHashCode(), startingNode );
 
-		while ( openSet.Count >= 0 && !token.IsCancellationRequested )
+		while ( openSet.Count > 0 && !token.IsCancellationRequested )
 		{
-			if ( openSet.Count == 0 )
-			{
-				if ( pathBuilder.AcceptsPartial )
-				{
-					var closestNode = closedSet.OrderBy( x => x.hCost )
-						.Where( x => x.gCost != 0f )
-						.First();
-
-					RetracePath( ref path, startingNode, closestNode );
-					break;
-				}
-			}
-
 			var currentNode = openSet.RemoveFirst();
 			closedSet.Add( currentNode );
 
@@ -54,7 +41,6 @@ public partial class Grid
 				RetracePath( ref path, startingNode, currentNode );
 				break;
 			}
-
 
 			foreach ( var neighbour in withCellConnections ? currentNode.Current.GetNeighbourAndConnections() : currentNode.Current.GetNeighbours().Select( x => new AStarNode( x ) ) )
 			{
@@ -88,7 +74,16 @@ public partial class Grid
 			}
 		}
 
-		if ( reversed )
+		if ( path.Count == 0 && pathBuilder.AcceptsPartial )
+		{
+			var closestNode = closedSet.OrderBy( x => x.hCost )
+				.Where( x => x.gCost != 0f )
+				.First();
+
+			RetracePath( ref path, startingNode, closestNode );
+		}
+
+			if ( reversed )
 			path.Reverse();
 
 		return path;
@@ -104,7 +99,8 @@ public partial class Grid
 			currentNode = currentNode.Parent;
 		}
 		pathList.Reverse();
-		pathList = pathList.Select( node => new AStarNode( node.Parent.Current, node, node.MovementTag ) ).ToList(); // Cell connections are flipped when we reverse
+
+		pathList = pathList.Select( node => new AStarNode( node.Parent.Current, node, node.MovementTag ) ).ToList(); // Cell connections are flipped when we reversed earlier
 	}
 }
 
