@@ -432,14 +432,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// </summary>
 	/// <param name="ignoreHeight"></param>
 	/// <returns></returns>
-	public IEnumerable<AStarNode> GetNeighbourAndConnections( bool ignoreHeight = false )
-	{
-		return GetNeighbours( ignoreHeight )
-			.Select( x => new AStarNode( x ) )
-			.Concat( CellConnections );
-	}
+	public IEnumerable<AStarNode> GetNeighbourAndConnections( bool ignoreHeight = false ) => GetNeighbourConnections( ignoreHeight ).Concat( CellConnections );
 
-	public IEnumerable<AStarNode> GetNeighbourConnections( bool ignoreHeight = false ) => GetNeighbours().Select( x => new AStarNode( x ) );
+	public IEnumerable<AStarNode> GetNeighbourConnections( bool ignoreHeight = false ) => GetNeighbours( ignoreHeight ).Select( x => new AStarNode( x ) );
 
 	/// <summary>
 	/// Return the first cell below spaces where a neighbour is missing

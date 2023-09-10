@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Diagnostics.Metrics;
+using System.Threading;
 
 namespace GridAStar;
 
@@ -31,7 +32,7 @@ public partial class Grid
 
 		openSet.Add( startingNode );
 		openSetReference.Add( startingNode.GetHashCode(), startingNode );
-
+		targetCell.Draw( 1f, false, true );
 		var counted = 0;
 		while ( openSet.Count > 0 && !token.IsCancellationRequested )
 		{
@@ -114,7 +115,7 @@ public partial class Grid
 		pathList.Reverse();
 
 		var fixedList = new List<AStarNode>();
-
+		
 		foreach ( var node in pathList )
 		{
 			if ( node.Parent?.Current == null )
