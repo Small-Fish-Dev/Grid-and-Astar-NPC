@@ -5,6 +5,20 @@ namespace GridAStar;
 
 public partial class Grid
 {
+	/*
+	static Dictionary<int, (int,int)> threadsUsed = new();
+
+	[GameEvent.Tick.Server]
+	static void displayThreads()
+	{
+		var line = 0;
+		foreach ( var thread in threadsUsed )
+		{
+			DebugOverlay.ScreenText( $"Thread #{thread.Key}: {(thread.Value.Item1 > 0 ? $"IN USE {thread.Value.Item1} nodes With openset count: {thread.Value.Item2}" : "unused")}", line, Time.Delta );
+			line++;
+		}
+	}*/
+
 	/// <summary>
 	/// Computes a path from the starting point to a target point. Reversing the path if needed.
 	/// </summary>
@@ -32,12 +46,22 @@ public partial class Grid
 
 		openSet.Add( startingNode );
 		openSetReference.Add( startingNode.GetHashCode(), startingNode );
-		targetCell.Draw( 1f, false, true );
-		var counted = 0;
+		/*
+		var curId = ThreadSafe.CurrentThreadId;
+		if ( threadsUsed.ContainsKey( curId ) )
+			threadsUsed[curId] = (0,0);
+		else
+			threadsUsed.Add( curId, (0,0) );
+
+		var count = 0;*/
+
 		while ( openSet.Count > 0 && !token.IsCancellationRequested )
 		{
 			var currentNode = openSet.RemoveFirst();
 			closedSet.Add( currentNode );
+			//count++;
+
+			//threadsUsed[curId] = (count,openSet.Count);
 
 			if ( currentNode.Current == targetNode.Current )
 			{
@@ -75,15 +99,9 @@ public partial class Grid
 					}
 				}
 			}
-
-			counted++;
-
-			if ( counted > maxCells )
-			{
-				Log.Warning( "TOO MANY CELLS, SOME WERE COUNTED TWICE, BREAKING OUT" );
-				break;
-			}
 		}
+
+		//threadsUsed[curId] = (0,0);
 
 		if ( token.IsCancellationRequested )
 			return path;
