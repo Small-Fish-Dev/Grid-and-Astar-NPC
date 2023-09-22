@@ -7,7 +7,20 @@ public struct AStarPath
 	public Grid Grid => Settings.Grid;
 	public int Count => Nodes?.Count() ?? 0;
 	public bool IsEmpty => Nodes == null || Count == 0;
-	public float Length { get; set; } = 0f;
+	float length = 0f;
+	public float Length
+	{
+		get
+		{
+			if ( length == 0 )
+			{
+				var newLength = CalculateLength();
+				length = newLength;
+			}
+
+			return length;
+		}
+	}
 
 	public AStarPath() { }
 
@@ -15,19 +28,19 @@ public struct AStarPath
 	{
 		Settings = builder;
 		Nodes = nodes;
-		CalculateLenght();
 	}
 
 	public static AStarPath From( AStarPathBuilder builder, List<AStarNode> nodes ) => new AStarPath( builder, nodes );
 
 	public static AStarPath Empty() => new AStarPath();
 
-	public void CalculateLenght()
+	public float CalculateLength()
 	{
 		var length = 0f;
 		for ( int i = 0; i < Nodes.Count - 1; i++ )
 			length += Nodes[i].EndPosition.Distance( Nodes[i + 1].EndPosition );
-		Length = length;
+
+		return length;
 	}
 
 	/// <summary>
@@ -63,6 +76,6 @@ public struct AStarPath
 			}
 		}
 
-		CalculateLenght();
+		length = CalculateLength();
 	}
 }
