@@ -353,12 +353,14 @@ public partial class Grid : IValid
 	/// <param name="maxNeighourCount">How many neighbours a cell needs to have to not be considered an edge</param>
 	/// <param name="threadsToUse">How many threads to use</param>
 	/// <param name="clearTags">Clear previous edge tags, for regenerating terrain and not first creating</param>
+	/// <param name="tagToExclude">Cells with this tag won't get counted, you can for example do "edge" to exclude previous edge cells and expand the edge towards the center</param>
+	/// <param name="tagToAssign">Name of the tag that gets assigned</param>
 	/// <returns></returns>
-	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false ) => await assignEdgeCellsInternal( AllCells.ToList(), maxNeighourCount, threadsToUse, clearTags );
+	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" ) => await assignEdgeCellsInternal( AllCells.ToList(), maxNeighourCount, threadsToUse, clearTags, tagToExclude, tagToAssign );
 
-	public async Task AssignEdgeCells( BBox bounds, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false ) => await assignEdgeCellsInternal( GetCellsInBBox( bounds ), maxNeighourCount, threadsToUse, clearTags );
+	public async Task AssignEdgeCells( BBox bounds, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" ) => await assignEdgeCellsInternal( GetCellsInBBox( bounds ), maxNeighourCount, threadsToUse, clearTags, tagToExclude, tagToAssign );
 
-	internal async Task assignEdgeCellsInternal( List<Cell> cells, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false )
+	internal async Task assignEdgeCellsInternal( List<Cell> cells, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" )
 	{
 		var cellsCount = cells.Count();
 		var cellsEachThread = (int)(cellsCount / threadsToUse);
@@ -377,10 +379,15 @@ public partial class Grid : IValid
 				foreach ( var cell in cellsToCheck )
 				{
 					if ( clearTags )
-						cell.Tags.Remove( "edge" );
+						cell.Tags.Remove( tagToAssign );
 
-					if ( cell.GetNeighbours().Count() < maxNeighourCount )
-						cell.Tags.Add( "edge" );
+					var neighbours = cell.GetNeighbours();
+
+					if ( tagToExclude != "" )
+						neighbours = neighbours.Where( x => !x.Tags.Has( tagToExclude ) );
+
+					if ( neighbours.Count() < maxNeighourCount )
+						cell.Tags.Add( tagToAssign );
 				}
 			} ) );
 		}
