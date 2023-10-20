@@ -10,6 +10,8 @@ public struct AStarPathBuilder
 	public bool HasOccupiedTagToExclude => HasTagsToExlude ? TagsToExclude.Contains( "occupied" ) : false;
 	public List<string> TagsToInclude { get; private set; } = new();
 	public bool HasTagsToInclude => TagsToInclude.Count() > 0;
+	public Dictionary<string, float> TagsToAvoid { get; private set; } = new();
+	public bool HasTagsToAvoid => TagsToAvoid.Count() > 0;
 	public bool AcceptsPartial { get; private set; } = false;
 	public float MaxCheckDistance { get; private set; } = float.PositiveInfinity;
 	public float MaxDropHeight { get; private set; } = GridSettings.DEFAULT_DROP_HEIGHT;
@@ -39,6 +41,7 @@ public struct AStarPathBuilder
 		}
 		return this;
 	}
+
 	/// <summary>
 	/// Which tags the cells cannot have to be a part of the path ("occupied" for example goes here)
 	/// </summary>
@@ -52,6 +55,23 @@ public struct AStarPathBuilder
 			if ( TagsToInclude.Contains( tag ) )
 				TagsToInclude.Remove( tag );
 		}
+		return this;
+	}
+
+	/// <summary>
+	/// Which tags to avoid, when found it will add the malus to its total cost. Example: Adding 1000 malus to a cell will make it rather find a path that is up to 1000 units of distance longer rather than going on a single tagged cell
+	/// </summary>
+	/// <param name="tag"></param>
+	/// <param name="malus">Will always be positive, even if you feed it a negative value</param>
+	public AStarPathBuilder AvoidTag( string tag, float malus )
+	{
+		malus = Math.Abs( malus );
+
+		if ( !TagsToAvoid.ContainsKey( tag ) )
+			TagsToAvoid.Add( tag, malus );
+		else
+			TagsToAvoid[tag] = malus; // There isn't a reason to do this, but just to be sure in case someone screws up and blames it on me
+
 		return this;
 	}
 

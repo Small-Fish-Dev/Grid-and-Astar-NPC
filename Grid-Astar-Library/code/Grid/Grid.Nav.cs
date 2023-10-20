@@ -81,8 +81,15 @@ public partial class Grid
 				var isInOpenSet = openSetReference.ContainsKey( neighbour.GetHashCode() );
 				var currentNeighbour = isInOpenSet ? openSetReference[neighbour.GetHashCode()] : neighbour;
 
-				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( currentNeighbour );
-				var distanceToTarget = currentNeighbour.Distance( targetNode );
+				var malus = 0f;
+
+				if ( pathBuilder.HasTagsToAvoid && currentNeighbour.Tags.Has( pathBuilder.TagsToAvoid.Keys ) )
+					foreach ( var tag in currentNeighbour.Tags.All )
+						if ( pathBuilder.TagsToAvoid.TryGetValue( tag, out float tagMalus ) )
+							malus += tagMalus;
+
+				var newMovementCostToNeighbour = currentNode.gCost + currentNode.Distance( currentNeighbour ) + malus / 2f;
+				var distanceToTarget = currentNeighbour.Distance( targetNode ) + malus / 2f;
 
 				if ( distanceToTarget > maxDistance ) continue;
 

@@ -48,8 +48,9 @@ public struct AStarPath
 	/// </summary>
 	/// <param name="segmentAmounts"></param>
 	/// <param name="iterations"></param>
+	/// <param name="tagsToExclude">Tags where it won't merge if they're present</param>
 	/// <returns></returns>
-	public void Simplify( int segmentAmounts = 2, int iterations = 8 )
+	public void Simplify( int segmentAmounts = 2, int iterations = 8, params string[] tagsToExclude )
 	{
 		for ( int iteration = 0; iteration < iterations; iteration++ )
 		{
@@ -62,10 +63,11 @@ public struct AStarPath
 				var nextNode = Nodes[segmentStart + 1];
 				var furtherNode = Nodes[segmentEnd];
 
-				if ( nextNode.MovementTag == "" || nextNode.MovementTag == string.Empty || furtherNode.MovementTag == "" || furtherNode.MovementTag == string.Empty )
-					if ( Settings.Grid.LineOfSight( currentNode.Current, furtherNode.Current, Settings.PathCreator ) )
-						for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
-							Nodes.RemoveAt( toDelete );
+				if ( !currentNode.Tags.Has( tagsToExclude ) && !nextNode.Tags.Has( tagsToExclude ) && !furtherNode.Tags.Has( tagsToExclude ) )
+					if ( nextNode.MovementTag == "" || nextNode.MovementTag == string.Empty || furtherNode.MovementTag == "" || furtherNode.MovementTag == string.Empty )
+						if ( Settings.Grid.LineOfSight( currentNode.Current, furtherNode.Current, Settings.PathCreator ) )
+							for ( int toDelete = segmentStart + 1; toDelete < segmentEnd; toDelete++ )
+								Nodes.RemoveAt( toDelete );
 
 
 				if ( segmentEnd == Count - 1 )

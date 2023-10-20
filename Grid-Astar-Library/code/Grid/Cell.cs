@@ -31,6 +31,14 @@ public struct CellTags
 		return false;
 	}
 
+	public bool Has( IEnumerable<string> tags )
+	{
+		foreach ( string tag in tags )
+			if ( Has( tag ) )
+				return true;
+		return false;
+	}
+
 	public void Add( string tag )
 	{
 		if ( !Has( tag ) )
