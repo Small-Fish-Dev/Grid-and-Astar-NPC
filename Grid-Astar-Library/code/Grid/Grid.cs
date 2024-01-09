@@ -1,9 +1,7 @@
 ﻿global using Sandbox;
 global using System;
 global using System.Collections.Generic;
-global using System.Diagnostics;
 global using System.Linq;
-global using System.Threading.Tasks;
 
 namespace GridAStar;
 
@@ -18,6 +16,80 @@ public static partial class GridSettings
 	public const float DEFAULT_DROP_HEIGHT = 400f;      // How high you can drop down from
 	public const bool DEFAULT_GRID_PERFECT = false;     // For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
 	public const bool DEFAULT_STATIC_ONLY = true;        // Will it only hit world and static or also dynamic
+}
+
+
+public class Grid : Component, Component.ExecuteInEditor
+{
+	[Property]
+	public BBox Bounds { get; private set; } = new();
+
+	[Property]
+	[Range( 1f, 89f, 1f )]
+	public float StandableAngle { get; private set; } = GridSettings.DEFAULT_STANDABLE_ANGLE;
+
+	[Property]
+	[Range( 0f, 64f, 1f )]
+	public float StepSize { get; private set; } = GridSettings.DEFAULT_STEP_SIZE;
+
+	[Property]
+	[Range( 4f, 64f, 1f )]
+	public float CellSize { get; private set; } = GridSettings.DEFAULT_CELL_SIZE;
+
+	[Property]
+	[Range( 0f, 120f, 1f )]
+	public float HeightClearance { get; private set; } = GridSettings.DEFAULT_HEIGHT_CLEARANCE;
+
+	[Property]
+	[Range( 0f, 120f, 1f )]
+	public float WidthClearance { get; private set; } = GridSettings.DEFAULT_WIDTH_CLEARANCE;
+
+	[Property]
+	public bool GridPerfect { get; private set; } = GridSettings.DEFAULT_GRID_PERFECT;
+
+	[Property]
+	[Range( 0f, 9999f, 1f )]
+	public float MaxDropHeight { get; private set; } = GridSettings.DEFAULT_DROP_HEIGHT;
+
+	//public bool AxisAligned { get; private set; } = false;
+	//public bool CylinderShaped { get; private set; } = false;
+
+	[Property]
+	public TagSet TagsToInclude { get; private set; } = new();
+
+	[Property]
+	public TagSet TagsToExclude { get; private set; } = new();
+	//public List<JumpDefinition> JumpDefinitions { get; private set; } = new(); // TODO: Add to persistance
+
+	[Property]
+	[Range( 0, 8, 1 )]
+	public int MinNeighbourCount { get; private set; } = 8; // TODO: Add to persistance
+
+	[Property]
+	public bool IgnoreConnectionsForJumps { get; private set; } = false; // TODO: Add to persistance
+
+	[Property]
+	public bool IgnoreLOSForJumps { get; private set; } = false; // TODO: Add to persistance
+
+	protected override void DrawGizmos()
+	{
+		Gizmo.GizmoDraw draw = Gizmo.Draw;
+
+		draw.LineBBox( Bounds );
+
+		// Test performance
+
+		for ( int x = -100; x <= 100; x++ )
+		{
+			draw.Line( new Vector3( x * 10, 0, 0 ), new Vector3( x * 10 + 10, 10000, 0 ) );
+		}
+		for ( int y = -100; y <= 100; y++ )
+		{
+			draw.Line( new Vector3( 0, y * 10, 0 ), new Vector3( 10000, y * 10, 0 ) );
+		}
+
+	}
+
 }
 /*
 public partial class Grid : IValid

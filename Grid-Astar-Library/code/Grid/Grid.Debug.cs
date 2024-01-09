@@ -1,196 +1,196 @@
 ﻿namespace GridAStar;
 
-public partial class Grid
+//public partial class Grid
+//{
+//public void Print( string message ) => Grid.Print( Identifier, message );
+//public static void Print( string identifier, string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{identifier}': {message}" );
+
+/*
+[ConCmd.Admin( "RegenerateMainGrid" )]
+public async static void RegenerateMainGrid()
 {
-	//public void Print( string message ) => Grid.Print( Identifier, message );
-	//public static void Print( string identifier, string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{identifier}': {message}" );
-
-	/*
-	[ConCmd.Admin( "RegenerateMainGrid" )]
-	public async static void RegenerateMainGrid()
-	{
-		BroadcastMainGrid();
-		await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
-	}
-
-	[ClientRpc]
-	public async static void BroadcastMainGrid()
-	{
-		await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
-	}
-
-	[ConCmd.Admin( "CreateGrid" )]
-	public async static void CreateGrid( string identifier )
-	{
-		var caller = ConsoleSystem.Caller;
-		await Grid.Create( caller.Position, new BBox( -200f, 200f ), new Rotation(), identifier );
-	}
-
-	[ConCmd.Admin( "LoadGrid" )]
-	public async static void LoadGrid( string identifier = "main" )
-	{
-		await Grid.Load( identifier );
-	}
-
-	[ConCmd.Admin( "DeleteGrid" )]
-	public static void DeleteGrid( string identifier = "main" )
-	{
-		DeleteSave( identifier );
-	}
-
-	[ConCmd.Admin( "TestOccupancy" )]
-	public static void OccupancyTest()
-	{
-		foreach ( var grid in Grid.Grids )
-			grid.Value.CheckOccupancy( "BlockGrid" );
-	}*/
-	/*
-	[ConCmd.Admin( "TestPath" )]
-	public async static void TestPath()
-	{
-		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
-
-		var builder = AStarPathBuilder.From( Grid.Main );
-
-		var computedPath = await builder.RunInParallel( Grid.Main.GetCellInArea( caller.Position, Grid.Main.WidthClearance ), Grid.Main.GetCell( Vector3.Zero, false ), new CancellationTokenSource() );
-
-		for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
-		{
-			var node = computedPath.Nodes[i];
-			node.Current.Draw( Color.Red, 3f, false );
-			DebugOverlay.Text( i.ToString(), node.EndPosition, duration: 3 );
-
-			if ( i < computedPath.Nodes.Count() - 1 )
-				DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i + 1].EndPosition, 3f );
-		}
-	}
-
-
-	[ConCmd.Admin( "TestLOS" )]
-	public static void TestLOS()
-	{
-		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
-
-		var standingCell = Grid.Main.GetNearestCell( caller.Position );
-		var forwardCell = Grid.Main.GetNearestCell( caller.Position + caller.Rotation.Forward * Grid.Main.CellSize * 6f );
-
-		Log.Error( Grid.Main.LineOfSight( standingCell, forwardCell, debugShow: true ) );
-	}
-
-	[ConCmd.Admin( "TestWalkable" )]
-	public static void TestWalkable()
-	{
-		var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
-
-		var standingCell = Grid.Main.GetNearestCell( caller.Position );
-		var forwardCell = Grid.Main.GetNearestCell( caller.Position + caller.Rotation.Forward * Grid.Main.CellSize * 16f );
-
-		Log.Error( Grid.Main.IsDirectlyWalkable( standingCell, forwardCell ) );
-	}
-
-	[ConCmd.Admin( "DeleteCells" )]
-	public static void TestDeleteCells( float size = 300)
-	{
-		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
-
-		var bounds = new BBox( player.Position, size );
-		Grid.Main.RemoveCells( bounds, true, true );
-	}
-
-	[ConCmd.Admin( "CreateCells" )]
-	public async static void TestCreateCells( float size = 300 )
-	{
-		if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
-
-		var bounds = new BBox( player.Position, size );
-		await Grid.Main.GenerateCells( Grid.Main.ToLocal( bounds ), 4, true, true );
-		await Grid.Main.GenerateConnections( Grid.Main.ToLocal( bounds ), Grid.Main.MaxDropHeight, 4, true, true );
-	}
-	/*
-	[ConCmd.Admin( "StressPath" )]
-	public static async void StressPath( int runs = 100, int seed = 42069 )
-	{
-		var firstPlayer = Game.Clients.FirstOrDefault();
-		if ( firstPlayer is null )
-		{
-			Log.Warning( "There needs to be at least one player in the server for this to be used" );
-			return;
-		}
-
-		var random = new Random( seed );
-		var times = new double[runs];
-		var paths = new ImmutableArray<Cell>[runs];
-
-		var startingPosition = firstPlayer.Position;
-		for ( var i = 0; i < runs; i++ )
-		{
-			var targetPosition = new Vector3( random.Float( -1, 1 ), random.Float( -1, 1 ), random.Float( -1, 1 ) ) * 3000;
-
-			var startingCell = Grid.Main.GetCell( startingPosition, false );
-			var targetCell = Grid.Main.GetCell( targetPosition, false );
-
-			var timestamp = Stopwatch.GetTimestamp();
-			var path = await Grid.Main.ComputePathParallel( startingCell, targetCell );
-			var elapsed = Stopwatch.GetElapsedTime( timestamp );
-
-			times[i] = elapsed.TotalMilliseconds;
-			paths[i] = path;
-			Log.Info( $"Finished run #{i + 1}" );
-		}
-
-		Log.Info( $"-- {runs} Runs --" );
-		Log.Info( $"Fastest Run: {times.Min()}ms" );
-		Log.Info( $"Slowest Run: {times.Max()}ms" );
-		Log.Info( $"Average: {times.Average()}ms" );
-		Log.Info( $"Total Time: {times.Sum()}ms" );
-
-		foreach ( var path in paths )
-		{
-			for ( var i = 0; i < path.Length; i++ )
-			{
-				path[i].Draw( Color.Red, 10, false );
-				DebugOverlay.Text( i.ToString(), path[i].Position, duration: 10 );
-			}
-		}
-	}*/
-	/*
-	[ConCmd.Admin( "gridastar_regenerate" )]
-	public static void RegenerateGrids( bool save = false, bool compress = false )
-	{
-		RegenerateOnClient( To.Everyone );
-
-		/*GameTask.RunInThreadAsync( () =>
-		{
-			Log.Info( ThreadSafe.IsMainThread );
-			for ( int i = 0; i < 10; i++ )
-			{
-				var task = i;
-				GameTask.RunInThreadAsync( async () =>
-				{
-					for ( int x = 0; x < 10; x++ )
-					{
-						Log.Info( $"Hello from Task #{task}" );
-						await GameTask.Delay( 100 );
-					}
-				} );
-			}
-		} );*/
-
-
-	/*GameTask.RunInThreadAsync( async () =>
-	{
-		var allGrids = Entity.All.OfType<HammerGrid>().ToList();
-
-		foreach ( var grid in allGrids )
-		{
-			var newGrid = await grid.CreateFromSettings();
-			if ( save )
-				await newGrid.Save( compress );
-		}
-
-		Event.Run( Grid.LoadedAll );
-	} );*/
+	BroadcastMainGrid();
+	await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
 }
+
+[ClientRpc]
+public async static void BroadcastMainGrid()
+{
+	await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
+}
+
+[ConCmd.Admin( "CreateGrid" )]
+public async static void CreateGrid( string identifier )
+{
+	var caller = ConsoleSystem.Caller;
+	await Grid.Create( caller.Position, new BBox( -200f, 200f ), new Rotation(), identifier );
+}
+
+[ConCmd.Admin( "LoadGrid" )]
+public async static void LoadGrid( string identifier = "main" )
+{
+	await Grid.Load( identifier );
+}
+
+[ConCmd.Admin( "DeleteGrid" )]
+public static void DeleteGrid( string identifier = "main" )
+{
+	DeleteSave( identifier );
+}
+
+[ConCmd.Admin( "TestOccupancy" )]
+public static void OccupancyTest()
+{
+	foreach ( var grid in Grid.Grids )
+		grid.Value.CheckOccupancy( "BlockGrid" );
+}*/
+/*
+[ConCmd.Admin( "TestPath" )]
+public async static void TestPath()
+{
+	var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
+
+	var builder = AStarPathBuilder.From( Grid.Main );
+
+	var computedPath = await builder.RunInParallel( Grid.Main.GetCellInArea( caller.Position, Grid.Main.WidthClearance ), Grid.Main.GetCell( Vector3.Zero, false ), new CancellationTokenSource() );
+
+	for ( int i = 0; i < computedPath.Nodes.Count(); i++ )
+	{
+		var node = computedPath.Nodes[i];
+		node.Current.Draw( Color.Red, 3f, false );
+		DebugOverlay.Text( i.ToString(), node.EndPosition, duration: 3 );
+
+		if ( i < computedPath.Nodes.Count() - 1 )
+			DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i + 1].EndPosition, 3f );
+	}
+}
+
+
+[ConCmd.Admin( "TestLOS" )]
+public static void TestLOS()
+{
+	var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
+
+	var standingCell = Grid.Main.GetNearestCell( caller.Position );
+	var forwardCell = Grid.Main.GetNearestCell( caller.Position + caller.Rotation.Forward * Grid.Main.CellSize * 6f );
+
+	Log.Error( Grid.Main.LineOfSight( standingCell, forwardCell, debugShow: true ) );
+}
+
+[ConCmd.Admin( "TestWalkable" )]
+public static void TestWalkable()
+{
+	var caller = ConsoleSystem.Caller.Pawn as ModelEntity;
+
+	var standingCell = Grid.Main.GetNearestCell( caller.Position );
+	var forwardCell = Grid.Main.GetNearestCell( caller.Position + caller.Rotation.Forward * Grid.Main.CellSize * 16f );
+
+	Log.Error( Grid.Main.IsDirectlyWalkable( standingCell, forwardCell ) );
+}
+
+[ConCmd.Admin( "DeleteCells" )]
+public static void TestDeleteCells( float size = 300)
+{
+	if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
+
+	var bounds = new BBox( player.Position, size );
+	Grid.Main.RemoveCells( bounds, true, true );
+}
+
+[ConCmd.Admin( "CreateCells" )]
+public async static void TestCreateCells( float size = 300 )
+{
+	if ( ConsoleSystem.Caller.Pawn is not ModelEntity player ) return;
+
+	var bounds = new BBox( player.Position, size );
+	await Grid.Main.GenerateCells( Grid.Main.ToLocal( bounds ), 4, true, true );
+	await Grid.Main.GenerateConnections( Grid.Main.ToLocal( bounds ), Grid.Main.MaxDropHeight, 4, true, true );
+}
+/*
+[ConCmd.Admin( "StressPath" )]
+public static async void StressPath( int runs = 100, int seed = 42069 )
+{
+	var firstPlayer = Game.Clients.FirstOrDefault();
+	if ( firstPlayer is null )
+	{
+		Log.Warning( "There needs to be at least one player in the server for this to be used" );
+		return;
+	}
+
+	var random = new Random( seed );
+	var times = new double[runs];
+	var paths = new ImmutableArray<Cell>[runs];
+
+	var startingPosition = firstPlayer.Position;
+	for ( var i = 0; i < runs; i++ )
+	{
+		var targetPosition = new Vector3( random.Float( -1, 1 ), random.Float( -1, 1 ), random.Float( -1, 1 ) ) * 3000;
+
+		var startingCell = Grid.Main.GetCell( startingPosition, false );
+		var targetCell = Grid.Main.GetCell( targetPosition, false );
+
+		var timestamp = Stopwatch.GetTimestamp();
+		var path = await Grid.Main.ComputePathParallel( startingCell, targetCell );
+		var elapsed = Stopwatch.GetElapsedTime( timestamp );
+
+		times[i] = elapsed.TotalMilliseconds;
+		paths[i] = path;
+		Log.Info( $"Finished run #{i + 1}" );
+	}
+
+	Log.Info( $"-- {runs} Runs --" );
+	Log.Info( $"Fastest Run: {times.Min()}ms" );
+	Log.Info( $"Slowest Run: {times.Max()}ms" );
+	Log.Info( $"Average: {times.Average()}ms" );
+	Log.Info( $"Total Time: {times.Sum()}ms" );
+
+	foreach ( var path in paths )
+	{
+		for ( var i = 0; i < path.Length; i++ )
+		{
+			path[i].Draw( Color.Red, 10, false );
+			DebugOverlay.Text( i.ToString(), path[i].Position, duration: 10 );
+		}
+	}
+}*/
+/*
+[ConCmd.Admin( "gridastar_regenerate" )]
+public static void RegenerateGrids( bool save = false, bool compress = false )
+{
+	RegenerateOnClient( To.Everyone );
+
+	/*GameTask.RunInThreadAsync( () =>
+	{
+		Log.Info( ThreadSafe.IsMainThread );
+		for ( int i = 0; i < 10; i++ )
+		{
+			var task = i;
+			GameTask.RunInThreadAsync( async () =>
+			{
+				for ( int x = 0; x < 10; x++ )
+				{
+					Log.Info( $"Hello from Task #{task}" );
+					await GameTask.Delay( 100 );
+				}
+			} );
+		}
+	} );*/
+
+
+/*GameTask.RunInThreadAsync( async () =>
+{
+	var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+
+	foreach ( var grid in allGrids )
+	{
+		var newGrid = await grid.CreateFromSettings();
+		if ( save )
+			await newGrid.Save( compress );
+	}
+
+	Event.Run( Grid.LoadedAll );
+} );*/
+//}
 /*
 	[ConCmd.Admin( "gridastar_create" )]
 	public static void CreateMain( bool save = false, bool compress = false )

@@ -1,5 +1,5 @@
 ﻿namespace GridAStar;
-
+/*
 public partial class Grid
 {
 	public const string LoadedAll = "grid.loadedall";
@@ -9,3 +9,4 @@ public partial class Grid
 		public LoadedAllAttribute() : base( LoadedAll ) { }
 	}
 }
+*/
