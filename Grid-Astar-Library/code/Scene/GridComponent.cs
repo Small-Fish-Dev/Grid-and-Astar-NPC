@@ -1,11 +1,8 @@
-﻿using Editor;
-using System.ComponentModel.DataAnnotations;
-
-namespace GridAStar;
-
+﻿namespace GridAStar;
+/*
 [HammerEntity, Solid, AutoApplyMaterial( "materials/grid.vmat" )]
 [Display( Name = "3D Grid", GroupName = "Navigation", Description = "Define a grid to load on this map" )]
-public partial class HammerGrid : ModelEntity
+public partial class GridComponent : BaseComponent, BaseComponent.ExecuteInEditor
 {
 
 	[Net, Property, Description( "Name of the grid. Use the name 'main' to access using Grid.Main via code" )]
@@ -36,7 +33,7 @@ public partial class HammerGrid : ModelEntity
 	public string TagsToExclude { get; set; } = "player";
 	public string SaveIdentifier => $"{Game.Server.MapIdent}-{Identifier}";
 
-	public HammerGrid()
+	public GridComponent()
 	{
 	}
 
@@ -76,7 +73,7 @@ public partial class HammerGrid : ModelEntity
 	{
 		GameTask.RunInThreadAsync( async () =>
 		{
-			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+			var allGrids = Entity.All.OfType<GridComponent>().ToList();
 
 			foreach ( var grid in allGrids )
 			{
@@ -143,3 +140,4 @@ public partial class HammerGrid : ModelEntity
 	// Overriding GetHashCode returns an error because of Position.GetHashCode()
 	public int GridHashCode() => GetProperties().GetHashCode();
 }
+*/

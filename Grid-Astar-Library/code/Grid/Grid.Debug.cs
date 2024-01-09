@@ -1,12 +1,9 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public partial class Grid
 {
-	public void Print( string message ) => Grid.Print( Identifier, message );
-	public static void Print( string identifier, string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{identifier}': {message}" );
+	//public void Print( string message ) => Grid.Print( Identifier, message );
+	//public static void Print( string identifier, string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{identifier}': {message}" );
 
 	/*
 	[ConCmd.Admin( "RegenerateMainGrid" )]
@@ -47,7 +44,7 @@ public partial class Grid
 		foreach ( var grid in Grid.Grids )
 			grid.Value.CheckOccupancy( "BlockGrid" );
 	}*/
-
+	/*
 	[ConCmd.Admin( "TestPath" )]
 	public async static void TestPath()
 	{
@@ -156,7 +153,7 @@ public partial class Grid
 			}
 		}
 	}*/
-
+	/*
 	[ConCmd.Admin( "gridastar_regenerate" )]
 	public static void RegenerateGrids( bool save = false, bool compress = false )
 	{
@@ -178,23 +175,23 @@ public partial class Grid
 				} );
 			}
 		} );*/
-		
 
-		/*GameTask.RunInThreadAsync( async () =>
+
+	/*GameTask.RunInThreadAsync( async () =>
+	{
+		var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+
+		foreach ( var grid in allGrids )
 		{
-			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+			var newGrid = await grid.CreateFromSettings();
+			if ( save )
+				await newGrid.Save( compress );
+		}
 
-			foreach ( var grid in allGrids )
-			{
-				var newGrid = await grid.CreateFromSettings();
-				if ( save )
-					await newGrid.Save( compress );
-			}
-
-			Event.Run( Grid.LoadedAll );
-		} );*/
-	}
-
+		Event.Run( Grid.LoadedAll );
+	} );*/
+}
+/*
 	[ConCmd.Admin( "gridastar_create" )]
 	public static void CreateMain( bool save = false, bool compress = false )
 	{
@@ -226,7 +223,7 @@ public partial class Grid
 	{
 		GameTask.RunInThreadAsync( async () =>
 		{
-			var allGrids = Entity.All.OfType<HammerGrid>().ToList();
+			var allGrids = Entity.All.OfType<GridComponent>().ToList();
 
 			foreach ( var grid in allGrids )
 			{
@@ -372,3 +369,4 @@ public partial class Grid
 }
 
 
+*/

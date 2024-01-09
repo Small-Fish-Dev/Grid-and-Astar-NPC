@@ -1,9 +1,5 @@
-﻿using GridAStar;
-using System.Collections.Generic;
-using System.Threading;
-
-namespace GridAStarNPC;
-
+﻿namespace GridAStarNPC;
+/*
 public abstract partial class BaseActor
 {
 	private AStarPath currentPath { get; set; }
@@ -107,6 +103,7 @@ public abstract partial class BaseActor
 				{
 					
 				}*/
+/*
 			}
 
 		}
@@ -156,3 +153,4 @@ public abstract partial class BaseActor
 		} );
 	}
 }
+*/

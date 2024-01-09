@@ -19,7 +19,7 @@ public static partial class GridSettings
 	public const bool DEFAULT_GRID_PERFECT = false;     // For grid-perfect terrain, if true it will not be checking for steps, so use ramps instead
 	public const bool DEFAULT_STATIC_ONLY = true;        // Will it only hit world and static or also dynamic
 }
-
+/*
 public partial class Grid : IValid
 {
 	public static Grid Main
@@ -795,3 +795,4 @@ public partial class Grid : IValid
 }
 
 
+*/

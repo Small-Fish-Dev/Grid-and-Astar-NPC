@@ -1,7 +1,5 @@
-﻿using GridAStar;
-
-namespace GridAStarNPC;
-
+﻿namespace GridAStarNPC;
+/*
 partial class Player : BaseActor
 {
 	public Vector3 EyePosition => Position + Vector3.Up * 64f;
@@ -73,3 +71,4 @@ partial class Player : BaseActor
 		Log.Error( Grid.Main.LineOfSight( standingCell, targetCell ) );
 	}
 }
+*/

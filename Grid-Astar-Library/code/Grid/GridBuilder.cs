@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.Design;
-
-namespace GridAStar;
-
+﻿namespace GridAStar;
+/*
 public struct JumpDefinition
 {
 	public string Name { get; private set; } = "shortjump";
@@ -64,7 +61,7 @@ public struct GridBuilder
 
 	public GridBuilder()
 	{
-		var map = ( Game.PhysicsWorld != null && Game.PhysicsWorld.IsValid() && Game.PhysicsWorld.Body != null && Game.PhysicsWorld.Body.IsValid() ) ? Game.PhysicsWorld.Body : null;
+		var map = (Game.PhysicsWorld != null && Game.PhysicsWorld.IsValid() && Game.PhysicsWorld.Body != null && Game.PhysicsWorld.Body.IsValid()) ? Game.PhysicsWorld.Body : null;
 		var mapBounds = map == null ? new BBox( 0 ) : map.GetBounds();
 		Position = mapBounds.Center;
 		Bounds = mapBounds;
@@ -293,7 +290,7 @@ public struct GridBuilder
 		IgnoreConnectionsForJumps = ignore;
 		return this;
 	}
-	
+
 	/// <summary>
 	/// Overcharges the jump generation, more expensive
 	/// </summary>
@@ -393,3 +390,4 @@ public struct GridBuilder
 	}
 
 }
+*/

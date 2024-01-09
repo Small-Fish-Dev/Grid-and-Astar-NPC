@@ -1,7 +1,5 @@
-﻿using GridAStar;
-
-namespace GridAStarNPC;
-
+﻿namespace GridAStarNPC;
+/*
 public partial class NPC : BaseActor
 {
 	public NPC()
@@ -91,3 +89,4 @@ public partial class NPC : BaseActor
 		}
 	}
 }
+*/

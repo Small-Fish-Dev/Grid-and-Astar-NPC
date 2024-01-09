@@ -59,7 +59,7 @@ public struct CellTags
 
 public struct CellConnection
 {
-	public Cell Cell { get; private set; }
+	/*public Cell Cell { get; private set; }
 	public string ConnectionTag { get; private set; } = string.Empty;
 
 	public CellConnection( Cell cell )
@@ -71,9 +71,9 @@ public struct CellConnection
 	{
 		Cell = cell;
 		ConnectionTag = tag;
-	}
+	}*/
 }
-
+/*
 public partial class Cell : IEquatable<Cell>, IValid
 {
 	/// <summary>
@@ -111,6 +111,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( (Position + Bounds.Mins).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public CellTags Tags { get; private set; }
+	/*
 	public List<AStarNode> CellConnections { get; private set; } = new();
 	private List<AStarNode> connectedCells = new();
 
@@ -638,3 +639,4 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return gridHash + positionHash;
 	}
 }
+	*/

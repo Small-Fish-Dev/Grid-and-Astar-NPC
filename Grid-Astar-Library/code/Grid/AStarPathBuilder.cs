@@ -1,7 +1,5 @@
-﻿using System.Threading;
-
-namespace GridAStar;
-
+﻿namespace GridAStar;
+/*
 public struct AStarPathBuilder
 {
 	public Grid Grid { get; private set; } = null;
@@ -161,3 +159,4 @@ public struct AStarPathBuilder
 	public async Task<AStarPath> RunInParallel( Cell startingCell, Vector3 targetPosition, CancellationTokenSource tokenSource, bool withCellConnections = true ) => await RunInParallel( startingCell, Grid.GetCell( targetPosition ), tokenSource, withCellConnections );
 	public async Task<AStarPath> RunInParallel( Vector3 startingPosition, Vector3 targetPosition, CancellationTokenSource tokenSource, bool withCellConnections = true ) => await RunInParallel( Grid.GetCell( startingPosition ), Grid.GetCell( targetPosition ), tokenSource, withCellConnections );
 }
+*/

@@ -1,10 +1,9 @@
 ﻿global using Sandbox;
 global using System;
 global using System.Linq;
-global using System.Threading.Tasks;
 
 namespace GridAStarNPC;
-
+/*
 public partial class GridGame : GameManager
 {
 	public GridGame() { }
@@ -28,3 +27,4 @@ public partial class GridGame : GameManager
 		}
 	}
 }
+*/

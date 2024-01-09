@@ -1,5 +1,5 @@
 ﻿namespace GridAStarNPC;
-
+/*
 public abstract partial class BaseActor : AnimatedEntity
 {
 	public virtual float CollisionWidth { get; set; } = 24f;
@@ -56,3 +56,4 @@ public abstract partial class BaseActor : AnimatedEntity
 	}
 
 }
+*/

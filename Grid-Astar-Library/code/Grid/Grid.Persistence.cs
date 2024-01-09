@@ -1,13 +1,11 @@
-﻿using System.IO;
-using System.IO.Compression;
-namespace GridAStar;
+﻿namespace GridAStar;
 
 public static partial class GridSettings
 {
 	public const string DEFAULT_SAVE_PATH = "./grid-%identifier%.dat";   // Where the grid is saved (%identifier% will be the grid's saveidentifier)
 	public const string DEFAULT_MOUNTED_LOAD_FOLDER = "Grids";          // Which folder should it look for any grid that comes with the game (Just give the name and nothing else)
 }
-
+/*
 public partial class Grid
 {
 	public string SavePath => GetSavePath( SaveIdentifier );
@@ -369,3 +367,4 @@ public partial class Grid
 }
 
 
+	*/

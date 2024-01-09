@@ -1,5 +1,5 @@
 ﻿namespace GridAStar;
-
+/*
 public partial class AStarNode : IHeapItem<AStarNode>, IEquatable<AStarNode>
 {
 	public Cell Current { get; internal set; } = null;
@@ -75,3 +75,4 @@ public partial class AStarNode : IHeapItem<AStarNode>, IEquatable<AStarNode>
 		return true;
 	}
 }
+*/

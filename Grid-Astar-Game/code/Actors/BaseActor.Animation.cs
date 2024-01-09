@@ -1,7 +1,7 @@
 ﻿namespace GridAStarNPC;
 
 public abstract partial class BaseActor
-{
+{/*
 	public virtual void ComputeAnimations()
 	{
 		if ( Velocity.Length > 10 )
@@ -11,5 +11,5 @@ public abstract partial class BaseActor
 		animationHelper.WithVelocity( Velocity );
 
 		animationHelper.IsGrounded = GroundEntity != null;
-	}
+	}*/
 }

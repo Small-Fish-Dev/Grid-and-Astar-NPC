@@ -1,9 +1,7 @@
-﻿using GridAStar;
-
-namespace GridAStarNPC;
+﻿namespace GridAStarNPC;
 
 public abstract partial class BaseActor
-{
+{/*
 	[Net] public float WalkSpeed { get; set; } = 200f;
 	[Net] public float RunSpeed { get; set; } = 350f;
 	[Net] public bool IsRunning { get; set; } = false;
@@ -81,6 +79,6 @@ public abstract partial class BaseActor
 		}
 		DebugOverlay.Line( Position, Position + Direction * 30f );
 		//DebugOverlay.Sphere( Position, 10f, Color.Blue );
-	}
+	}*/
 }
 

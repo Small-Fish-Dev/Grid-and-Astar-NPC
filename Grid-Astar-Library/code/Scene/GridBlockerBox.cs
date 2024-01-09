@@ -1,7 +1,5 @@
-﻿using Editor;
-using System.ComponentModel.DataAnnotations;
-
-namespace GridAStar;
+﻿
+/*namespace GridAStar;
 
 [HammerEntity, Solid, AutoApplyMaterial( "materials/no_grid.vmat" )]
 [Display( Name = "Grid Blocker Box", GroupName = "Navigation", Description = "Define an box where all cells inside are occupied (Can be rotated)" )]
@@ -82,3 +80,4 @@ public partial class GridBlockerBox : ModelEntity
 	}
 
 }
+*/

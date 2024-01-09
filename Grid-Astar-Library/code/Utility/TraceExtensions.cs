@@ -1,5 +1,5 @@
 ﻿namespace GridAStar;
-
+/*
 public static partial class TraceExtensions
 {
 
@@ -15,3 +15,4 @@ public static partial class TraceExtensions
 	}
 
 }
+*/

@@ -1,5 +1,5 @@
 ﻿namespace GridAStar;
-
+/*
 public struct AStarPath
 {
 	public AStarPathBuilder Settings { get; internal set; }
@@ -81,3 +81,4 @@ public struct AStarPath
 		length = CalculateLength();
 	}
 }
+*/
