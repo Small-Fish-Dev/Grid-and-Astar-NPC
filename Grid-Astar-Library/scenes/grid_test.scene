@@ -1,0 +1,33 @@
+{
+  "Id": "9a7ea120-7271-4b63-a12b-f311fce4985f",
+  "GameObjects": [
+    {
+      "Id": "a4bd530f-ad9c-4b13-9049-a651b159281d",
+      "Name": "Map",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "MapInstance",
+          "__enabled": true,
+          "MapName": "grid_test",
+          "OnMapLoaded": null,
+          "OnMapUnloaded": null,
+          "UseMapFromLaunch": false
+        }
+      ],
+      "Children": []
+    }
+  ],
+  "SceneProperties": {
+    "FixedUpdateFrequency": 50,
+    "Lerping": true,
+    "MaxFixedUpdates": 5,
+    "NetworkFrequency": 30,
+    "ThreadedAnimation": true,
+    "TimeScale": 1,
+    "UseFixedUpdate": true
+  },
+  "Title": "grid_test",
+  "Description": "",
+  "__references": []
+}
