@@ -130,6 +130,13 @@ public partial class Grid : Component, Component.ExecuteInEditor
 
 	}
 
+	protected override void OnEnabled()
+	{
+		base.OnEnabled();
+
+		Create();
+	}
+
 	public Model CreateModel()
 	{
 		var gridSize = 1000;
@@ -602,39 +609,37 @@ public partial class Grid : Component, Component.ExecuteInEditor
 	/// <param name="threadedChunkSides">How many sides the grid will be split to generate each chunk into a different thread. 1 = 1 thread, 2 = 4 threads, 3 = 9 threads etc...</param>
 	/// <param name="printInfo">Print information about the grid's generation state</param>
 	/// <returns></returns>
-	public async Task<Grid> Create( int threadedChunkSides = 4, bool printInfo = true )
+	public async Task Create( int threadedChunkSides = 4, bool printInfo = true )
 	{
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
 		Stopwatch cellsWatch = new Stopwatch();
 		cellsWatch.Start();
 
-		var currentGrid = new Grid();
-
-		await currentGrid.GenerateCells( currentGrid.Bounds, threadedChunkSides, printInfo, false );
+		await GenerateCells( Bounds, threadedChunkSides, printInfo, false );
 
 		if ( printInfo )
-			currentGrid.Print( "Creating grid" );
+			Print( "Creating grid" );
 
 		cellsWatch.Stop();
 		if ( printInfo )
-			currentGrid.Print( $"Generated terrain cells in {cellsWatch.ElapsedMilliseconds}ms" );
+			Print( $"Generated terrain cells in {cellsWatch.ElapsedMilliseconds}ms" );
 
 		Stopwatch edgeCells = new Stopwatch();
 		edgeCells.Start();
-		await currentGrid.AssignEdgeCells( MinNeighbourCount, threadsToUse: threadedChunkSides * threadedChunkSides );
+		await AssignEdgeCells( MinNeighbourCount, threadsToUse: threadedChunkSides * threadedChunkSides );
 		edgeCells.Stop();
 		if ( printInfo )
-			currentGrid.Print( $"Assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
+			Print( $"Assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
 
 		if ( MaxDropHeight > 0 )
 		{
 			Stopwatch droppableCells = new Stopwatch();
 			droppableCells.Start();
-			await currentGrid.AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+			await AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
 			droppableCells.Stop();
 			if ( printInfo )
-				currentGrid.Print( $"Assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
+				Print( $"Assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
 		}
 		/*
 		if ( JumpDefinitions.Count() > 0 )
@@ -650,9 +655,9 @@ public partial class Grid : Component, Component.ExecuteInEditor
 
 		totalWatch.Stop();
 		if ( printInfo )
-			currentGrid.Print( $"Finished in {totalWatch.ElapsedMilliseconds}ms" );
+			Print( $"Finished in {totalWatch.ElapsedMilliseconds}ms" );
 
-		return currentGrid;
+		return;
 	}
 
 	/// <summary>
