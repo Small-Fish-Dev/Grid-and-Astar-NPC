@@ -408,6 +408,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 	public IEnumerable<AStarNode> GetNeighbourConnections( bool ignoreHeight = false ) => GetNeighbours( ignoreHeight ).Select( x => new AStarNode( x ) );
 
+	/*
 	/// <summary>
 	/// Return the first cell below spaces where a neighbour is missing
 	/// </summary>
@@ -517,72 +518,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 			}
 
 		return null;
-	}
-
-	/// <summary>
-	/// Draw this cell with color
-	/// </summary>
-	/// <param name="color"></param>
-	/// <param name="duration"></param>
-	/// <param name="depthTest"></param>
-	/// <param name="drawCenter">Draw a point on the cell's position</param>
-	/// <param name="drawCross">Draw diagonal lines</param>
-	/// <param name="drawCoordinates">Draw coordinates</param>
-	public void Draw( Color color, float duration = 0f, bool depthTest = true, bool drawCenter = false, bool drawCross = false, bool drawCoordinates = false )
-	{
-		DebugOverlay.Line( BottomLeft, BottomRight, color, duration, depthTest );
-		DebugOverlay.Line( BottomRight, TopRight, color, duration, depthTest );
-		DebugOverlay.Line( TopRight, TopLeft, color, duration, depthTest );
-		DebugOverlay.Line( TopLeft, BottomLeft, color, duration, depthTest );
-
-		if ( drawCenter )
-			DebugOverlay.Sphere( Position, 1f, color, duration, depthTest );
-
-		if ( drawCross )
-		{
-			var bottomLeftDir = (BottomLeft - TopRight) / 4f;
-			var topLeftDir = (TopLeft - BottomRight) / 4f;
-			DebugOverlay.Line( BottomLeft - bottomLeftDir, TopRight + bottomLeftDir, color, duration, depthTest );
-			DebugOverlay.Line( TopLeft - topLeftDir, BottomRight + topLeftDir, color, duration, depthTest );
-		}
-
-		if ( drawCoordinates )
-			DebugOverlay.Text( $"{GridPosition}", Position, duration, 200 );
-
-		int index = 0;
-		foreach ( var tag in Tags.All )
-		{
-			DebugOverlay.Text( $"{tag}", Position, index, color, duration, 200 );
-			index++;
-		}
-	}
-
-	/// <summary>
-	/// Draw this cell
-	/// </summary>
-	/// <param name="duration"></param>
-	/// <param name="depthTest"></param>
-	/// <param name="drawCenter">Draw a point on the cell's position</param>
-	/// <param name="drawCross">Draw diagonal lines</param>
-	public void Draw( float duration = 0f, bool depthTest = true, bool drawCenter = false, bool drawCross = false )
-	{
-		var color = Occupied ? Color.Red : Color.White;
-
-		DebugOverlay.Line( BottomLeft, BottomRight, color, duration, depthTest );
-		DebugOverlay.Line( BottomRight, TopRight, color, duration, depthTest );
-		DebugOverlay.Line( TopRight, TopLeft, color, duration, depthTest );
-		DebugOverlay.Line( TopLeft, BottomLeft, color, duration, depthTest );
-
-		if ( drawCenter )
-			DebugOverlay.Sphere( Position, 5f, color, duration, depthTest );
-
-		if ( drawCross )
-		{
-			DebugOverlay.Line( BottomLeft, TopRight, color, duration, depthTest );
-			DebugOverlay.Line( TopLeft, BottomRight, color, duration, depthTest );
-		}
-	}
-
+	}*/
 
 	public override bool Equals( object obj )
 	{

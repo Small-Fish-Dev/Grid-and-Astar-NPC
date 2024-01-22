@@ -18,7 +18,6 @@ public static partial class GridSettings
 	public const bool DEFAULT_AXIS_ALIGNED = true;     // True = Cells get generated following the scene's transform, so all grids will match. False = Follow its own transform
 }
 
-
 public class Grid : Component, Component.ExecuteInEditor
 {
 	[Property]
@@ -78,8 +77,12 @@ public class Grid : Component, Component.ExecuteInEditor
 	[Property]
 	public bool AxisAligned { get; private set; } = GridSettings.DEFAULT_AXIS_ALIGNED;
 
-	//public bool AxisAligned { get; private set; } = false;
-	//public bool CylinderShaped { get; private set; } = false;
+	/// <summary>
+	/// How many neighboring cells a cell needs to have to not be considered an edge cell. (For 2D vertical grids this would be 2, for anything else 8)
+	/// </summary>
+	[Property]
+	[Range( 0, 8, 1 )]
+	public int MinNeighbourCount { get; private set; } = 8;
 
 	[Property]
 	public TagSet TagsToInclude { get; private set; } = new();
@@ -88,10 +91,7 @@ public class Grid : Component, Component.ExecuteInEditor
 	public TagSet TagsToExclude { get; private set; } = new();
 	//public List<JumpDefinition> JumpDefinitions { get; private set; } = new(); // TODO: Add to persistance
 
-	[Property]
-	[Range( 0, 8, 1 )]
-	public int MinNeighbourCount { get; private set; } = 8; // TODO: Add to persistance
-
+	public Dictionary<IntVector2, List<Cell>> CellStacks { get; internal set; } = new();
 	public BBox WorldBounds => Bounds.Translate( Transform.Position );
 
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
