@@ -6,7 +6,7 @@ public struct JumpDefinition
 	public float HorizontalSpeed { get; private set; } = 200f;
 	public float VerticalSpeed { get; private set; } = 300f;
 	public float Gravity { get; private set; } = -800f;
-	public int SidesToCheck { get; private set;} = 8;
+	public int SidesToCheck { get; private set; } = 8;
 	public float AngleOffset { get; private set; } = 0f;
 	public float GenerateFraction { get; private set; } = 1f;
 	public int MaxPerCell { get; private set; } = 2;
@@ -58,14 +58,6 @@ public struct GridBuilder
 	public Vector3 Position { get; private set; } = new();
 	public BBox Bounds { get; private set; } = new();
 	public Rotation Rotation { get; set; } = new();
-
-	public GridBuilder()
-	{
-		var map = (Game.PhysicsWorld != null && Game.PhysicsWorld.IsValid() && Game.PhysicsWorld.Body != null && Game.PhysicsWorld.Body.IsValid()) ? Game.PhysicsWorld.Body : null;
-		var mapBounds = map == null ? new BBox( 0 ) : map.GetBounds();
-		Position = mapBounds.Center;
-		Bounds = mapBounds;
-	}
 
 	/// <summary>
 	///  By default the identifier is "main", which makes it useable with Grid.Main

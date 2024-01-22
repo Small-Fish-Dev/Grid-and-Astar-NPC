@@ -59,7 +59,7 @@ public struct CellTags
 
 public struct CellConnection
 {
-	/*public Cell Cell { get; private set; }
+	public Cell Cell { get; private set; }
 	public string ConnectionTag { get; private set; } = string.Empty;
 
 	public CellConnection( Cell cell )
@@ -71,18 +71,19 @@ public struct CellConnection
 	{
 		Cell = cell;
 		ConnectionTag = tag;
-	}*/
+	}
 }
-/*
+
 public partial class Cell : IEquatable<Cell>, IValid
 {
 	/// <summary>
 	/// The parent grid
 	/// </summary>
 	public Grid Grid { get; set; }
-	public Rotation Rotation => Grid.AxisAligned ? new Rotation() : Grid.Rotation;
+	public Rotation Rotation => Grid.AxisAligned ? Grid.Scene.Transform.Rotation : Grid.Transform.Rotation;
 	public Vector3 Position { get; set; }
 	public IntVector2 GridPosition { get; set; }
+
 	/// <summary>
 	/// Since we know the size of each cell, all we need to define is the height of each vertices
 	/// 0 = Bottom Left
@@ -91,17 +92,21 @@ public partial class Cell : IEquatable<Cell>, IValid
 	/// 3 = Top Right
 	/// </summary>
 	public float[] Vertices = new float[4];
+
 	// Note: There is no performance boost in having the variables below being set in the constructor
 	/// <summary>
 	/// Get the point with both minimum coordinates
 	/// </summary>
 	public Vector3 BottomLeft => Position.WithZ( Vertices[0] ) + new Vector3( -Grid.CellSize / 2, -Grid.CellSize / 2, 0f ) * Rotation;
+
 	/// <summary>
 	/// Get the point with minimum x and maximum y
 	/// </summary>
 	public Vector3 BottomRight => Position.WithZ( Vertices[1] ) + new Vector3( -Grid.CellSize / 2, Grid.CellSize / 2, 0f ) * Rotation;
+
 	// Get the point with maxinum x and minimum y
 	public Vector3 TopLeft => Position.WithZ( Vertices[2] ) + new Vector3( Grid.CellSize / 2, -Grid.CellSize / 2, 0f ) * Rotation;
+
 	/// <summary>
 	/// Get the point with both maximum coordinates
 	/// </summary>
@@ -111,24 +116,10 @@ public partial class Cell : IEquatable<Cell>, IValid
 	public BBox Bounds => new BBox( new Vector3( -Grid.WidthClearance, -Grid.WidthClearance, 0f ), new Vector3( Grid.WidthClearance, Grid.WidthClearance, Grid.HeightClearance ) );
 	public BBox WorldBounds => new BBox( (Position + Bounds.Mins).WithZ( Vertices.Min() ), Position + Bounds.Maxs );
 	public CellTags Tags { get; private set; }
-	/*
+
 	public List<AStarNode> CellConnections { get; private set; } = new();
 	private List<AStarNode> connectedCells = new();
 
-
-	public bool Occupied
-	{
-		get => Tags.Has( "occupied" );
-		set
-		{
-			if ( value )
-				Tags.Add( "occupied" );
-			else
-				Tags.Remove( "occupied" );
-		}
-	}
-	public Entity OccupyingEntity { get; set; } = null;
-	internal Transform currentOccupyingTransform { get; set; } = Transform.Zero;
 	bool IValid.IsValid { get; }
 
 	/// <summary>
@@ -173,8 +164,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var centerDir = testCoordinates[i].Normal; // Test a little closer to the center, for grid-perfect terrain
 			var startTestPos = position + testCoordinates[i] - centerDir * grid.Tolerance;
 			var endTestPos = position + testCoordinates[i].WithZ( -maxHeight * 2f ) - centerDir * grid.Tolerance;
-			var testTrace = Sandbox.Trace.Ray( startTestPos, endTestPos )
-				.WithGridSettings( grid.Settings );
+			var testTrace = grid.Scene.Trace.Ray( startTestPos, endTestPos )
+				.WithGridSettings( grid );
 			var testResult = testTrace.Run();
 
 			if ( testResult.StartedSolid ) return (false, false);
@@ -197,8 +188,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 	private static bool IsCliff( Grid grid, Vector3 from, Vector3 to )
 	{
-		var trace = Sandbox.Trace.Ray( from, to )
-			.WithGridSettings( grid.Settings );
+		var trace = grid.Scene.Trace.Ray( from, to )
+			.WithGridSettings( grid );
 		var result = trace.Run();
 
 		if ( result.Hit )
@@ -212,8 +203,8 @@ public partial class Cell : IEquatable<Cell>, IValid
 	{
 		var clearanceBBox = new BBox( new Vector3( -grid.WidthClearance / 2f, -grid.WidthClearance / 2f, 0f ), new Vector3( grid.WidthClearance / 2f, grid.WidthClearance / 2f, 1f ) );
 		var startPos = position + Vector3.Up * grid.HeightClearance;
-		var clearanceTrace = Sandbox.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize )
-			.WithGridSettings( grid.Settings );
+		var clearanceTrace = grid.Scene.Trace.Box( clearanceBBox, startPos, position + Vector3.Up * grid.StepSize )
+			.WithGridSettings( grid );
 
 		var clearanceResult = clearanceTrace.Run();
 		var heightDifference = clearanceResult.EndPosition.z - (position.z - height);
@@ -262,9 +253,9 @@ public partial class Cell : IEquatable<Cell>, IValid
 			var stepPositionEnd = endPosition.WithZ( stepPositionStart.z );
 			var stepDirection = (stepPositionEnd - stepPositionStart).Normal;
 			var stepDistance = stepPositionStart.Distance( stepPositionEnd );
-			var stepTrace = Sandbox.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * (stepDistance + tolerance * 2f) )
+			var stepTrace = grid.Scene.Trace.Ray( stepPositionStart, stepPositionStart + stepDirection * (stepDistance + tolerance * 2f) )
 				.Size( grid.StepSize / 2f )
-				.WithGridSettings( grid.Settings );
+				.WithGridSettings( grid );
 
 			var stepResult = stepTrace.Run();
 			var stepAngle = Vector3.GetAngle( Vector3.Up, stepResult.Normal );
@@ -319,34 +310,6 @@ public partial class Cell : IEquatable<Cell>, IValid
 	}
 
 	public IEnumerable<AStarNode> GetConnections( string movementTag ) => CellConnections.Where( x => x.MovementTag == movementTag );
-
-	public void SetOccupant( Entity entity )
-	{
-		OccupyingEntity = entity;
-		currentOccupyingTransform = entity.Transform;
-	}
-
-	public void RemoveOccupant()
-	{
-		OccupyingEntity = null;
-		currentOccupyingTransform = Transform.Zero;
-	}
-
-	public bool TestForOccupancy( string tag )
-	{
-		if ( OccupyingEntity != null && OccupyingEntity.Transform == currentOccupyingTransform ) return Occupied;
-
-		var occupyTrace = Sandbox.Trace.Box( Bounds, Position, Position )
-			.DynamicOnly()
-			.WithTag( tag );
-
-		var occupyResult = occupyTrace.Run();
-
-		if ( occupyResult.Entity != null )
-			SetOccupant( occupyResult.Entity );
-
-		return occupyResult.Hit;
-	}
 
 	public Cell( Grid grid, Vector3 position, float[] vertices, List<string> tags = null )
 	{
@@ -479,13 +442,13 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 				// Check if you can walk off the edge
 				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance - Grid.StepSize ) );
-				var horizontalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.StepSize, cellFound.Position.WithZ( Position.z + Grid.StepSize ) )
+				var horizontalClearanceTrace = grid.Scene.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.StepSize, cellFound.Position.WithZ( Position.z + Grid.StepSize ) )
 					.WithGridSettings( Grid.Settings )
 					.Run();
 				if ( horizontalClearanceTrace.Hit ) continue; // Ignore if you can't walk off the edge
 
 				// Check if you can drop down
-				var verticalClearanceTrace = Sandbox.Trace.Box( clearanceBBox, cellFound.Position.WithZ( Position.z + Grid.StepSize ), cellFound.Position + Vector3.Up * Grid.StepSize )
+				var verticalClearanceTrace = grid.Scene.Trace.Box( clearanceBBox, cellFound.Position.WithZ( Position.z + Grid.StepSize ), cellFound.Position + Vector3.Up * Grid.StepSize )
 					.WithGridSettings( Grid.Settings )
 					.Run();
 				if ( verticalClearanceTrace.Hit ) continue; // Ignore if you can't drop down
@@ -511,12 +474,12 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 			if ( cell == null || cell == this ) continue;
 
-			if ( ignoreLOS || !Grid.IsDirectlyWalkable( this, cell, withConnections: !ignoreConnections ) && ( ignoreConnections ? true : !Grid.IsDirectlyWalkable( this, cell, withConnections: false ) ) )
-				if ( ignoreLOS || !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: !ignoreConnections ) ) && ( ignoreConnections ? true : !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: false ) ) ) )
-					if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && ( ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) ) )
+			if ( ignoreLOS || !Grid.IsDirectlyWalkable( this, cell, withConnections: !ignoreConnections ) && (ignoreConnections ? true : !Grid.IsDirectlyWalkable( this, cell, withConnections: false )) )
+				if ( ignoreLOS || !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: false ) )) )
+					if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) )) )
 					{
 						var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
-						var jumpTrace = Sandbox.Trace.Box( clearanceBBox, endPosition, cell.Position )
+						var jumpTrace = grid.Scene.Trace.Box( clearanceBBox, endPosition, cell.Position )
 							.WithGridSettings( Grid.Settings )
 							.Run();
 
@@ -541,11 +504,11 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		if ( cell == null ) return null;
 
-		if ( ignoreLOS || !Grid.IsDirectlyWalkable( this, cell, withConnections: !ignoreConnections ) && ( ignoreConnections ? true : !Grid.IsDirectlyWalkable( this, cell, withConnections: false ) ) )
-			if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && ( ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) ) ) )
+		if ( ignoreLOS || !Grid.IsDirectlyWalkable( this, cell, withConnections: !ignoreConnections ) && (ignoreConnections ? true : !Grid.IsDirectlyWalkable( this, cell, withConnections: false )) )
+			if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) )) )
 			{
 				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
-				var jumpTrace = Sandbox.Trace.Box( clearanceBBox, endPosition, cell.Position )
+				var jumpTrace = grid.Scene.Trace.Box( clearanceBBox, endPosition, cell.Position )
 					.WithGridSettings( Grid.Settings )
 					.Run();
 
@@ -639,4 +602,3 @@ public partial class Cell : IEquatable<Cell>, IValid
 		return gridHash + positionHash;
 	}
 }
-	*/

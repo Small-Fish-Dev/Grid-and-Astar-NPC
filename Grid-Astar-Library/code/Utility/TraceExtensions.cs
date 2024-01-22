@@ -1,18 +1,13 @@
 ﻿namespace GridAStar;
-/*
+
 public static partial class TraceExtensions
 {
-
-	public static Sandbox.Trace WithGridSettings( this Sandbox.Trace self, GridBuilder settings )
+	public static SceneTrace WithGridSettings( this SceneTrace self, Grid grid )
 	{
-		if ( settings.StaticOnly )
-			self = self.StaticOnly();
-
-		self = self.WithAllTags( settings.TagsToInclude.ToArray() )
-			.WithoutTags( settings.TagsToExclude.ToArray() );
+		self = self.WithAllTags( grid.TagsToInclude )
+			.WithoutTags( grid.TagsToExclude );
 
 		return self;
 	}
-
 }
-*/
+
