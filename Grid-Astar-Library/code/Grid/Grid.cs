@@ -71,6 +71,8 @@ public class Grid : Component, Component.ExecuteInEditor
 	[Property]
 	public bool IgnoreLOSForJumps { get; private set; } = false; // TODO: Add to persistance
 
+	private Model model;
+
 	protected override void DrawGizmos()
 	{
 		Gizmo.GizmoDraw draw = Gizmo.Draw;
@@ -79,15 +81,54 @@ public class Grid : Component, Component.ExecuteInEditor
 
 		// Test performance
 
-		for ( int x = -100; x <= 100; x++ )
+		if ( model == null )
+			model = CreateModel();
+
+		draw.Model( model );
+
+
+	}
+
+	public Model CreateModel()
+	{
+		var gridSize = 1000;
+		var squareSize = 10f;
+		var totVertices = gridSize * gridSize * 6;
+
+		Mesh mesh = new Mesh( Material.Load( "materials/dev/debug_wireframe.vmat" ) );
+		mesh.SetVertexRange( 0, totVertices );
+
+		List<Vertex> vertices = new();
+
+		for ( int x = 0; x < gridSize; x++ )
 		{
-			draw.Line( new Vector3( x * 10, 0, 0 ), new Vector3( x * 10 + 10, 10000, 0 ) );
-		}
-		for ( int y = -100; y <= 100; y++ )
-		{
-			draw.Line( new Vector3( 0, y * 10, 0 ), new Vector3( 10000, y * 10, 0 ) );
+			for ( int z = 0; z < gridSize; z++ )
+			{
+				float xPos = x * squareSize * 1.5f;
+				float zPos = z * squareSize * 1.5f;
+
+				// First triangle
+				Vector3 v1 = new Vector3( xPos, 0, zPos );
+				Vector3 v2 = new Vector3( xPos + squareSize, 0, zPos );
+				Vector3 v3 = new Vector3( xPos, 0, zPos + squareSize );
+
+				// Second triangle
+				Vector3 v4 = new Vector3( xPos + squareSize, 0, zPos + squareSize );
+				Vector3 v5 = new Vector3( xPos, 0, zPos + squareSize );
+				Vector3 v6 = new Vector3( xPos + squareSize, 0, zPos );
+
+				vertices.Add( new Vertex( v1 ) );
+				vertices.Add( new Vertex( v2 ) );
+				vertices.Add( new Vertex( v3 ) );
+				vertices.Add( new Vertex( v4 ) );
+				vertices.Add( new Vertex( v5 ) );
+				vertices.Add( new Vertex( v6 ) );
+			}
 		}
 
+		mesh.CreateVertexBuffer<Vertex>( totVertices, Vertex.Layout, vertices );
+
+		return Model.Builder.AddMesh( mesh ).Create();
 	}
 
 }
