@@ -408,7 +408,7 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 	public IEnumerable<AStarNode> GetNeighbourConnections( bool ignoreHeight = false ) => GetNeighbours( ignoreHeight ).Select( x => new AStarNode( x ) );
 
-	/*
+
 	/// <summary>
 	/// Return the first cell below spaces where a neighbour is missing
 	/// </summary>
@@ -443,14 +443,14 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 				// Check if you can walk off the edge
 				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, 0f ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance - Grid.StepSize ) );
-				var horizontalClearanceTrace = grid.Scene.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.StepSize, cellFound.Position.WithZ( Position.z + Grid.StepSize ) )
-					.WithGridSettings( Grid.Settings )
+				var horizontalClearanceTrace = Grid.Scene.Trace.Box( clearanceBBox, Position + Vector3.Up * Grid.StepSize, cellFound.Position.WithZ( Position.z + Grid.StepSize ) )
+					.WithGridSettings( Grid )
 					.Run();
 				if ( horizontalClearanceTrace.Hit ) continue; // Ignore if you can't walk off the edge
 
 				// Check if you can drop down
-				var verticalClearanceTrace = grid.Scene.Trace.Box( clearanceBBox, cellFound.Position.WithZ( Position.z + Grid.StepSize ), cellFound.Position + Vector3.Up * Grid.StepSize )
-					.WithGridSettings( Grid.Settings )
+				var verticalClearanceTrace = Grid.Scene.Trace.Box( clearanceBBox, cellFound.Position.WithZ( Position.z + Grid.StepSize ), cellFound.Position + Vector3.Up * Grid.StepSize )
+					.WithGridSettings( Grid )
 					.Run();
 				if ( verticalClearanceTrace.Hit ) continue; // Ignore if you can't drop down
 
@@ -460,65 +460,65 @@ public partial class Cell : IEquatable<Cell>, IValid
 
 		return null;
 	}
-
-	public IEnumerable<Cell> GetValidJumpables( JumpDefinition definition, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, bool ignoreConnections = false, bool ignoreLOS = false )
-	{
-		var jumpableCells = new List<Cell>();
-
-		for ( int side = 0; side < definition.SidesToCheck; side++ )
+	/*
+		public IEnumerable<Cell> GetValidJumpables( JumpDefinition definition, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, bool ignoreConnections = false, bool ignoreLOS = false )
 		{
-			var directionToCheck = Rotation.FromYaw( definition.AngleOffset + 360 / definition.SidesToCheck * side ).Forward;
+			var jumpableCells = new List<Cell>();
+
+			for ( int side = 0; side < definition.SidesToCheck; side++ )
+			{
+				var directionToCheck = Rotation.FromYaw( definition.AngleOffset + 360 / definition.SidesToCheck * side ).Forward;
+				var horizontalVelocity = directionToCheck * definition.HorizontalSpeed;
+
+				var endPosition = Grid.TraceParabola( Position, horizontalVelocity, definition.VerticalSpeed, definition.Gravity, maxHeightDistance );
+				var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
+
+				if ( cell == null || cell == this ) continue;
+
+				if ( ignoreLOS || !Grid.IsDirectlyWalkable( this, cell, withConnections: !ignoreConnections ) && (ignoreConnections ? true : !Grid.IsDirectlyWalkable( this, cell, withConnections: false )) )
+					if ( ignoreLOS || !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: false ) )) )
+						if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) )) )
+						{
+							var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+							var jumpTrace = grid.Scene.Trace.Box( clearanceBBox, endPosition, cell.Position )
+								.WithGridSettings( Grid.Settings )
+								.Run();
+
+							if ( !jumpTrace.Hit )
+								jumpableCells.Add( cell );
+						}
+
+				if ( jumpableCells.Count() >= definition.MaxPerCell )
+					break;
+			}
+
+			return jumpableCells;
+		}
+
+
+		public Cell GetValidJumpable( JumpDefinition definition, Vector3 directionToCheck, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, bool ignoreConnections = false, bool ignoreLOS = false )
+		{
 			var horizontalVelocity = directionToCheck * definition.HorizontalSpeed;
 
 			var endPosition = Grid.TraceParabola( Position, horizontalVelocity, definition.VerticalSpeed, definition.Gravity, maxHeightDistance );
 			var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
 
-			if ( cell == null || cell == this ) continue;
+			if ( cell == null ) return null;
 
 			if ( ignoreLOS || !Grid.IsDirectlyWalkable( this, cell, withConnections: !ignoreConnections ) && (ignoreConnections ? true : !Grid.IsDirectlyWalkable( this, cell, withConnections: false )) )
-				if ( ignoreLOS || !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !jumpableCells.Any( otherCell => Grid.IsDirectlyWalkable( otherCell, cell, withConnections: false ) )) )
-					if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) )) )
-					{
-						var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
-						var jumpTrace = grid.Scene.Trace.Box( clearanceBBox, endPosition, cell.Position )
-							.WithGridSettings( Grid.Settings )
-							.Run();
+				if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) )) )
+				{
+					var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
+					var jumpTrace = grid.Scene.Trace.Box( clearanceBBox, endPosition, cell.Position )
+						.WithGridSettings( Grid.Settings )
+						.Run();
 
-						if ( !jumpTrace.Hit )
-							jumpableCells.Add( cell );
-					}
+					if ( !jumpTrace.Hit )
+						return cell;
+				}
 
-			if ( jumpableCells.Count() >= definition.MaxPerCell )
-				break;
-		}
-
-		return jumpableCells;
-	}
-
-
-	public Cell GetValidJumpable( JumpDefinition definition, Vector3 directionToCheck, float maxHeightDistance = GridSettings.DEFAULT_DROP_HEIGHT, bool ignoreConnections = false, bool ignoreLOS = false )
-	{
-		var horizontalVelocity = directionToCheck * definition.HorizontalSpeed;
-
-		var endPosition = Grid.TraceParabola( Position, horizontalVelocity, definition.VerticalSpeed, definition.Gravity, maxHeightDistance );
-		var cell = Grid.GetCellInArea( endPosition, Grid.WidthClearance );
-
-		if ( cell == null ) return null;
-
-		if ( ignoreLOS || !Grid.IsDirectlyWalkable( this, cell, withConnections: !ignoreConnections ) && (ignoreConnections ? true : !Grid.IsDirectlyWalkable( this, cell, withConnections: false )) )
-			if ( ignoreLOS || !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: !ignoreConnections ) ) && (ignoreConnections ? true : !CellConnections.Any( otherNode => Grid.IsDirectlyWalkable( otherNode.Current, cell, withConnections: false ) )) )
-			{
-				var clearanceBBox = new BBox( new Vector3( -Grid.WidthClearance / 2f, -Grid.WidthClearance / 2f, Grid.StepSize ), new Vector3( Grid.WidthClearance / 2f, Grid.WidthClearance / 2f, Grid.HeightClearance ) );
-				var jumpTrace = grid.Scene.Trace.Box( clearanceBBox, endPosition, cell.Position )
-					.WithGridSettings( Grid.Settings )
-					.Run();
-
-				if ( !jumpTrace.Hit )
-					return cell;
-			}
-
-		return null;
-	}*/
+			return null;
+		}*/
 
 	public override bool Equals( object obj )
 	{

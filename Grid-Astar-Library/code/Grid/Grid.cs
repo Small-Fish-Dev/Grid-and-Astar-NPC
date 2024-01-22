@@ -2,6 +2,8 @@
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace GridAStar;
 
@@ -18,7 +20,7 @@ public static partial class GridSettings
 	public const bool DEFAULT_AXIS_ALIGNED = true;     // True = Cells get generated following the scene's transform, so all grids will match. False = Follow its own transform
 }
 
-public class Grid : Component, Component.ExecuteInEditor
+public partial class Grid : Component, Component.ExecuteInEditor
 {
 	[Property]
 	public BBox Bounds { get; private set; } = new();
@@ -327,7 +329,6 @@ public class Grid : Component, Component.ExecuteInEditor
 	/// <param name="startingCell"></param>
 	/// <param name="endingCell"></param>
 	/// <param name="maxDistanceFromDirectPath"></param>
-	/// <param name="pathCreator"></param>
 	/// <param name="withConnections"></param>
 	/// <returns></returns>
 	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, bool withConnections = true )
@@ -366,6 +367,353 @@ public class Grid : Component, Component.ExecuteInEditor
 
 		return cells;
 	}
+
+	public void RemoveCells( BBox bounds, bool printInfo = false, bool broadcastToClients = false )
+	{
+		var cellsToRemove = GetCellsInBBox( bounds );
+		var count = cellsToRemove.Count();
+
+		foreach ( var cell in cellsToRemove )
+			cell.Delete();
+
+		if ( printInfo )
+			Print( $"Removed {count} cells" );
+
+		/* Leave networking last LOL
+		if ( broadcastToClients )
+			if ( Game.IsServer )
+				Grid.removeCellsClient( Identifier, bounds, printInfo );*/
+	}
+
+	public async Task GenerateCells( BBox bounds, int threadedChunkSides = 1, bool printInfo = true, bool broadcastToClients = false )
+	{
+		List<Task<List<Cell>>> tasks = new();
+		var totalMins = bounds.Mins;
+		var totalMaxs = bounds.Maxs;
+		var totalSize = bounds.Size;
+
+		/* Leave networking last LOL
+		if ( broadcastToClients )
+			if ( Game.IsServer )
+				Grid.generateCellsClient( Identifier, threadedChunkSides, bounds, printInfo );*/
+
+		for ( int x = 1; x <= threadedChunkSides; x++ )
+		{
+			for ( int y = 1; y <= threadedChunkSides; y++ )
+			{
+				var xOffset = totalSize.x / threadedChunkSides * x - totalSize.x / threadedChunkSides / 2;
+				var yOffset = totalSize.y / threadedChunkSides * y - totalSize.y / threadedChunkSides / 2;
+				var offset = new Vector3( xOffset, yOffset );
+				var chunkSize = totalSize / threadedChunkSides;
+				var chunkMins = totalMins + offset - chunkSize / 2;
+				var chunkMaxs = totalMins + offset + chunkSize / 2;
+				var dividedBounds = new BBox( chunkMins.WithZ( totalMins.z ), chunkMaxs.WithZ( totalMaxs.z ) );
+
+				tasks.Add( GameTask.RunInThreadAsync( () => createCells( dividedBounds, printInfo ) ) );
+			}
+		}
+
+		await GameTask.WhenAll( tasks );
+
+		foreach ( var task in tasks )
+			foreach ( var cell in task.Result )
+				AddCell( cell );
+	}
+
+	public async Task GenerateConnections( BBox bounds, float expandBoundsCheck = GridSettings.DEFAULT_DROP_HEIGHT, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
+	{
+		bounds = new BBox( bounds.Mins - expandBoundsCheck - StepSize, bounds.Maxs + expandBoundsCheck + StepSize );
+
+		await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
+
+		if ( MaxDropHeight > 0 )
+			await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
+		/*
+		if ( JumpDefinitions.Count() > 0 )
+			foreach ( var definition in JumpDefinitions )
+				await AssignJumpableCells( bounds, definition, threadsToUse: threadedChunkSides * threadedChunkSides );
+
+		if ( broadcastToClients )
+			if ( Game.IsServer )
+				Grid.regenerateConnectionsClient( Identifier, bounds, expandBoundsCheck, threadedChunkSides, printInfo );*/
+	}
+
+
+	/// <summary>
+	/// Gives the edge tag to all cells with less than 8 neighbours
+	/// </summary>
+	/// <param name="maxNeighourCount">How many neighbours a cell needs to have to not be considered an edge</param>
+	/// <param name="threadsToUse">How many threads to use</param>
+	/// <param name="clearTags">Clear previous edge tags, for regenerating terrain and not first creating</param>
+	/// <param name="tagToExclude">Cells with this tag won't get counted, you can for example do "edge" to exclude previous edge cells and expand the edge towards the center</param>
+	/// <param name="tagToAssign">Name of the tag that gets assigned</param>
+	/// <returns></returns>
+	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" ) => await assignEdgeCellsInternal( AllCells.ToList(), maxNeighourCount, threadsToUse, clearTags, tagToExclude, tagToAssign );
+
+	public async Task AssignEdgeCells( BBox bounds, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" ) => await assignEdgeCellsInternal( GetCellsInBBox( bounds ), maxNeighourCount, threadsToUse, clearTags, tagToExclude, tagToAssign );
+
+	internal async Task assignEdgeCellsInternal( List<Cell> cells, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" )
+	{
+		var cellsCount = cells.Count();
+		var cellsEachThread = (int)(cellsCount / threadsToUse);
+		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
+		List<Task> tasks = new();
+
+		for ( int i = 0; i < threadsToUse; i++ )
+		{
+			var curentThread = i;
+
+			tasks.Add( GameTask.RunInThreadAsync( () =>
+			{
+				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
+				var cellsToCheck = cells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
+
+				foreach ( var cell in cellsToCheck )
+				{
+					if ( clearTags )
+						cell.Tags.Remove( tagToAssign );
+
+					var neighbours = cell.GetNeighbours();
+
+					if ( tagToExclude != "" )
+						neighbours = neighbours.Where( x => !x.Tags.Has( tagToExclude ) );
+
+					if ( neighbours.Count() < maxNeighourCount )
+						cell.Tags.Add( tagToAssign );
+				}
+			} ) );
+		}
+
+		await GameTask.WhenAll( tasks );
+	}
+
+	/// <summary>
+	/// Adds the droppable connection to cells you can drop from
+	/// </summary>
+	/// <returns></returns>
+	public async Task AssignDroppableCells( int threadsToUse = 1 ) => await internalAssignDroppableCells( CellsWithTag( "edge" ).ToList(), threadsToUse );
+
+	public async Task AssignDroppableCells( BBox bounds, int threadsToUse = 1 ) => await internalAssignDroppableCells( CellsWithTag( bounds, "edge" ).ToList(), threadsToUse );
+
+	internal async Task internalAssignDroppableCells( List<Cell> cells, int threadsToUse = 1 )
+	{
+		var allCells = cells;
+		var cellsCount = allCells.Count();
+		var cellsEachThread = (int)(cellsCount / threadsToUse);
+		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
+		List<Task> tasks = new();
+
+		for ( int i = 0; i < threadsToUse; i++ )
+		{
+			var curentThread = i;
+
+			tasks.Add( GameTask.RunInThreadAsync( () =>
+			{
+				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
+				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
+
+				foreach ( var cell in cellsToCheck )
+				{
+					var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight );
+					if ( droppableCell != null )
+						cell.AddConnection( droppableCell, "drop" );
+				}
+			} ) );
+		}
+
+		await GameTask.WhenAll( tasks );
+	}
+
+
+	/// <summary>
+	/// Create cells in that local bbox (Doesn't add them)
+	/// </summary>
+	/// <param name="bounds">Local bounds</param>
+	/// <param name="printInfo"></param>
+	private List<Cell> createCells( BBox bounds, bool printInfo = true )
+	{
+		var generatedCells = new List<Cell>();
+
+		var minimumGrid = bounds.Mins.ToIntVector2( CellSize );
+		var maximumGrid = bounds.Maxs.ToIntVector2( CellSize );
+		var startingColumn = minimumGrid.y - MinimumColumn;
+		var totalColumns = maximumGrid.y - minimumGrid.y;
+		var endingColumn = startingColumn + totalColumns;
+		var startingRow = minimumGrid.x - MinimumRow;
+		var totalRows = maximumGrid.x - minimumGrid.x;
+		var endingRow = startingRow + totalRows;
+
+		if ( printInfo )
+			Print( $"Casting {totalRows * totalColumns} cells. [{totalRows}x{totalColumns}]" );
+
+		for ( int column = startingColumn; column < endingColumn; column++ )
+		{
+			for ( int row = startingRow; row < endingRow; row++ )
+			{
+				var startPosition = WorldBounds.Mins.WithZ( WorldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
+				var endPosition = WorldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
+				var checkBBox = new BBox( new Vector3( -CellSize / 2f + Tolerance, -CellSize / 2f + Tolerance, 0f ), new Vector3( CellSize / 2f - Tolerance, CellSize / 2f - Tolerance, 0.001f ) );
+				var positionTrace = Scene.Trace.Box( checkBBox, startPosition, endPosition )
+					.WithGridSettings( this );
+
+				var positionResult = positionTrace.Run();
+
+				while ( positionResult.Hit && startPosition.z >= endPosition.z )
+				{
+					if ( IsInsideBounds( positionResult.HitPosition ) )
+					{
+						if ( true ) //!CylinderShaped || IsInsideCylinder( positionResult.HitPosition ) ) // TODO: Add cylinder check here ( Boring!!)
+						{
+							var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
+							if ( angle <= StandableAngle )
+							{
+								var newCell = Cell.TryCreate( this, positionResult.HitPosition );
+
+								if ( newCell != null )
+									generatedCells.Add( newCell );
+							}
+						}
+					}
+
+					startPosition = positionResult.HitPosition + Vector3.Down * HeightClearance;
+
+					var minimumCheckOffset = MathF.Max( CellSize, HeightClearance );
+
+					while ( startPosition.z > endPosition.z && Scene.Trace.Sphere( CellSize / 2f - Tolerance, startPosition, startPosition ).Run().Hit )
+						startPosition += Vector3.Down * minimumCheckOffset;
+
+					positionTrace = Scene.Trace.Box( checkBBox, startPosition, endPosition )
+						.WithGridSettings( this );
+
+					positionResult = positionTrace.Run();
+				}
+			}
+		}
+
+		if ( printInfo )
+			Print( $"Generated {generatedCells.Count()} valid cells" );
+
+		return generatedCells;
+	}
+
+	/// <summary>
+	/// Creates a new grid with the settings given
+	/// </summary>
+	/// <param name="threadedChunkSides">How many sides the grid will be split to generate each chunk into a different thread. 1 = 1 thread, 2 = 4 threads, 3 = 9 threads etc...</param>
+	/// <param name="printInfo">Print information about the grid's generation state</param>
+	/// <returns></returns>
+	public async Task<Grid> Create( int threadedChunkSides = 4, bool printInfo = true )
+	{
+		Stopwatch totalWatch = new Stopwatch();
+		totalWatch.Start();
+		Stopwatch cellsWatch = new Stopwatch();
+		cellsWatch.Start();
+
+		var currentGrid = new Grid();
+
+		await currentGrid.GenerateCells( currentGrid.Bounds, threadedChunkSides, printInfo, false );
+
+		if ( printInfo )
+			currentGrid.Print( "Creating grid" );
+
+		cellsWatch.Stop();
+		if ( printInfo )
+			currentGrid.Print( $"Generated terrain cells in {cellsWatch.ElapsedMilliseconds}ms" );
+
+		Stopwatch edgeCells = new Stopwatch();
+		edgeCells.Start();
+		await currentGrid.AssignEdgeCells( MinNeighbourCount, threadsToUse: threadedChunkSides * threadedChunkSides );
+		edgeCells.Stop();
+		if ( printInfo )
+			currentGrid.Print( $"Assigned edge cells in {edgeCells.ElapsedMilliseconds}ms" );
+
+		if ( MaxDropHeight > 0 )
+		{
+			Stopwatch droppableCells = new Stopwatch();
+			droppableCells.Start();
+			await currentGrid.AssignDroppableCells( threadsToUse: threadedChunkSides * threadedChunkSides );
+			droppableCells.Stop();
+			if ( printInfo )
+				currentGrid.Print( $"Assigned droppable cells in {droppableCells.ElapsedMilliseconds}ms" );
+		}
+		/*
+		if ( JumpDefinitions.Count() > 0 )
+		{
+			Stopwatch jumpableCells = new Stopwatch();
+			jumpableCells.Start();
+			foreach ( var definition in JumpDefinitions )
+				await currentGrid.AssignJumpableCells( definition, threadsToUse: threadedChunkSides * threadedChunkSides );
+			jumpableCells.Stop();
+			if ( printInfo )
+				currentGrid.Print( $"Assigned jumpable cells in {jumpableCells.ElapsedMilliseconds}ms" );
+		}*/
+
+		totalWatch.Stop();
+		if ( printInfo )
+			currentGrid.Print( $"Finished in {totalWatch.ElapsedMilliseconds}ms" );
+
+		return currentGrid;
+	}
+
+	/// <summary>
+	/// Returns all cells with that tag
+	/// </summary>
+	/// <param name="tag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTag( string tag ) => AllCells.Where( cell => cell.Tags.Has( tag ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => AllCells.Where( cell => cell.Tags.Has( tags ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => AllCells.Where( cell => cell.Tags.Has( tags ) );
+
+	/// <summary>
+	/// Returns all cells with that tag
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="tag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTag( BBox bounds, string tag ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tag ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( BBox bounds, params string[] tags ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tags ) );
+
+	/// <summary>
+	/// Returns all cells with those tags
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="tags"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithTags( BBox bounds, List<string> tags ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tags ) );
+
+	/// <summary>
+	/// Returns all connections with the movementTag
+	/// </summary>
+	/// <param name="movementTag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithConnection( string movementTag ) => AllCells.Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
+
+	/// <summary>
+	/// Returns all connections with the movementTag
+	/// </summary>
+	/// <param name="bounds"></param>
+	/// <param name="movementTag"></param>
+	/// <returns></returns>
+	public IEnumerable<Cell> CellsWithConnection( BBox bounds, string movementTag ) => GetCellsInBBox( bounds ).Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
 
 }
 /*
@@ -656,90 +1004,6 @@ public partial class Grid : IValid
 
 	public override int GetHashCode() => Settings.GetHashCode();
 
-	/// <summary>
-	/// Gives the edge tag to all cells with less than 8 neighbours
-	/// </summary>
-	/// <param name="maxNeighourCount">How many neighbours a cell needs to have to not be considered an edge</param>
-	/// <param name="threadsToUse">How many threads to use</param>
-	/// <param name="clearTags">Clear previous edge tags, for regenerating terrain and not first creating</param>
-	/// <param name="tagToExclude">Cells with this tag won't get counted, you can for example do "edge" to exclude previous edge cells and expand the edge towards the center</param>
-	/// <param name="tagToAssign">Name of the tag that gets assigned</param>
-	/// <returns></returns>
-	public async Task AssignEdgeCells( int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" ) => await assignEdgeCellsInternal( AllCells.ToList(), maxNeighourCount, threadsToUse, clearTags, tagToExclude, tagToAssign );
-
-	public async Task AssignEdgeCells( BBox bounds, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" ) => await assignEdgeCellsInternal( GetCellsInBBox( bounds ), maxNeighourCount, threadsToUse, clearTags, tagToExclude, tagToAssign );
-
-	internal async Task assignEdgeCellsInternal( List<Cell> cells, int maxNeighourCount = 8, int threadsToUse = 1, bool clearTags = false, string tagToExclude = "", string tagToAssign = "edge" )
-	{
-		var cellsCount = cells.Count();
-		var cellsEachThread = (int)(cellsCount / threadsToUse);
-		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
-		List<Task> tasks = new();
-
-		for ( int i = 0; i < threadsToUse; i++ )
-		{
-			var curentThread = i;
-
-			tasks.Add( GameTask.RunInThreadAsync( () =>
-			{
-				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
-				var cellsToCheck = cells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
-
-				foreach ( var cell in cellsToCheck )
-				{
-					if ( clearTags )
-						cell.Tags.Remove( tagToAssign );
-
-					var neighbours = cell.GetNeighbours();
-
-					if ( tagToExclude != "" )
-						neighbours = neighbours.Where( x => !x.Tags.Has( tagToExclude ) );
-
-					if ( neighbours.Count() < maxNeighourCount )
-						cell.Tags.Add( tagToAssign );
-				}
-			} ) );
-		}
-
-		await GameTask.WhenAll( tasks );
-	}
-
-	/// <summary>
-	/// Adds the droppable connection to cells you can drop from
-	/// </summary>
-	/// <returns></returns>
-	public async Task AssignDroppableCells( int threadsToUse = 1 ) => await internalAssignDroppableCells( CellsWithTag( "edge" ).ToList(), threadsToUse );
-
-	public async Task AssignDroppableCells( BBox bounds, int threadsToUse = 1 ) => await internalAssignDroppableCells( CellsWithTag( bounds, "edge" ).ToList(), threadsToUse );
-
-	internal async Task internalAssignDroppableCells( List<Cell> cells, int threadsToUse = 1 )
-	{
-		var allCells = cells;
-		var cellsCount = allCells.Count();
-		var cellsEachThread = (int)(cellsCount / threadsToUse);
-		var lastThreadCount = cellsCount - (cellsEachThread * (threadsToUse - 1));
-		List<Task> tasks = new();
-
-		for ( int i = 0; i < threadsToUse; i++ )
-		{
-			var curentThread = i;
-
-			tasks.Add( GameTask.RunInThreadAsync( () =>
-			{
-				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
-				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
-
-				foreach ( var cell in cellsToCheck )
-				{
-					var droppableCell = cell.GetFirstValidDroppable( maxHeightDistance: MaxDropHeight );
-					if ( droppableCell != null )
-						cell.AddConnection( droppableCell, "drop" );
-				}
-			} ) );
-		}
-
-		await GameTask.WhenAll( tasks );
-	}
 	public IEnumerable<Cell> JumpableCandidates()
 	{
 		var droppedCells = CellsWithConnection( "drop" ).SelectMany( cell => cell.GetConnections( "drop" ).Select( connection => connection.Current ) );
@@ -868,74 +1132,6 @@ public partial class Grid : IValid
 		return lastPositionChecked;
 	}
 
-	public void RemoveCells( BBox bounds, bool printInfo = false, bool broadcastToClients = false )
-	{
-		var cellsToRemove = GetCellsInBBox( bounds );
-		var count = cellsToRemove.Count();
-
-		foreach ( var cell in cellsToRemove )
-			cell.Delete();
-
-		if ( printInfo )
-			Print( $"Removed {count} cells" );
-
-		if ( broadcastToClients )
-			if ( Game.IsServer )
-				Grid.removeCellsClient( Identifier, bounds, printInfo );
-	}
-
-	public async Task GenerateCells( BBox bounds, int threadedChunkSides = 1, bool printInfo = true, bool broadcastToClients = false )
-	{
-		List<Task<List<Cell>>> tasks = new();
-		var totalMins = bounds.Mins;
-		var totalMaxs = bounds.Maxs;
-		var totalSize = bounds.Size;
-
-		if ( broadcastToClients )
-			if ( Game.IsServer )
-				Grid.generateCellsClient( Identifier, threadedChunkSides, bounds, printInfo );
-
-		for ( int x = 1; x <= threadedChunkSides; x++ )
-		{
-			for ( int y = 1; y <= threadedChunkSides; y++ )
-			{
-				var xOffset = totalSize.x / threadedChunkSides * x - totalSize.x / threadedChunkSides / 2;
-				var yOffset = totalSize.y / threadedChunkSides * y - totalSize.y / threadedChunkSides / 2;
-				var offset = new Vector3( xOffset, yOffset );
-				var chunkSize = totalSize / threadedChunkSides;
-				var chunkMins = totalMins + offset - chunkSize / 2;
-				var chunkMaxs = totalMins + offset + chunkSize / 2;
-				var dividedBounds = new BBox( chunkMins.WithZ( totalMins.z ), chunkMaxs.WithZ( totalMaxs.z ) );
-
-				tasks.Add( GameTask.RunInThreadAsync( () => createCells( dividedBounds, printInfo ) ) );
-			}
-		}
-
-		await GameTask.WhenAll( tasks );
-
-		foreach ( var task in tasks )
-			foreach ( var cell in task.Result )
-				AddCell( cell );
-	}
-
-	public async Task GenerateConnections( BBox bounds, float expandBoundsCheck = GridSettings.DEFAULT_DROP_HEIGHT, int threadedChunkSides = 4, bool printInfo = true, bool broadcastToClients = false )
-	{
-		bounds = new BBox( bounds.Mins - expandBoundsCheck - StepSize, bounds.Maxs + expandBoundsCheck + StepSize );
-
-		await AssignEdgeCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
-
-		if ( MaxDropHeight > 0 )
-			await AssignDroppableCells( bounds, threadsToUse: threadedChunkSides * threadedChunkSides );
-
-		if ( JumpDefinitions.Count() > 0 )
-			foreach ( var definition in JumpDefinitions )
-				await AssignJumpableCells( bounds, definition, threadsToUse: threadedChunkSides * threadedChunkSides );
-
-		if ( broadcastToClients )
-			if ( Game.IsServer )
-				Grid.regenerateConnectionsClient( Identifier, bounds, expandBoundsCheck, threadedChunkSides, printInfo );
-	}
-
 	[ClientRpc]
 	internal async static void regenerateConnectionsClient( string identifier, BBox bounds, float expandBoundsCheck = GridSettings.DEFAULT_DROP_HEIGHT, int threadedChunkSides = 4, bool printInfo = true )
 	{
@@ -945,74 +1141,6 @@ public partial class Grid : IValid
 			await grid.GenerateConnections( bounds, expandBoundsCheck, threadedChunkSides, printInfo );
 	}
 
-	/// <summary>
-	/// Create cells in that local bbox (Doesn't add them)
-	/// </summary>
-	/// <param name="bounds">Local bounds</param>
-	/// <param name="printInfo"></param>
-	private List<Cell> createCells( BBox bounds, bool printInfo = true )
-	{
-		var generatedCells = new List<Cell>();
-
-		var minimumGrid = bounds.Mins.ToIntVector2( CellSize );
-		var maximumGrid = bounds.Maxs.ToIntVector2( CellSize );
-		var startingColumn = minimumGrid.y - MinimumColumn;
-		var totalColumns = maximumGrid.y - minimumGrid.y;
-		var endingColumn = startingColumn + totalColumns;
-		var startingRow = minimumGrid.x - MinimumRow;
-		var totalRows = maximumGrid.x - minimumGrid.x;
-		var endingRow = startingRow + totalRows;
-
-		if ( printInfo )
-			Print( $"Casting {totalRows * totalColumns} cells. [{totalRows}x{totalColumns}]" );
-
-		for ( int column = startingColumn; column < endingColumn; column++ )
-		{
-			for ( int row = startingRow; row < endingRow; row++ )
-			{
-				var startPosition = WorldBounds.Mins.WithZ( WorldBounds.Maxs.z ) + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, Tolerance * 2f ) * AxisRotation;
-				var endPosition = WorldBounds.Mins + new Vector3( row * CellSize + CellSize / 2f, column * CellSize + CellSize / 2f, -Tolerance ) * AxisRotation;
-				var checkBBox = new BBox( new Vector3( -CellSize / 2f + Tolerance, -CellSize / 2f + Tolerance, 0f ), new Vector3( CellSize / 2f - Tolerance, CellSize / 2f - Tolerance, 0.001f ) );
-				var positionTrace = grid.Scene.Trace.Box( checkBBox, startPosition, endPosition )
-					.WithGridSettings( Settings );
-
-				var positionResult = positionTrace.Run();
-
-				while ( positionResult.Hit && startPosition.z >= endPosition.z )
-				{
-					if ( IsInsideBounds( positionResult.HitPosition ) )
-					{
-						if ( !CylinderShaped || IsInsideCylinder( positionResult.HitPosition ) )
-						{
-							var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
-							if ( angle <= StandableAngle )
-							{
-								var newCell = Cell.TryCreate( this, positionResult.HitPosition );
-
-								if ( newCell != null )
-									generatedCells.Add( newCell );
-							}
-						}
-					}
-
-					startPosition = positionResult.HitPosition + Vector3.Down * HeightClearance;
-
-					while ( grid.Scene.Trace.TestPoint( startPosition, radius: CellSize / 2f - Tolerance ) )
-						startPosition += Vector3.Down * HeightClearance;
-
-					positionTrace = grid.Scene.Trace.Box( checkBBox, startPosition, endPosition )
-						.WithGridSettings( Settings );
-
-					positionResult = positionTrace.Run();
-				}
-			}
-		}
-
-		if ( printInfo )
-			Print( $"Generated {generatedCells.Count()} valid cells" );
-
-		return generatedCells;
-	}
 
 	[ClientRpc]
 	internal static void removeCellsClient( string identifier, BBox bounds, bool printInfo = false )
@@ -1031,66 +1159,6 @@ public partial class Grid : IValid
 		if ( grid != null )
 			await grid.GenerateCells( bounds, threadedChunkSides, printInfo );
 	}
-
-	/// <summary>
-	/// Returns all cells with that tag
-	/// </summary>
-	/// <param name="tag"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTag( string tag ) => AllCells.Where( cell => cell.Tags.Has( tag ) );
-
-	/// <summary>
-	/// Returns all cells with those tags
-	/// </summary>
-	/// <param name="tags"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( params string[] tags ) => AllCells.Where( cell => cell.Tags.Has( tags ) );
-
-	/// <summary>
-	/// Returns all cells with those tags
-	/// </summary>
-	/// <param name="tags"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( List<string> tags ) => AllCells.Where( cell => cell.Tags.Has( tags ) );
-
-	/// <summary>
-	/// Returns all cells with that tag
-	/// </summary>
-	/// <param name="bounds"></param>
-	/// <param name="tag"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTag( BBox bounds, string tag ) => GetCellsInBBox(bounds).Where( cell => cell.Tags.Has( tag ) );
-
-	/// <summary>
-	/// Returns all cells with those tags
-	/// </summary>
-	/// <param name="bounds"></param>
-	/// <param name="tags"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( BBox bounds, params string[] tags ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tags ) );
-
-	/// <summary>
-	/// Returns all cells with those tags
-	/// </summary>
-	/// <param name="bounds"></param>
-	/// <param name="tags"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithTags( BBox bounds, List<string> tags ) => GetCellsInBBox( bounds ).Where( cell => cell.Tags.Has( tags ) );
-
-	/// <summary>
-	/// Returns all connections with the movementTag
-	/// </summary>
-	/// <param name="movementTag"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithConnection( string movementTag ) => AllCells.Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
-
-	/// <summary>
-	/// Returns all connections with the movementTag
-	/// </summary>
-	/// <param name="bounds"></param>
-	/// <param name="movementTag"></param>
-	/// <returns></returns>
-	public IEnumerable<Cell> CellsWithConnection( BBox bounds, string movementTag ) => GetCellsInBBox( bounds ).Where( cell => cell.GetConnections( movementTag ).Count() > 0 );
 
 	/// <summary>
 	/// Loop through cells and set them as occupied if an entity is inside of their clearance zone

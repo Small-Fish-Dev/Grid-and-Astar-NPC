@@ -1,49 +1,13 @@
 ﻿namespace GridAStar;
 
-//public partial class Grid
-//{
-//public void Print( string message ) => Grid.Print( Identifier, message );
-//public static void Print( string identifier, string message ) => Log.Info( $"{(Game.IsServer ? "[Server]" : "[Client]")} Grid '{identifier}': {message}" );
-
-/*
-[ConCmd.Admin( "RegenerateMainGrid" )]
-public async static void RegenerateMainGrid()
+public partial class Grid
 {
-	BroadcastMainGrid();
-	await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
+	public void Print( string message ) => Grid.Print( GameObject.Name, message );
+	public static void Print( string identifier, string message ) => Log.Info( $"Grid '{identifier}': {message}" );
+
 }
 
-[ClientRpc]
-public async static void BroadcastMainGrid()
-{
-	await Grid.Create( Vector3.Zero, Game.PhysicsWorld.Body.GetBounds(), new Rotation() ); // Initialize the main grid
-}
 
-[ConCmd.Admin( "CreateGrid" )]
-public async static void CreateGrid( string identifier )
-{
-	var caller = ConsoleSystem.Caller;
-	await Grid.Create( caller.Position, new BBox( -200f, 200f ), new Rotation(), identifier );
-}
-
-[ConCmd.Admin( "LoadGrid" )]
-public async static void LoadGrid( string identifier = "main" )
-{
-	await Grid.Load( identifier );
-}
-
-[ConCmd.Admin( "DeleteGrid" )]
-public static void DeleteGrid( string identifier = "main" )
-{
-	DeleteSave( identifier );
-}
-
-[ConCmd.Admin( "TestOccupancy" )]
-public static void OccupancyTest()
-{
-	foreach ( var grid in Grid.Grids )
-		grid.Value.CheckOccupancy( "BlockGrid" );
-}*/
 /*
 [ConCmd.Admin( "TestPath" )]
 public async static void TestPath()
@@ -64,7 +28,6 @@ public async static void TestPath()
 			DebugOverlay.Line( node.EndPosition, computedPath.Nodes[i + 1].EndPosition, 3f );
 	}
 }
-
 
 [ConCmd.Admin( "TestLOS" )]
 public static void TestLOS()
