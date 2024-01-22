@@ -92,6 +92,7 @@ public class Grid : Component, Component.ExecuteInEditor
 	//public List<JumpDefinition> JumpDefinitions { get; private set; } = new(); // TODO: Add to persistance
 
 	public Dictionary<IntVector2, List<Cell>> CellStacks { get; internal set; } = new();
+	public IEnumerable<Cell> AllCells => CellStacks.Values.SelectMany( list => list );
 	public BBox WorldBounds => Bounds.Translate( Transform.Position );
 
 	public float Tolerance => GridPerfect ? 0.001f : 0f;
@@ -181,14 +182,11 @@ public class Grid : Component, Component.ExecuteInEditor
 	/// </summary>
 	/// <param name="position"></param>
 	/// <param name="onlyBelow"></param>
-	/// <param name="unoccupiedOnly"></param>
 	/// <returns></returns>
-	public Cell GetNearestCell( Vector3 position, bool onlyBelow = true, bool unoccupiedOnly = false )
+	public Cell GetNearestCell( Vector3 position, bool onlyBelow = true )
 	{
 		var validCells = AllCells;
 
-		if ( unoccupiedOnly )
-			validCells = validCells.Where( x => !x.Occupied );
 		if ( onlyBelow )
 			validCells = validCells.Where( x => x.Vertices.Min() - Math.Max( HeightClearance, StepSize ) <= position.z );
 
@@ -298,20 +296,13 @@ public class Grid : Component, Component.ExecuteInEditor
 	/// </summary>
 	/// <param name="startingCell"></param>
 	/// <param name="endingCell"></param>
-	/// <param name="pathCreator">Who created the path, cells occupied by this entity will get ignored.</param>
 	/// <param name="debugShow"></param>
 	/// <returns></returns>
-	public bool LineOfSight( Cell startingCell, Cell endingCell, Entity pathCreator = null, bool debugShow = false )
+	public bool LineOfSight( Cell startingCell, Cell endingCell, bool debugShow = false )
 	{
 		var startingPosition = startingCell.Position;
 		var endingPosition = endingCell.Position;
 		var distanceInSteps = (int)Math.Ceiling( startingPosition.Distance( endingPosition ) / CellSize );
-
-		if ( pathCreator == null && startingCell.Occupied ) return false;
-		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
-
-		if ( pathCreator == null && endingCell.Occupied ) return false;
-		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
 
 		Cell lastCell = startingCell;
 		for ( int i = 0; i <= distanceInSteps; i++ )
@@ -322,14 +313,9 @@ public class Grid : Component, Component.ExecuteInEditor
 			if ( cellToCheck == null ) return false;
 			if ( cellToCheck == endingCell ) return true;
 			if ( cellToCheck == lastCell ) continue;
-			if ( pathCreator == null && cellToCheck.Occupied ) return false;
-			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
 			if ( !cellToCheck.IsNeighbour( lastCell ) ) return false;
 
 			lastCell = cellToCheck;
-
-			if ( debugShow )
-				lastCell.Draw( 2f, false, false, false );
 		}
 
 		return true;
@@ -344,7 +330,7 @@ public class Grid : Component, Component.ExecuteInEditor
 	/// <param name="pathCreator"></param>
 	/// <param name="withConnections"></param>
 	/// <returns></returns>
-	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, Entity pathCreator = null, bool withConnections = true )
+	public bool IsDirectlyWalkable( Cell startingCell, Cell endingCell, float maxDistanceFromDirectPath = 150f, bool withConnections = true )
 	{
 		if ( startingCell == null || endingCell == null ) return false;
 
@@ -352,20 +338,12 @@ public class Grid : Component, Component.ExecuteInEditor
 		var directPath = new Line( startingCell.Position.WithZ( 0 ), endingCell.Position.WithZ( 0 ) );
 		List<Cell> cellsChecked = new();
 
-		if ( pathCreator == null && startingCell.Occupied ) return false;
-		if ( pathCreator != null && startingCell.Occupied && startingCell.OccupyingEntity != pathCreator ) return false;
-
-		if ( pathCreator == null && endingCell.Occupied ) return false;
-		if ( pathCreator != null && endingCell.Occupied && endingCell.OccupyingEntity != pathCreator ) return false;
-
 		while ( currentCell != endingCell && directPath.Distance( currentCell.Position.WithZ( 0 ) ) <= maxDistanceFromDirectPath )
 		{
 			var cellToCheck = withConnections ? currentCell.GetClosestNeighbourAndConnection( endingCell.Position ) : currentCell.GetClosestNeighbour( endingCell.Position );
 
 			if ( cellToCheck == null ) return false;
 			if ( cellsChecked.Contains( cellToCheck ) ) return false;
-			if ( pathCreator == null && cellToCheck.Occupied ) return false;
-			if ( pathCreator != null && cellToCheck.Occupied && cellToCheck.OccupyingEntity != pathCreator ) return false;
 
 			if ( cellToCheck == endingCell ) return true;
 
@@ -376,35 +354,7 @@ public class Grid : Component, Component.ExecuteInEditor
 		return false;
 	}
 
-	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Position, point, Rotation );
-	public bool IsInsideCylinder( Vector3 point ) => Bounds.IsInsideSquishedRotatedCylinder( Position, point, Rotation );
-
-	public void Initialize()
-	{
-		if ( Grids.ContainsKey( Identifier ) )
-		{
-			if ( Grids[Identifier] != null )
-				Grids[Identifier].Delete( true );
-
-			Grids[Identifier] = this;
-		}
-		else
-			Grids.Add( Identifier, this );
-	}
-
-	public void Delete( bool deleteSave = false )
-	{
-		Event.Unregister( this );
-
-		if ( Grids.ContainsKey( Identifier ) )
-		{
-			Grids[Identifier] = null;
-			Grids.Remove( Identifier );
-		}
-
-		if ( deleteSave )
-			DeleteSave();
-	}
+	public bool IsInsideBounds( Vector3 point ) => Bounds.IsRotatedPointWithinBounds( Transform.Position, point, Transform.Rotation );
 
 	public List<Cell> GetCellsInBBox( BBox bbox )
 	{
