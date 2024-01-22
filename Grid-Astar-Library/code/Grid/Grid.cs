@@ -126,15 +126,13 @@ public partial class Grid : Component, Component.ExecuteInEditor
 			previewModel = CreateModel();
 
 		draw.Model( previewModel );
-
-
 	}
 
 	protected override void OnEnabled()
 	{
 		base.OnEnabled();
 
-		Create();
+		Create( 1 );
 	}
 
 	public Model CreateModel()
