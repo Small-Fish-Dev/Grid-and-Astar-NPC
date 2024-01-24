@@ -136,7 +136,7 @@ public partial class Grid : Component, Component.ExecuteInEditor
 	{
 		base.OnEnabled();
 
-		GameTask.RunInThreadAsync( async () =>
+		Task.RunInThreadAsync( async () =>
 		{
 			Loaded = false;
 			previewModel = null;
@@ -422,11 +422,11 @@ public partial class Grid : Component, Component.ExecuteInEditor
 				var chunkMaxs = totalMins + offset + chunkSize / 2;
 				var dividedBounds = new BBox( chunkMins.WithZ( totalMins.z ), chunkMaxs.WithZ( totalMaxs.z ) );
 
-				tasks.Add( GameTask.RunInThreadAsync( () => createCells( dividedBounds, printInfo ) ) );
+				tasks.Add( Task.RunInThreadAsync( () => createCells( dividedBounds, printInfo ) ) );
 			}
 		}
 
-		await GameTask.WhenAll( tasks );
+		await Task.WhenAll( tasks );
 
 		foreach ( var task in tasks )
 			foreach ( var cell in task.Result )
@@ -476,7 +476,7 @@ public partial class Grid : Component, Component.ExecuteInEditor
 		{
 			var curentThread = i;
 
-			tasks.Add( GameTask.RunInThreadAsync( () =>
+			tasks.Add( Task.RunInThreadAsync( () =>
 			{
 				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
 				var cellsToCheck = cells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
@@ -497,7 +497,7 @@ public partial class Grid : Component, Component.ExecuteInEditor
 			} ) );
 		}
 
-		await GameTask.WhenAll( tasks );
+		await Task.WhenAll( tasks );
 	}
 
 	/// <summary>
@@ -520,7 +520,7 @@ public partial class Grid : Component, Component.ExecuteInEditor
 		{
 			var curentThread = i;
 
-			tasks.Add( GameTask.RunInThreadAsync( () =>
+			tasks.Add( Task.RunInThreadAsync( () =>
 			{
 				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
 				var cellsToCheck = allCells.Skip( cellsEachThread * curentThread ).Take( cellsRange );
@@ -534,7 +534,7 @@ public partial class Grid : Component, Component.ExecuteInEditor
 			} ) );
 		}
 
-		await GameTask.WhenAll( tasks );
+		await Task.WhenAll( tasks );
 	}
 
 
@@ -1048,7 +1048,7 @@ public partial class Grid : IValid
 		{
 			var curentThread = i;
 
-			tasks.Add( GameTask.RunInThreadAsync( () =>
+			tasks.Add( Task.RunInThreadAsync( () =>
 			{
 				var totalFraction = 1f;
 				var cellsRange = curentThread == threadsToUse - 1 ? cellsEachThread : lastThreadCount;
@@ -1097,7 +1097,7 @@ public partial class Grid : IValid
 			} ) );
 		}
 
-		await GameTask.WhenAll( tasks );
+		await Task.WhenAll( tasks );
 	}
 
 	public Vector3 TraceParabola( Vector3 startingPosition, Vector3 horizontalVelocity, float verticalSpeed, float gravity, float maxDropHeight, int subSteps = 2, bool draw = false )
