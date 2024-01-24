@@ -105,6 +105,7 @@ public partial class Grid : Component, Component.ExecuteInEditor
 	public int MinimumRow => WorldBounds.Mins.ToIntVector2( CellSize ).x;
 	public int MaximumRow => WorldBounds.Maxs.ToIntVector2( CellSize ).x;
 	public int Rows => MaximumRow - MinimumRow;
+	public bool Loaded { get; set; } = false;
 
 	/*[Property]
 	public bool IgnoreConnectionsForJumps { get; private set; } = false; // TODO: Add to persistance
@@ -122,59 +123,66 @@ public partial class Grid : Component, Component.ExecuteInEditor
 
 		// Test performance
 
-		if ( previewModel == null )
-			previewModel = CreateModel();
-
-		draw.Model( previewModel );
+		if ( Loaded )
+		{
+			if ( previewModel == null )
+				previewModel = CreateModel();
+			else
+				draw.Model( previewModel );
+		}
 	}
 
 	protected override void OnEnabled()
 	{
 		base.OnEnabled();
 
-		Create( 1 );
+		GameTask.RunInThreadAsync( async () =>
+		{
+			Loaded = false;
+			previewModel = null;
+			await Create( 2 );
+			Loaded = true;
+		} );
 	}
 
 	public Model CreateModel()
 	{
-		var gridSize = 1000;
-		var squareSize = 10f;
-		var totVertices = gridSize * gridSize * 6;
+		var allCells = AllCells.ToList();
+		var totVertices = allCells.Count() * 6;
 
-		Mesh mesh = new Mesh( Material.Load( "materials/dev/debug_wireframe.vmat" ) );
+		var material = Material.Load( "materials/dev/debug_wireframe.vmat" );
+		Mesh mesh = new Mesh( material );
 		mesh.SetVertexRange( 0, totVertices );
 
 		List<Vertex> vertices = new();
 
-		for ( int x = 0; x < gridSize; x++ )
+		foreach ( var cell in allCells )
 		{
-			for ( int z = 0; z < gridSize; z++ )
-			{
-				float xPos = x * squareSize * 1.5f;
-				float zPos = z * squareSize * 1.5f;
+			// First triangle
+			Vector3 v1 = cell.BottomLeft;
+			Vector3 v2 = cell.BottomRight;
+			Vector3 v3 = cell.TopLeft;
 
-				// First triangle
-				Vector3 v1 = new Vector3( xPos, 0, zPos );
-				Vector3 v2 = new Vector3( xPos + squareSize, 0, zPos );
-				Vector3 v3 = new Vector3( xPos, 0, zPos + squareSize );
+			// Second triangle
+			Vector3 v4 = cell.BottomRight;
+			Vector3 v5 = cell.TopRight;
+			Vector3 v6 = cell.TopLeft;
 
-				// Second triangle
-				Vector3 v4 = new Vector3( xPos + squareSize, 0, zPos + squareSize );
-				Vector3 v5 = new Vector3( xPos, 0, zPos + squareSize );
-				Vector3 v6 = new Vector3( xPos + squareSize, 0, zPos );
-
-				vertices.Add( new Vertex( v1 ) );
-				vertices.Add( new Vertex( v2 ) );
-				vertices.Add( new Vertex( v3 ) );
-				vertices.Add( new Vertex( v4 ) );
-				vertices.Add( new Vertex( v5 ) );
-				vertices.Add( new Vertex( v6 ) );
-			}
+			vertices.Add( new Vertex( v1 ) );
+			vertices.Add( new Vertex( v2 ) );
+			vertices.Add( new Vertex( v3 ) );
+			vertices.Add( new Vertex( v4 ) );
+			vertices.Add( new Vertex( v5 ) );
+			vertices.Add( new Vertex( v6 ) );
 		}
 
 		mesh.CreateVertexBuffer<Vertex>( totVertices, Vertex.Layout, vertices );
 
-		return Model.Builder.AddMesh( mesh ).Create();
+		var model = Model.Builder
+			.AddMesh( mesh )
+			.Create();
+
+		return model;
 	}
 
 	/// <summary>
@@ -570,6 +578,7 @@ public partial class Grid : Component, Component.ExecuteInEditor
 						if ( true ) //!CylinderShaped || IsInsideCylinder( positionResult.HitPosition ) ) // TODO: Add cylinder check here ( Boring!!)
 						{
 							var angle = Vector3.GetAngle( Vector3.Up, positionResult.Normal );
+
 							if ( angle <= StandableAngle )
 							{
 								var newCell = Cell.TryCreate( this, positionResult.HitPosition );
