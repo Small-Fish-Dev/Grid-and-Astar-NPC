@@ -8,9 +8,7 @@
       "Enabled": true,
       "Components": [
         {
-          "__version": 0,
           "__type": "MapInstance",
-          "__enabled": true,
           "MapName": "maps/grid_test.vmap",
           "OnMapLoaded": null,
           "OnMapUnloaded": null,
@@ -27,9 +25,7 @@
       "Enabled": true,
       "Components": [
         {
-          "__version": 0,
           "__type": "CameraComponent",
-          "__enabled": true,
           "BackgroundColor": "0.33333,0.46275,0.52157,1",
           "ClearFlags": "All",
           "FieldOfView": 60,

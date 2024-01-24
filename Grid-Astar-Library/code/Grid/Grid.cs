@@ -117,11 +117,11 @@ public partial class Grid : Component, Component.ExecuteInEditor
 
 	protected override void DrawGizmos()
 	{
+		if ( !Game.IsEditor ) return;
+
 		Gizmo.GizmoDraw draw = Gizmo.Draw;
 
 		draw.LineBBox( Bounds );
-
-		// Test performance
 
 		if ( Loaded )
 		{
@@ -136,18 +136,18 @@ public partial class Grid : Component, Component.ExecuteInEditor
 	{
 		base.OnEnabled();
 
-		Task.RunInThreadAsync( async () =>
-		{
-			Loaded = false;
-			previewModel = null;
-			await Create( 2 );
-			Loaded = true;
-		} );
+		Loaded = false;
+		previewModel = null;
+
+		Create( 1 ).ContinueWith( _ => Loaded = true );
 	}
 
 	public Model CreateModel()
 	{
 		var allCells = AllCells.ToList();
+
+		if ( allCells.Count == 0 ) return null;
+
 		var totVertices = allCells.Count() * 6;
 
 		var material = Material.Load( "materials/dev/debug_wireframe.vmat" );
@@ -618,6 +618,8 @@ public partial class Grid : Component, Component.ExecuteInEditor
 	/// <returns></returns>
 	public async Task Create( int threadedChunkSides = 4, bool printInfo = true )
 	{
+		CellStacks.Clear();
+
 		Stopwatch totalWatch = new Stopwatch();
 		totalWatch.Start();
 		Stopwatch cellsWatch = new Stopwatch();
